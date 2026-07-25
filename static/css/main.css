@@ -1,0 +1,118 @@
+:root {
+  --sidebar-width: 260px;
+  --primary-color: #0d6efd;
+  --primary-gradient: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+  --sidebar-bg: #1e293b;
+  --sidebar-hover: #334155;
+  --sidebar-active: #0d6efd;
+  --bg-light: #f8fafc;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background-color: var(--bg-light);
+  color: #334155;
+}
+
+/* App Wrapper Layout */
+#wrapper {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* Sidebar Styles */
+#sidebar-wrapper {
+  width: var(--sidebar-width);
+  background-color: var(--sidebar-bg);
+  color: #f8fafc;
+  flex-shrink: 0;
+  transition: all 0.3s ease;
+  box-shadow: 4px 0 10px rgba(0, 0, 0, 0.05);
+}
+
+.sidebar-heading {
+  padding: 1.25rem 1.5rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.sidebar-heading i {
+  color: #38bdf8;
+}
+
+.sidebar-menu {
+  padding: 1rem 0;
+}
+
+.sidebar-menu .nav-link {
+  color: #94a3b8;
+  padding: 0.75rem 1.5rem;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  transition: all 0.2s ease;
+}
+
+.sidebar-menu .nav-link:hover {
+  color: #ffffff;
+  background-color: var(--sidebar-hover);
+}
+
+.sidebar-menu .nav-link.active {
+  color: #ffffff;
+  background: var(--primary-gradient);
+  border-radius: 0 50px 50px 0;
+  font-weight: 600;
+}
+
+/* Page Content */
+#page-content-wrapper {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.navbar-custom {
+  background-color: #ffffff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+  padding: 0.75rem 1.5rem;
+}
+
+.main-content {
+  padding: 2rem;
+  flex-grow: 1;
+}
+
+/* Metric Cards */
+.card-metric {
+  border: none;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card-metric:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
+}
+
+.metric-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+}
+
+.bg-primary-soft { background-color: #e0f2fe; color: #0284c7; }
+.bg-success-soft { background-color: #dcfce7; color: #16a34a; }
+.bg-danger-soft { background-color: #fee2e2; color: #dc2626; }
+.bg-warning-soft { background-color: #fef3c7; color: #d97706; }
+.bg-purple-soft { background-color: #f3e8ff; color: #9333ea; }

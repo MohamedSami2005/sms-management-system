@@ -1,0 +1,48 @@
+<div id="sidebar-wrapper">
+    <div class="sidebar-heading d-flex align-items-center gap-2">
+        <i class="bi bi-chat-left-dots-fill fs-4"></i>
+        <span>CampusSMS DLT</span>
+    </div>
+    
+    <div class="sidebar-menu nav flex-column">
+        <a href="{% url 'dashboard:home' %}" class="nav-link {% if request.resolver_match.app_name == 'dashboard' %}active{% endif %}">
+            <i class="bi bi-speedometer2"></i> Dashboard
+        </a>
+
+        {% if user.is_admin %}
+        <a href="{% url 'users:user_list' %}" class="nav-link {% if request.resolver_match.app_name == 'users' %}active{% endif %}">
+            <i class="bi bi-people"></i> Users & Roles
+        </a>
+        {% endif %}
+
+        <a href="{% url 'dlt_templates:list' %}" class="nav-link {% if request.resolver_match.app_name == 'dlt_templates' %}active{% endif %}">
+            <i class="bi bi-file-earmark-text"></i> DLT Templates
+        </a>
+
+        <a href="{% url 'sms:single' %}" class="nav-link {% if request.resolver_match.url_name == 'single' %}active{% endif %}">
+            <i class="bi bi-send"></i> Send Single SMS
+        </a>
+
+        <a href="{% url 'sms:bulk' %}" class="nav-link {% if request.resolver_match.url_name == 'bulk' %}active{% endif %}">
+            <i class="bi bi-file-earmark-spreadsheet"></i> Send Bulk SMS
+        </a>
+
+        <a href="{% url 'sms:queue' %}" class="nav-link {% if request.resolver_match.url_name == 'queue' %}active{% endif %}">
+            <i class="bi bi-hourglass-split"></i> SMS Queue
+        </a>
+
+        <a href="{% url 'logs:list' %}" class="nav-link {% if request.resolver_match.app_name == 'logs' %}active{% endif %}">
+            <i class="bi bi-journal-text"></i> SMS Logs
+        </a>
+
+        <a href="{% url 'reports:overview' %}" class="nav-link {% if request.resolver_match.app_name == 'reports' %}active{% endif %}">
+            <i class="bi bi-bar-chart-line"></i> Reports & Analytics
+        </a>
+
+        {% if user.is_admin %}
+        <a href="{% url 'settings_app:index' %}" class="nav-link {% if request.resolver_match.app_name == 'settings_app' %}active{% endif %}">
+            <i class="bi bi-gear"></i> Settings
+        </a>
+        {% endif %}
+    </div>
+</div>

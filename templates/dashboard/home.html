@@ -1,0 +1,119 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="fw-bold mb-1">Welcome back, {{ user.get_full_name|default:user.username }}!</h3>
+        <p class="text-muted mb-0">Overview of your department's SMS dispatch metrics & credit balance.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{% url 'sms:single' %}" class="btn btn-primary">
+            <i class="bi bi-send-fill me-1"></i> Send Single SMS
+        </a>
+        <a href="{% url 'sms:bulk' %}" class="btn btn-outline-primary">
+            <i class="bi bi-file-earmark-spreadsheet me-1"></i> Bulk Upload
+        </a>
+    </div>
+</div>
+
+<!-- Metric Cards Grid -->
+<div class="row g-4 mb-4">
+    <div class="col-md-6 col-lg-3">
+        <div class="card card-metric p-3">
+            <div class="d-flex align-items-center gap-3">
+                <div class="metric-icon bg-primary-soft">
+                    <i class="bi bi-chat-text-fill"></i>
+                </div>
+                <div>
+                    <h6 class="text-muted mb-1 small text-uppercase font-monospace">Today's SMS</h6>
+                    <h3 class="fw-bold mb-0">{{ today_count }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-lg-3">
+        <div class="card card-metric p-3">
+            <div class="d-flex align-items-center gap-3">
+                <div class="metric-icon bg-success-soft">
+                    <i class="bi bi-check-circle-fill"></i>
+                </div>
+                <div>
+                    <h6 class="text-muted mb-1 small text-uppercase font-monospace">Delivered</h6>
+                    <h3 class="fw-bold mb-0">{{ delivered_count }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-lg-3">
+        <div class="card card-metric p-3">
+            <div class="d-flex align-items-center gap-3">
+                <div class="metric-icon bg-danger-soft">
+                    <i class="bi bi-x-circle-fill"></i>
+                </div>
+                <div>
+                    <h6 class="text-muted mb-1 small text-uppercase font-monospace">Failed</h6>
+                    <h3 class="fw-bold mb-0">{{ failed_count }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-lg-3">
+        <div class="card card-metric p-3">
+            <div class="d-flex align-items-center gap-3">
+                <div class="metric-icon bg-purple-soft">
+                    <i class="bi bi-wallet2"></i>
+                </div>
+                <div>
+                    <h6 class="text-muted mb-1 small text-uppercase font-monospace">Gateway Credit</h6>
+                    <h3 class="fw-bold mb-0">{{ credit_balance }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activities Table -->
+<div class="card border-0 shadow-sm rounded-3">
+    <div class="card-header bg-white py-3 border-0">
+        <h5 class="fw-bold mb-0">Recent SMS Activity</h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Mobile</th>
+                        <th>DLT Template</th>
+                        <th>Status</th>
+                        <th>Timestamp</th>
+                        <th>User</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for activity in recent_activities %}
+                    <tr>
+                        <td>{{ activity.mobile_number }}</td>
+                        <td>{{ activity.template.name }}</td>
+                        <td><span class="badge bg-success">{{ activity.status }}</span></td>
+                        <td>{{ activity.created_at|date:"M d, Y H:i" }}</td>
+                        <td>{{ activity.user.username }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center py-4 text-muted">
+                            <i class="bi bi-inbox display-6 d-block mb-2"></i>
+                            No recent SMS activity found.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
