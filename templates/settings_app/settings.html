@@ -1,24 +1,174 @@
 {% extends 'base.html' %}
 
-{% block title %}System Settings{% endblock %}
+{% block title %}SMS Gateway & System Settings{% endblock %}
 
 {% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'dashboard:home' %}">Dashboard</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Gateway Settings</li>
+    </ol>
+</nav>
+
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h3 class="fw-bold mb-1">System & Gateway Settings</h3>
-        <p class="text-muted mb-0">Manage HTTP SMS API provider keys, sender IDs, and DLT principal settings.</p>
+        <h3 class="fw-bold mb-1">SMS Gateway Configuration</h3>
+        <p class="text-muted mb-0">Dynamic HTTP SMS API credentials, sender headers, and connectivity diagnostics.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <button type="button" class="btn btn-outline-primary" id="testConnectionBtn">
+            <i class="bi bi-broadcast me-1"></i> Test API Connectivity
+        </button>
     </div>
 </div>
 
-<div class="row justify-content-center">
-    <div class="col-md-8">
-        <div class="card border-0 shadow-sm rounded-3 p-4">
-            <h5 class="fw-bold mb-3"><i class="bi bi-gear text-primary me-2"></i>SMS Gateway Credentials</h5>
-            <div class="alert alert-light border">
-                <p class="mb-1"><strong>Provider API URL:</strong> {{ gateway_url|default:"Configured via .env" }}</p>
-                <p class="mb-1"><strong>Default Sender ID:</strong> {{ sender_id|default:"COLLEG" }}</p>
+<!-- Test Connection Result Alert -->
+<div id="testResultAlert" class="alert d-none shadow-sm rounded-3 mb-4" role="alert">
+    <div class="d-flex align-items-center justify-content-between">
+        <div>
+            <h6 class="fw-bold mb-1" id="testResultTitle"></h6>
+            <div class="small" id="testResultText"></div>
+        </div>
+        <span class="badge bg-secondary font-monospace" id="testLatencyBadge"></span>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Active Gateway Specification Card -->
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold mb-0"><i class="bi bi-gear text-primary me-2"></i>Active HTTP API Profile</h5>
+                {% if gateway_config %}
+                    <span class="badge bg-success">Active Profile</span>
+                {% else %}
+                    <span class="badge bg-danger">No Active Profile</span>
+                {% endif %}
+            </div>
+            <div class="card-body p-4">
+                {% if gateway_config %}
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <small class="text-muted d-block">Provider Name</small>
+                            <span class="fw-bold fs-6">{{ gateway_config.provider_name }}</span>
+                        </div>
+                        <div class="col-md-6">
+                            <small class="text-muted d-block">HTTP Method</small>
+                            <span class="badge bg-secondary">{{ gateway_config.request_method }}</span>
+                        </div>
+                        <div class="col-12">
+                            <small class="text-muted d-block">API Dispatch Endpoint</small>
+                            <span class="font-monospace text-primary bg-light p-2 rounded d-block border">{{ gateway_config.api_url }}</span>
+                        </div>
+                        <div class="col-md-6">
+                            <small class="text-muted d-block">Masked API Key / Secret</small>
+                            <code>{{ gateway_config.masked_api_key }}</code>
+                        </div>
+                        <div class="col-md-6">
+                            <small class="text-muted d-block">Default Sender ID (Header)</small>
+                            <span class="badge bg-dark font-monospace fs-6">{{ gateway_config.default_sender_id }}</span>
+                        </div>
+                        <div class="col-md-6">
+                            <small class="text-muted d-block">Default Principal Entity ID</small>
+                            <code>{{ gateway_config.default_entity_id|default:"Not Configured" }}</code>
+                        </div>
+                        <div class="col-md-6">
+                            <small class="text-muted d-block">Last Updated</small>
+                            <span>{{ gateway_config.updated_at|date:"M d, Y H:i" }}</span>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="alert alert-warning text-center my-3">
+                        <i class="bi bi-exclamation-triangle display-6 d-block mb-2"></i>
+                        No active SMS Gateway configuration profile found. Please register an active profile in Django Admin.
+                    </div>
+                {% endif %}
             </div>
         </div>
     </div>
+
+    <!-- Credit Balance Diagnostic Widget -->
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm rounded-4 p-4 text-center">
+            <div class="mb-3">
+                <i class="bi bi-wallet2 display-3 text-primary"></i>
+            </div>
+            <h6 class="text-muted text-uppercase small font-monospace">Gateway Credit Balance</h6>
+            <h2 class="display-5 fw-bold text-dark my-2" id="balanceDisplay">
+                {% if balance_result and balance_result.success %}
+                    {{ balance_result.balance }}
+                {% else %}
+                    N/A
+                {% endif %}
+            </h2>
+            <small class="text-muted d-block mb-3">Provider: {{ gateway_config.provider_name|default:"None" }}</small>
+            <button class="btn btn-outline-secondary btn-sm" id="refreshBalanceBtn">
+                <i class="bi bi-arrow-clockwise me-1"></i> Refresh Balance
+            </button>
+        </div>
+    </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const testBtn = document.getElementById('testConnectionBtn');
+    const alertBox = document.getElementById('testResultAlert');
+    const alertTitle = document.getElementById('testResultTitle');
+    const alertText = document.getElementById('testResultText');
+    const latencyBadge = document.getElementById('testLatencyBadge');
+    const refreshBtn = document.getElementById('refreshBalanceBtn');
+    const balanceDisplay = document.getElementById('balanceDisplay');
+
+    testBtn.addEventListener('click', function() {
+        testBtn.disabled = True;
+        testBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Testing...';
+        alertBox.classList.add('d-none');
+
+        fetch("{% url 'settings_app:test_connection' %}", {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(res => res.json())
+        .then(data => {
+            testBtn.disabled = False;
+            testBtn.innerHTML = '<i class="bi bi-broadcast me-1"></i> Test API Connectivity';
+            alertBox.classList.remove('d-none', 'alert-success', 'alert-danger');
+
+            if (data.success) {
+                alertBox.classList.add('alert-success');
+                alertTitle.innerText = "Gateway Connectivity Successful!";
+                alertText.innerText = "Connected to " + data.gateway_name + " (HTTP Status: " + data.status_code + ")";
+                latencyBadge.innerText = data.response_time_ms + " ms";
+            } else {
+                alertBox.classList.add('alert-danger');
+                alertTitle.innerText = "Connectivity Error!";
+                alertText.innerText = data.error_message || "Failed to establish connection to SMS Gateway.";
+                latencyBadge.innerText = data.response_time_ms + " ms";
+            }
+        });
+    });
+
+    refreshBtn.addEventListener('click', function() {
+        refreshBtn.disabled = True;
+        refreshBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Fetching...';
+
+        fetch("{% url 'settings_app:balance' %}")
+        .then(res => res.json())
+        .then(data => {
+            refreshBtn.disabled = False;
+            refreshBtn.innerHTML = '<i class="bi bi-arrow-clockwise me-1"></i> Refresh Balance';
+            if (data.success) {
+                balanceDisplay.innerText = data.balance;
+            } else {
+                balanceDisplay.innerText = "N/A";
+            }
+        });
+    });
+});
+</script>
 {% endblock %}

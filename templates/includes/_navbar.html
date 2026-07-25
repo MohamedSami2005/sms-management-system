@@ -14,6 +14,17 @@
                         <li><span class="dropdown-header">Department: {{ user.department.name|default:"General" }}</span></li>
                         <li><hr class="dropdown-divider"></li>
                         <li>
+                            <a class="dropdown-item d-flex align-items-center gap-2" href="{% url 'accounts:profile' %}">
+                                <i class="bi bi-person-vcard text-primary"></i> My Profile
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item d-flex align-items-center gap-2" href="{% url 'accounts:password_change' %}">
+                                <i class="bi bi-shield-lock text-secondary"></i> Change Password
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
                             <form method="post" action="{% url 'accounts:logout' %}">
                                 {% csrf_token %}
                                 <button type="submit" class="dropdown-item text-danger d-flex align-items-center gap-2">

@@ -1,0 +1,182 @@
+from django import forms
+from django.utils.translation import gettext_lazy as _
+from apps.users.models import Department
+from apps.accounts.models import CustomUser, RoleChoices
+
+
+class DepartmentForm(forms.ModelForm):
+    """
+    Form for creating and updating college departments.
+    """
+    name = forms.CharField(
+        max_length=100,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g. Controller of Examinations'})
+    )
+    code = forms.CharField(
+        max_length=20,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g. COE'})
+    )
+    description = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Department duties...'})
+    )
+    is_active = forms.BooleanField(
+        required=False,
+        initial=True,
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'})
+    )
+
+    class Meta:
+        model = Department
+        fields = ['name', 'code', 'description', 'is_active']
+
+    def clean_code(self):
+        code = self.cleaned_data.get('code', '').strip().upper()
+        qs = Department.objects.filter(code=code)
+        if self.instance and self.instance.pk:
+            qs = qs.exclude(pk=self.instance.pk)
+        if qs.exists():
+            raise forms.ValidationError(_("A department with this short code already exists."))
+        return code
+
+    def clean_name(self):
+        name = self.cleaned_data.get('name', '').strip()
+        qs = Department.objects.filter(name__iexact=name)
+        if self.instance and self.instance.pk:
+            qs = qs.exclude(pk=self.instance.pk)
+        if qs.exists():
+            raise forms.ValidationError(_("A department with this name already exists."))
+        return name
+
+
+class UserCreateForm(forms.ModelForm):
+    """
+    Form for Administrator to create a new staff account with assigned role and department.
+    """
+    password = forms.CharField(
+        widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Initial Password'}),
+        label=_("Password")
+    )
+    confirm_password = forms.CharField(
+        widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Confirm Password'}),
+        label=_("Confirm Password")
+    )
+
+    class Meta:
+        model = CustomUser
+        fields = [
+            'username', 'email', 'first_name', 'last_name',
+            'role', 'department', 'employee_id', 'phone_number', 'is_active'
+        ]
+        widgets = {
+            'username': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'johndoe'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'john@college.edu'}),
+            'first_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'John'}),
+            'last_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Doe'}),
+            'role': forms.Select(attrs={'class': 'form-select'}),
+            'department': forms.Select(attrs={'class': 'form-select'}),
+            'employee_id': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'EMP-1001'}),
+            'phone_number': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '9876543210'}),
+            'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+
+    def clean_username(self):
+        username = self.cleaned_data.get('username', '').strip()
+        if CustomUser.objects.filter(username__iexact=username).exists():
+            raise forms.ValidationError(_("This username is already taken."))
+        return username
+
+    def clean_email(self):
+        email = self.cleaned_data.get('email', '').strip().lower()
+        if email and CustomUser.objects.filter(email__iexact=email).exists():
+            raise forms.ValidationError(_("This email address is already registered."))
+        return email
+
+    def clean_employee_id(self):
+        employee_id = self.cleaned_data.get('employee_id', '').strip().upper()
+        if employee_id and CustomUser.objects.filter(employee_id=employee_id).exists():
+            raise forms.ValidationError(_("This Employee ID is already assigned to another staff member."))
+        return employee_id
+
+    def clean_phone_number(self):
+        phone = self.cleaned_data.get('phone_number', '').strip()
+        if phone and CustomUser.objects.filter(phone_number=phone).exists():
+            raise forms.ValidationError(_("This phone number is already registered to another account."))
+        return phone
+
+    def clean(self):
+        cleaned_data = super().clean()
+        password = cleaned_data.get('password')
+        confirm_password = cleaned_data.get('confirm_password')
+        if password and confirm_password and password != confirm_password:
+            self.add_error('confirm_password', _("Passwords do not match."))
+        return cleaned_data
+
+
+class UserUpdateForm(forms.ModelForm):
+    """
+    Form for Administrator to edit an existing user account.
+    """
+    class Meta:
+        model = CustomUser
+        fields = [
+            'username', 'email', 'first_name', 'last_name',
+            'role', 'department', 'employee_id', 'phone_number', 'is_active'
+        ]
+        widgets = {
+            'username': forms.TextInput(attrs={'class': 'form-control'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control'}),
+            'first_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'last_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'role': forms.Select(attrs={'class': 'form-select'}),
+            'department': forms.Select(attrs={'class': 'form-select'}),
+            'employee_id': forms.TextInput(attrs={'class': 'form-control'}),
+            'phone_number': forms.TextInput(attrs={'class': 'form-control'}),
+            'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+
+    def clean_username(self):
+        username = self.cleaned_data.get('username', '').strip()
+        if CustomUser.objects.filter(username__iexact=username).exclude(pk=self.instance.pk).exists():
+            raise forms.ValidationError(_("This username is already taken."))
+        return username
+
+    def clean_email(self):
+        email = self.cleaned_data.get('email', '').strip().lower()
+        if email and CustomUser.objects.filter(email__iexact=email).exclude(pk=self.instance.pk).exists():
+            raise forms.ValidationError(_("This email address is already registered."))
+        return email
+
+    def clean_employee_id(self):
+        employee_id = self.cleaned_data.get('employee_id', '').strip().upper()
+        if employee_id and CustomUser.objects.filter(employee_id=employee_id).exclude(pk=self.instance.pk).exists():
+            raise forms.ValidationError(_("This Employee ID is already assigned to another staff member."))
+        return employee_id
+
+    def clean_phone_number(self):
+        phone = self.cleaned_data.get('phone_number', '').strip()
+        if phone and CustomUser.objects.filter(phone_number=phone).exclude(pk=self.instance.pk).exists():
+            raise forms.ValidationError(_("This phone number is already registered to another account."))
+        return phone
+
+
+class AdminResetPasswordForm(forms.Form):
+    """
+    Form for Administrator to reset another staff member's password.
+    """
+    new_password = forms.CharField(
+        widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'New Password'}),
+        label=_("New Password")
+    )
+    confirm_password = forms.CharField(
+        widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Confirm Password'}),
+        label=_("Confirm Password")
+    )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        new_pass = cleaned_data.get('new_password')
+        confirm_pass = cleaned_data.get('confirm_password')
+        if new_pass and confirm_pass and new_pass != confirm_pass:
+            self.add_error('confirm_password', _("Passwords do not match."))
+        return cleaned_data

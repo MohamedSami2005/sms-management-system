@@ -1,15 +1,50 @@
 {% extends 'base.html' %}
 
-{% block title %}Departments{% endblock %}
+{% block title %}Departments Management{% endblock %}
 
 {% block content %}
+<!-- Breadcrumb Navigation -->
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'dashboard:home' %}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'users:user_list' %}">User Management</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Departments</li>
+    </ol>
+</nav>
+
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
         <h3 class="fw-bold mb-1">College Departments</h3>
-        <p class="text-muted mb-0">List of administrative & academic departments.</p>
+        <p class="text-muted mb-0">Manage college departments and staff assignments.</p>
+    </div>
+    <div>
+        <a href="{% url 'users:department_create' %}" class="btn btn-primary fw-bold">
+            <i class="bi bi-plus-circle me-1"></i> Add Department
+        </a>
     </div>
 </div>
 
+<!-- Search Bar -->
+<div class="card border-0 shadow-sm rounded-3 mb-4">
+    <div class="card-body p-3">
+        <form method="get" class="row g-2 align-items-center">
+            <div class="col-md-9">
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+                    <input type="text" name="q" class="form-control border-start-0" placeholder="Search department name or code..." value="{{ search_query }}">
+                </div>
+            </div>
+            <div class="col-md-3 d-flex gap-2">
+                <button type="submit" class="btn btn-primary w-100">Filter</button>
+                {% if search_query %}
+                    <a href="{% url 'users:department_list' %}" class="btn btn-outline-secondary">Reset</a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Department Data Table -->
 <div class="card border-0 shadow-sm rounded-3">
     <div class="card-body p-0">
         <div class="table-responsive">
@@ -17,17 +52,20 @@
                 <thead class="table-light">
                     <tr>
                         <th>Code</th>
-                        <th>Name</th>
+                        <th>Department Name</th>
                         <th>Description</th>
+                        <th>Assigned Staff</th>
                         <th>Status</th>
+                        <th class="text-end">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for dept in departments %}
                     <tr>
-                        <td class="fw-bold">{{ dept.code }}</td>
-                        <td>{{ dept.name }}</td>
-                        <td>{{ dept.description|default:"-" }}</td>
+                        <td class="fw-bold text-primary"><code>{{ dept.code }}</code></td>
+                        <td class="fw-semibold">{{ dept.name }}</td>
+                        <td><small class="text-muted">{{ dept.description|default:"-" }}</small></td>
+                        <td><span class="badge bg-secondary rounded-pill px-3">{{ dept.user_count }} staff</span></td>
                         <td>
                             {% if dept.is_active %}
                                 <span class="badge bg-success">Active</span>
@@ -35,10 +73,61 @@
                                 <span class="badge bg-secondary">Inactive</span>
                             {% endif %}
                         </td>
+                        <td class="text-end">
+                            <div class="btn-group btn-group-sm">
+                                <a href="{% url 'users:department_edit' dept.pk %}" class="btn btn-outline-primary" title="Edit Department">
+                                    <i class="bi bi-pencil-square"></i>
+                                </a>
+                                
+                                <form method="post" action="{% url 'users:department_toggle_status' dept.pk %}" class="d-inline">
+                                    {% csrf_token %}
+                                    {% if dept.is_active %}
+                                        <button type="submit" class="btn btn-outline-warning" title="Deactivate">
+                                            <i class="bi bi-pause-circle"></i>
+                                        </button>
+                                    {% else %}
+                                        <button type="submit" class="btn btn-outline-success" title="Activate">
+                                            <i class="bi bi-play-circle"></i>
+                                        </button>
+                                    {% endif %}
+                                </form>
+
+                                <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ dept.pk }}" title="Delete">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+
+                            <!-- Delete Modal -->
+                            <div class="modal fade text-start" id="deleteModal{{ dept.pk }}" tabindex="-1" aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title fw-bold">Delete Department</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <p>Are you sure you want to delete department <strong>{{ dept.name }}</strong>?</p>
+                                            {% if dept.user_count > 0 %}
+                                                <div class="alert alert-warning small mb-0">
+                                                    <i class="bi bi-exclamation-triangle me-1"></i> Note: This department has {{ dept.user_count }} assigned user(s). It will be soft-deactivated instead of permanently deleted.
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                                            <form method="post" action="{% url 'users:department_delete' dept.pk %}">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-danger">Confirm Delete</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="4" class="text-center py-4 text-muted">No departments created yet.</td>
+                        <td colspan="6" class="text-center py-4 text-muted">No departments found matching your criteria.</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -46,4 +135,21 @@
         </div>
     </div>
 </div>
+
+<!-- Pagination -->
+{% if is_paginated %}
+<div class="mt-4 d-flex justify-content-center">
+    <nav>
+        <ul class="pagination">
+            {% if page_obj.has_previous %}
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ search_query }}">Previous</a></li>
+            {% endif %}
+            <li class="page-item active"><span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span></li>
+            {% if page_obj.has_next %}
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ search_query }}">Next</a></li>
+            {% endif %}
+        </ul>
+    </nav>
+</div>
+{% endif %}
 {% endblock %}

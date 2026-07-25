@@ -1,0 +1,120 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}{% if object %}Edit Template: {{ object.name }}{% else %}Register DLT Template{% endif %}{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'dashboard:home' %}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'dlt_templates:list' %}">DLT Templates</a></li>
+        <li class="breadcrumb-item active" aria-current="page">{% if object %}Edit{% else %}Create{% endif %}</li>
+    </ol>
+</nav>
+
+<div class="row justify-content-center">
+    <div class="col-md-10 col-lg-8">
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-header bg-white py-3 border-0">
+                <h4 class="fw-bold mb-0">
+                    <i class="bi bi-file-earmark-code text-primary me-2"></i>
+                    {% if object %}Edit Template: {{ object.name }}{% else %}Register New DLT Content Template{% endif %}
+                </h4>
+            </div>
+            <div class="card-body p-4">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Template Name *</label>
+                            {{ form.name }}
+                            {% if form.name.errors %}<div class="text-danger small mt-1">{{ form.name.errors }}</div>{% endif %}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">DLT Content Template ID *</label>
+                            {{ form.dlt_template_id }}
+                            {% if form.dlt_template_id.errors %}<div class="text-danger small mt-1">{{ form.dlt_template_id.errors }}</div>{% endif %}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Principal Entity ID *</label>
+                            {{ form.entity_id }}
+                            {% if form.entity_id.errors %}<div class="text-danger small mt-1">{{ form.entity_id.errors }}</div>{% endif %}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Sender ID (Header) *</label>
+                            {{ form.header_sender_id }}
+                            {% if form.header_sender_id.errors %}<div class="text-danger small mt-1">{{ form.header_sender_id.errors }}</div>{% endif %}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Category *</label>
+                            {{ form.category }}
+                            {% if form.category.errors %}<div class="text-danger small mt-1">{{ form.category.errors }}</div>{% endif %}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Associated Department</label>
+                            {{ form.department }}
+                            {% if form.department.errors %}<div class="text-danger small mt-1">{{ form.department.errors }}</div>{% endif %}
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">DLT Registered Content Text *</label>
+                            {{ form.template_content }}
+                            <small class="form-text text-muted">Use <code>{#var#}</code> or <code>{1}</code> placeholders for dynamic variables.</small>
+                            {% if form.template_content.errors %}<div class="text-danger small mt-1">{{ form.template_content.errors }}</div>{% endif %}
+                        </div>
+
+                        <div class="col-12">
+                            <div class="form-check">
+                                {{ form.is_active }}
+                                <label class="form-check-label fw-semibold" for="{{ form.is_active.id_for_label }}">
+                                    Template Active
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Inline Variable Formset (When Editing) -->
+                    {% if variable_formset %}
+                        <hr class="my-4">
+                        <h5 class="fw-bold mb-3"><i class="bi bi-tags text-primary me-2"></i>Customize Variable Labels & Samples</h5>
+                        {{ variable_formset.management_form }}
+                        
+                        <div class="row g-3">
+                            {% for var_form in variable_formset %}
+                                <div class="col-md-6">
+                                    <div class="card bg-light border p-3">
+                                        <h6 class="fw-bold text-primary mb-2">Variable #{{ forloop.counter }}</h6>
+                                        {{ var_form.id }}
+                                        {{ var_form.position }}
+                                        <div class="mb-2">
+                                            <label class="form-label small fw-semibold">Variable Label Name</label>
+                                            {{ var_form.name }}
+                                        </div>
+                                        <div>
+                                            <label class="form-label small fw-semibold">Sample Value</label>
+                                            {{ var_form.sample_value }}
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+
+                    <div class="mt-4 d-flex justify-content-between">
+                        <a href="{% url 'dlt_templates:list' %}" class="btn btn-outline-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary fw-bold px-4">
+                            {% if object %}Save Template{% else %}Create Template{% endif %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

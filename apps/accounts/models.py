@@ -1,6 +1,7 @@
-from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import AbstractUser, Permission
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+from apps.common.models import TimeStampedModel, phone_validator
 
 
 class RoleChoices(models.TextChoices):
@@ -12,27 +13,67 @@ class RoleChoices(models.TextChoices):
     STAFF = 'STAFF', _('College Staff')
 
 
+class Role(TimeStampedModel):
+    """
+    Role definition for System Role-Based Access Control (RBAC).
+    Mapped to custom permissions and system choices.
+    """
+    name = models.CharField(
+        max_length=50,
+        unique=True,
+        verbose_name=_("Role Name")
+    )
+    code = models.CharField(
+        max_length=30,
+        unique=True,
+        db_index=True,
+        choices=RoleChoices.choices,
+        default=RoleChoices.STAFF,
+        verbose_name=_("Role Code")
+    )
+    description = models.TextField(
+        blank=True,
+        verbose_name=_("Description")
+    )
+    permissions = models.ManyToManyField(
+        Permission,
+        blank=True,
+        related_name="custom_roles",
+        verbose_name=_("Assigned Permissions")
+    )
+    is_system_role = models.BooleanField(
+        default=False,
+        verbose_name=_("Is System Built-in Role")
+    )
+
+    class Meta:
+        verbose_name = _("Role")
+        verbose_name_plural = _("Roles")
+        ordering = ['name']
+
+    def __str__(self) -> str:
+        return f"{self.name} [{self.code}]"
+
+
 class CustomUser(AbstractUser):
     """
-    Custom User Model supporting role-based access control and college staff metadata.
+    Custom User Model supporting role-based access control, college department mapping, and staff metadata.
     """
     role = models.CharField(
         max_length=20,
         choices=RoleChoices.choices,
         default=RoleChoices.STAFF,
+        db_index=True,
+        verbose_name=_("System Role"),
         help_text=_("Designated system access role.")
     )
-    phone_number = models.CharField(
-        max_length=15,
-        blank=True,
-        help_text=_("Contact phone number.")
-    )
-    employee_id = models.CharField(
-        max_length=50,
-        blank=True,
+    role_obj = models.ForeignKey(
+        Role,
+        on_delete=models.SET_NULL,
         null=True,
-        unique=True,
-        help_text=_("College Staff / Employee ID.")
+        blank=True,
+        related_name="users",
+        verbose_name=_("RBAC Role Object")
     )
     department = models.ForeignKey(
         'users.Department',
@@ -40,18 +81,59 @@ class CustomUser(AbstractUser):
         null=True,
         blank=True,
         related_name='users',
+        verbose_name=_("Department"),
         help_text=_("Associated college department.")
+    )
+    phone_number = models.CharField(
+        max_length=15,
+        validators=[phone_validator],
+        blank=True,
+        db_index=True,
+        verbose_name=_("Phone Number"),
+        help_text=_("Contact mobile number (10 digits).")
+    )
+    employee_id = models.CharField(
+        max_length=50,
+        blank=True,
+        null=True,
+        unique=True,
+        db_index=True,
+        verbose_name=_("Employee / Staff ID"),
+        help_text=_("Unique College Employee Identification Number.")
     )
 
     class Meta:
         verbose_name = _('User')
         verbose_name_plural = _('Users')
         ordering = ['username']
+        indexes = [
+            models.Index(fields=['role', 'is_active'], name='idx_user_role_active'),
+            models.Index(fields=['department', 'role'], name='idx_user_dept_role'),
+        ]
+
+    def save(self, *args, **kwargs):
+        if self.employee_id:
+            self.employee_id = self.employee_id.strip().upper()
+        super().save(*args, **kwargs)
 
     def __str__(self) -> str:
         full_name = self.get_full_name()
-        return f"{full_name or self.username} ({self.get_role_display()})"
+        display_name = full_name if full_name else self.username
+        dept_str = f" - {self.department.code}" if self.department else ""
+        return f"{display_name} ({self.get_role_display()}{dept_str})"
 
     @property
     def is_admin(self) -> bool:
+        """Returns True if the user has Administrator privileges."""
         return self.role == RoleChoices.ADMIN or self.is_superuser
+
+    @property
+    def display_role(self) -> str:
+        """Human readable role title."""
+        return self.get_role_display()
+
+    def has_role(self, *roles: str) -> bool:
+        """Utility method to check if user matches any of the given roles."""
+        if self.is_superuser:
+            return True
+        return self.role in roles

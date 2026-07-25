@@ -1,47 +1,60 @@
 <div id="sidebar-wrapper">
     <div class="sidebar-heading d-flex align-items-center gap-2">
-        <i class="bi bi-chat-left-dots-fill fs-4"></i>
+        <i class="bi bi-chat-left-dots-fill fs-4 text-info"></i>
         <span>CampusSMS DLT</span>
     </div>
     
     <div class="sidebar-menu nav flex-column">
+        <!-- Dashboard (Accessible to all staff) -->
         <a href="{% url 'dashboard:home' %}" class="nav-link {% if request.resolver_match.app_name == 'dashboard' %}active{% endif %}">
             <i class="bi bi-speedometer2"></i> Dashboard
         </a>
 
+        <!-- User & Role Management (Admin only) -->
         {% if user.is_admin %}
         <a href="{% url 'users:user_list' %}" class="nav-link {% if request.resolver_match.app_name == 'users' %}active{% endif %}">
             <i class="bi bi-people"></i> Users & Roles
         </a>
         {% endif %}
 
+        <!-- DLT Templates (Admin, COE, Admission, Accounts, Placement) -->
+        {% if user.is_admin or user.role == 'COE' or user.role == 'ADMISSION' or user.role == 'ACCOUNTS' or user.role == 'PLACEMENT' %}
         <a href="{% url 'dlt_templates:list' %}" class="nav-link {% if request.resolver_match.app_name == 'dlt_templates' %}active{% endif %}">
             <i class="bi bi-file-earmark-text"></i> DLT Templates
         </a>
+        {% endif %}
 
+        <!-- Single SMS Dispatch -->
         <a href="{% url 'sms:single' %}" class="nav-link {% if request.resolver_match.url_name == 'single' %}active{% endif %}">
             <i class="bi bi-send"></i> Send Single SMS
         </a>
 
+        <!-- Bulk SMS Dispatch -->
         <a href="{% url 'sms:bulk' %}" class="nav-link {% if request.resolver_match.url_name == 'bulk' %}active{% endif %}">
             <i class="bi bi-file-earmark-spreadsheet"></i> Send Bulk SMS
         </a>
 
+        <!-- SMS Queue -->
         <a href="{% url 'sms:queue' %}" class="nav-link {% if request.resolver_match.url_name == 'queue' %}active{% endif %}">
             <i class="bi bi-hourglass-split"></i> SMS Queue
         </a>
 
+        <!-- SMS Logs Audit Trail -->
         <a href="{% url 'logs:list' %}" class="nav-link {% if request.resolver_match.app_name == 'logs' %}active{% endif %}">
             <i class="bi bi-journal-text"></i> SMS Logs
         </a>
 
+        <!-- Reports & Analytics (Admin, COE, Admission, Accounts, Placement) -->
+        {% if user.is_admin or user.role == 'COE' or user.role == 'ADMISSION' or user.role == 'ACCOUNTS' or user.role == 'PLACEMENT' %}
         <a href="{% url 'reports:overview' %}" class="nav-link {% if request.resolver_match.app_name == 'reports' %}active{% endif %}">
             <i class="bi bi-bar-chart-line"></i> Reports & Analytics
         </a>
+        {% endif %}
 
+        <!-- Gateway & App System Settings (Admin only) -->
         {% if user.is_admin %}
         <a href="{% url 'settings_app:index' %}" class="nav-link {% if request.resolver_match.app_name == 'settings_app' %}active{% endif %}">
-            <i class="bi bi-gear"></i> Settings
+            <i class="bi bi-gear"></i> System Settings
         </a>
         {% endif %}
     </div>

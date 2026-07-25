@@ -1,0 +1,193 @@
+{% extends 'base.html' %}
+
+{% block title %}DLT Template Details - {{ template.name }}{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'dashboard:home' %}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'dlt_templates:list' %}">DLT Templates</a></li>
+        <li class="breadcrumb-item active" aria-current="page">{{ template.name }}</li>
+    </ol>
+</nav>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="fw-bold mb-1">{{ template.name }}</h3>
+        <p class="text-muted mb-0">DLT Content ID: <code>{{ template.dlt_template_id }}</code></p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{% url 'dlt_templates:edit' template.pk %}" class="btn btn-primary fw-bold">
+            <i class="bi bi-pencil-square me-1"></i> Edit Template
+        </a>
+        <a href="{% url 'dlt_templates:list' %}" class="btn btn-outline-secondary">Back to List</a>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Left Column: Template Metadata & Content -->
+    <div class="col-lg-7">
+        <div class="card border-0 shadow-sm rounded-4 mb-4">
+            <div class="card-header bg-white py-3 border-0">
+                <h5 class="fw-bold mb-0"><i class="bi bi-info-circle text-primary me-2"></i>Template Specification</h5>
+            </div>
+            <div class="card-body p-4">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <small class="text-muted d-block">DLT Template ID</small>
+                        <span class="fw-bold fs-6"><code>{{ template.dlt_template_id }}</code></span>
+                    </div>
+                    <div class="col-md-6">
+                        <small class="text-muted d-block">Principal Entity ID</small>
+                        <span class="fw-bold fs-6"><code>{{ template.entity_id }}</code></span>
+                    </div>
+                    <div class="col-md-6">
+                        <small class="text-muted d-block">Header / Sender ID</small>
+                        <span class="badge bg-secondary font-monospace fs-6">{{ template.header_sender_id }}</span>
+                    </div>
+                    <div class="col-md-6">
+                        <small class="text-muted d-block">Category</small>
+                        <span class="fw-semibold">{{ template.get_category_display }}</span>
+                    </div>
+                    <div class="col-md-6">
+                        <small class="text-muted d-block">Department Scope</small>
+                        <span class="fw-semibold">{{ template.department.name|default:"Global Access" }}</span>
+                    </div>
+                    <div class="col-md-6">
+                        <small class="text-muted d-block">Status</small>
+                        {% if template.is_active %}
+                            <span class="badge bg-success">Active</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Inactive</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <hr class="my-4">
+
+                <h6 class="fw-bold mb-2">Registered DLT Content Text</h6>
+                <div class="p-3 bg-light rounded-3 font-monospace border text-dark">
+                    {{ template.template_content|linebreaksbr }}
+                </div>
+            </div>
+        </div>
+
+        <!-- Variables Mapping Table -->
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-header bg-white py-3 border-0">
+                <h5 class="fw-bold mb-0"><i class="bi bi-diagram-2 text-primary me-2"></i>Extracted Variables Schema</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Position</th>
+                                <th>Variable Label</th>
+                                <th>Default Sample Value</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for var in variables %}
+                            <tr>
+                                <td class="fw-bold">Var #{{ var.position }}</td>
+                                <td class="fw-semibold text-primary">{{ var.name }}</td>
+                                <td><code>{{ var.sample_value|default:"-" }}</code></td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="3" class="text-center py-3 text-muted">No variable placeholders in this static template.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Interactive Live Preview Sandbox -->
+    <div class="col-lg-5">
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-header bg-primary text-white py-3 border-0">
+                <h5 class="fw-bold mb-0"><i class="bi bi-phone me-2"></i>Interactive Live SMS Preview</h5>
+            </div>
+            <div class="card-body p-4">
+                <p class="text-muted small">Enter sample variable parameters to see real-time message rendering and SMS credit calculation.</p>
+                
+                <form id="previewForm" class="mb-4">
+                    {% for var in variables %}
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold small mb-1">
+                                Var #{{ var.position }}: {{ var.name }}
+                            </label>
+                            <input type="text" class="form-control var-input" data-pos="{{ var.position }}" value="{{ var.sample_value|default:var.name }}">
+                        </div>
+                    {% endfor %}
+                </form>
+
+                <!-- Live Preview Phone Sandbox -->
+                <div class="border rounded-4 p-3 bg-light shadow-inner">
+                    <div class="d-flex justify-content-between align-items-center mb-2 border-bottom pb-2">
+                        <span class="badge bg-secondary font-monospace">{{ template.header_sender_id }}</span>
+                        <small class="text-muted" id="previewTimestamp">Just now</small>
+                    </div>
+                    
+                    <div id="renderedPreviewText" class="p-3 bg-white rounded-3 shadow-sm text-dark font-monospace mb-3" style="min-height: 80px;">
+                        {{ preview_text }}
+                    </div>
+
+                    <!-- Metrics Badges -->
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="badge bg-primary-soft text-primary p-2 me-1" id="charCountBadge">
+                                <i class="bi bi-fonts me-1"></i> <span id="charCount">{{ char_count }}</span> Chars
+                            </span>
+                        </div>
+                        <div>
+                            <span class="badge bg-purple-soft text-purple p-2" id="creditBadge">
+                                <i class="bi bi-envelope-paper me-1"></i> <span id="creditCount">{{ sms_credits }}</span> SMS Credit(s)
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const varInputs = document.querySelectorAll('.var-input');
+    const templateId = "{{ template.pk }}";
+
+    function updatePreview() {
+        const sampleValues = {};
+        varInputs.forEach(input => {
+            sampleValues[input.dataset.pos] = input.value;
+        });
+
+        fetch("{% url 'dlt_templates:preview_ajax' template.pk %}", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": "{{ csrf_token }}"
+            },
+            body: JSON.stringify({ sample_values: sampleValues })
+        })
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('renderedPreviewText').innerText = data.preview_text;
+            document.getElementById('charCount').innerText = data.char_count;
+            document.getElementById('creditCount').innerText = data.sms_credits;
+        });
+    }
+
+    varInputs.forEach(input => {
+        input.addEventListener('input', updatePreview);
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,31 @@
+INFO 2026-07-25 16:23:05,335 gateway_service 27812 19320 GATEWAY_REQ | Attempt 1/3 | Method: GET | URL: http://api.mock-gateway.com/send
+DEBUG 2026-07-25 16:23:05,335 gateway_service 27812 19320 GATEWAY_PAYLOAD | Params: {'action': 'dlr', 'apikey': 'TEST_API_KEY_999', 'msgid': 'GW_MSG_12345'} | Headers: {}
+INFO 2026-07-25 16:23:05,335 gateway_service 27812 19320 GATEWAY_RESP | Status: 200 | Execution Time: 0.44ms
+DEBUG 2026-07-25 16:23:05,336 gateway_service 27812 19320 GATEWAY_RAW_BODY | {"msgid": "GW_MSG_12345", "status": "DELIVRD"}
+INFO 2026-07-25 16:23:05,339 gateway_service 27812 19320 GATEWAY_REQ | Attempt 1/3 | Method: GET | URL: http://api.mock-gateway.com/send
+DEBUG 2026-07-25 16:23:05,339 gateway_service 27812 19320 GATEWAY_PAYLOAD | Params: {'action': 'balance', 'apikey': 'TEST_API_KEY_999'} | Headers: {}
+INFO 2026-07-25 16:23:05,340 gateway_service 27812 19320 GATEWAY_RESP | Status: 200 | Execution Time: 0.68ms
+DEBUG 2026-07-25 16:23:05,340 gateway_service 27812 19320 GATEWAY_RAW_BODY | {"balance": 15000}
+INFO 2026-07-25 16:23:05,343 gateway_service 27812 19320 GATEWAY_REQ | Attempt 1/3 | Method: POST | URL: http://api.mock-gateway.com/send
+DEBUG 2026-07-25 16:23:05,343 gateway_service 27812 19320 GATEWAY_PAYLOAD | Params: {'apikey': 'TEST_API_KEY_999', 'mobile': '9876543210', 'message': 'Dear Student, your exam is tomorrow.', 'sender': 'CLGEXM', 'template_id': '1107160000000123456', 'entity_id': '1001999988887777666'} | Headers: {}
+INFO 2026-07-25 16:23:05,343 gateway_service 27812 19320 GATEWAY_RESP | Status: 500 | Execution Time: 0.25ms
+DEBUG 2026-07-25 16:23:05,343 gateway_service 27812 19320 GATEWAY_RAW_BODY | {"error": "Internal Server Error"}
+WARNING 2026-07-25 16:23:05,343 gateway_service 27812 19320 GATEWAY_5XX_ERROR | Attempt 1 returned 500. Retrying...
+INFO 2026-07-25 16:23:05,344 gateway_service 27812 19320 GATEWAY_REQ | Attempt 2/3 | Method: POST | URL: http://api.mock-gateway.com/send
+DEBUG 2026-07-25 16:23:05,344 gateway_service 27812 19320 GATEWAY_PAYLOAD | Params: {'apikey': 'TEST_API_KEY_999', 'mobile': '9876543210', 'message': 'Dear Student, your exam is tomorrow.', 'sender': 'CLGEXM', 'template_id': '1107160000000123456', 'entity_id': '1001999988887777666'} | Headers: {}
+INFO 2026-07-25 16:23:05,344 gateway_service 27812 19320 GATEWAY_RESP | Status: 500 | Execution Time: 0.14ms
+DEBUG 2026-07-25 16:23:05,344 gateway_service 27812 19320 GATEWAY_RAW_BODY | {"error": "Internal Server Error"}
+WARNING 2026-07-25 16:23:05,344 gateway_service 27812 19320 GATEWAY_5XX_ERROR | Attempt 2 returned 500. Retrying...
+INFO 2026-07-25 16:23:05,344 gateway_service 27812 19320 GATEWAY_REQ | Attempt 3/3 | Method: POST | URL: http://api.mock-gateway.com/send
+DEBUG 2026-07-25 16:23:05,344 gateway_service 27812 19320 GATEWAY_PAYLOAD | Params: {'apikey': 'TEST_API_KEY_999', 'mobile': '9876543210', 'message': 'Dear Student, your exam is tomorrow.', 'sender': 'CLGEXM', 'template_id': '1107160000000123456', 'entity_id': '1001999988887777666'} | Headers: {}
+INFO 2026-07-25 16:23:05,345 gateway_service 27812 19320 GATEWAY_RESP | Status: 500 | Execution Time: 1.23ms
+DEBUG 2026-07-25 16:23:05,345 gateway_service 27812 19320 GATEWAY_RAW_BODY | {"error": "Internal Server Error"}
+WARNING 2026-07-25 16:23:05,346 gateway_service 27812 19320 GATEWAY_5XX_ERROR | Attempt 3 returned 500. Retrying...
+INFO 2026-07-25 16:23:05,348 gateway_service 27812 19320 GATEWAY_REQ | Attempt 1/3 | Method: POST | URL: http://api.mock-gateway.com/send
+DEBUG 2026-07-25 16:23:05,348 gateway_service 27812 19320 GATEWAY_PAYLOAD | Params: {'apikey': 'TEST_API_KEY_999', 'mobile': '9876543210', 'message': 'Dear Student, your exam is tomorrow.', 'sender': 'CLGEXM', 'template_id': '1107160000000123456', 'entity_id': '1001999988887777666'} | Headers: {}
+INFO 2026-07-25 16:23:05,348 gateway_service 27812 19320 GATEWAY_RESP | Status: 401 | Execution Time: 0.22ms
+DEBUG 2026-07-25 16:23:05,348 gateway_service 27812 19320 GATEWAY_RAW_BODY | {"error": "Unauthorized"}
+INFO 2026-07-25 16:23:05,350 gateway_service 27812 19320 GATEWAY_REQ | Attempt 1/3 | Method: POST | URL: http://api.mock-gateway.com/send
+DEBUG 2026-07-25 16:23:05,350 gateway_service 27812 19320 GATEWAY_PAYLOAD | Params: {'apikey': 'TEST_API_KEY_999', 'mobile': '9876543210', 'message': 'Dear Student, your exam is tomorrow.', 'sender': 'CLGEXM', 'template_id': '1107160000000123456', 'entity_id': '1001999988887777666'} | Headers: {}
+INFO 2026-07-25 16:23:05,350 gateway_service 27812 19320 GATEWAY_RESP | Status: 200 | Execution Time: 0.28ms
+DEBUG 2026-07-25 16:23:05,350 gateway_service 27812 19320 GATEWAY_RAW_BODY | {"status": "success", "message_id": "GW_MSG_12345"}
