@@ -2,6 +2,7 @@ import os
 from .base import *
 
 DEBUG = True
+ALLOWED_HOSTS = ['*']
 
 USE_MYSQL = os.getenv('USE_MYSQL', 'False').lower() in ('true', '1', 't')
 

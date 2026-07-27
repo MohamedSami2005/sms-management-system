@@ -15,7 +15,7 @@ class SMSGatewayConfigAdmin(admin.ModelAdmin):
             'fields': ('provider_name', 'is_active', 'default_sender_id', 'default_entity_id')
         }),
         ('API Endpoints', {
-            'fields': ('api_url', 'balance_api_url', 'dlr_api_url', 'request_method')
+            'fields': ('api_url', 'balance_api_url', 'dlr_api_url', 'request_method', 'route_id', 'response_format')
         }),
         ('Authentication', {
             'fields': ('api_key', 'username', 'password')

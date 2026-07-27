@@ -1,0 +1,142 @@
+{% extends 'base.html' %}
+
+{% block title %}Bulk SMS - Dispatch Summary{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'dashboard:home' %}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'sms:single' %}">SMS Portal</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Dispatch Summary</li>
+    </ol>
+</nav>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="fw-bold mb-1">Bulk SMS Dispatch Summary</h3>
+        <p class="text-muted mb-0">Batch #{{ batch.id }} completed for DLT Template <strong>{{ batch.template.name }}</strong>.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{% url 'logs:list' %}?batch={{ batch.id }}" class="btn btn-outline-primary fw-semibold">
+            <i class="bi bi-journal-text me-1"></i> View SMS Logs
+        </a>
+        <a href="{% url 'sms:bulk_select' %}" class="btn btn-primary fw-bold">
+            <i class="bi bi-plus-circle me-1"></i> Send Another Bulk SMS
+        </a>
+    </div>
+</div>
+
+<!-- Metrics Overview Row -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm rounded-4 p-3 text-center bg-white">
+            <small class="text-muted d-block text-uppercase font-monospace">Total Recipients</small>
+            <h2 class="fw-bold text-dark my-1">{{ batch.total_records }}</h2>
+            <small class="text-muted">Staff Members</small>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm rounded-4 p-3 text-center bg-success-soft text-success">
+            <small class="d-block text-uppercase font-monospace">Successfully Sent</small>
+            <h2 class="fw-bold my-1">{{ batch.successful_count }}</h2>
+            <small>{{ success_percentage }}% Success Rate</small>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm rounded-4 p-3 text-center bg-danger-soft text-danger">
+            <small class="d-block text-uppercase font-monospace">Failed Dispatches</small>
+            <h2 class="fw-bold my-1">{{ batch.failed_count }}</h2>
+            <small>{{ batch.failed_count }} Errors</small>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm rounded-4 p-3 text-center bg-purple-soft text-purple">
+            <small class="d-block text-uppercase font-monospace">Credits Used</small>
+            <h2 class="fw-bold my-1">{{ total_credits }}</h2>
+            <small>Exec Time: {{ execution_time }}s</small>
+        </div>
+    </div>
+</div>
+
+<!-- Progress Bar -->
+<div class="card border-0 shadow-sm rounded-4 mb-4">
+    <div class="card-body p-4">
+        <h6 class="fw-bold mb-2">Batch Delivery Rate</h6>
+        <div class="progress" style="height: 25px;">
+            <div class="progress-bar bg-success" role="progressbar" style="width: {{ success_percentage }}%;" aria-valuenow="{{ success_percentage }}" aria-valuemin="0" aria-valuemax="100">
+                {{ success_percentage }}% Success
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Failure Reasons Breakdown (If Any) -->
+{% if failed_logs %}
+<div class="card border-0 shadow-sm rounded-4 mb-4 border-start border-danger border-4">
+    <div class="card-header bg-white py-3 border-0">
+        <h5 class="fw-bold mb-0 text-danger"><i class="bi bi-exclamation-triangle-fill me-2"></i>Failed Dispatches Breakdown</h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Recipient Mobile</th>
+                        <th>Status Code</th>
+                        <th>Error Detail</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in failed_logs %}
+                    <tr>
+                        <td class="font-monospace fw-bold">{{ log.mobile_number }}</td>
+                        <td><span class="badge bg-danger">{{ log.gateway_status_code|default:"ERR" }}</span></td>
+                        <td class="small text-danger font-monospace">{{ log.gateway_response_raw }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Dispatched Logs Table -->
+<div class="card border-0 shadow-sm rounded-4">
+    <div class="card-header bg-white py-3 border-0">
+        <h5 class="fw-bold mb-0"><i class="bi bi-list-check text-primary me-2"></i>Batch Audit Trail ({{ logs.count }} Records)</h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Recipient Mobile</th>
+                        <th>Dispatched Message</th>
+                        <th>Credits</th>
+                        <th>Status</th>
+                        <th>Gateway Msg ID</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in logs %}
+                    <tr>
+                        <td class="font-monospace fw-semibold">{{ log.mobile_number }}</td>
+                        <td><small class="font-monospace">{{ log.message_content|truncatechars:60 }}</small></td>
+                        <td><span class="badge bg-secondary">{{ log.credit_units }}</span></td>
+                        <td>
+                            {% if log.status == 'SENT' or log.status == 'DELIVERED' %}
+                                <span class="badge bg-success">Sent</span>
+                            {% else %}
+                                <span class="badge bg-danger">Failed</span>
+                            {% endif %}
+                        </td>
+                        <td><code>{{ log.gateway_message_id|default:"-" }}</code></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

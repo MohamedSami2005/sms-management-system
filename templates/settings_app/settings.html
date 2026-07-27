@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}SMS Gateway & System Settings{% endblock %}
+{% block title %}SMS Gateway & Credential Settings{% endblock %}
 
 {% block content %}
 <nav aria-label="breadcrumb" class="mb-3">
@@ -12,75 +12,79 @@
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h3 class="fw-bold mb-1">SMS Gateway Configuration</h3>
-        <p class="text-muted mb-0">Dynamic HTTP SMS API credentials, sender headers, and connectivity diagnostics.</p>
+        <h3 class="fw-bold mb-1">SMS Gateway Credentials & Profiles</h3>
+        <p class="text-muted mb-0">Manage production HTTP SMS Gateway profiles, API keys, headers, and diagnostics.</p>
     </div>
     <div class="d-flex gap-2">
         <button type="button" class="btn btn-outline-primary" id="testConnectionBtn">
-            <i class="bi bi-broadcast me-1"></i> Test API Connectivity
+            <i class="bi bi-broadcast me-1"></i> Test Connection
         </button>
+        <a href="{% url 'settings_app:create' %}" class="btn btn-primary fw-bold">
+            <i class="bi bi-plus-circle me-1"></i> Add Gateway Profile
+        </a>
     </div>
 </div>
 
-<!-- Test Connection Result Alert -->
-<div id="testResultAlert" class="alert d-none shadow-sm rounded-3 mb-4" role="alert">
+<!-- Test Connection & Balance Result Alert -->
+<div id="diagAlert" class="alert d-none shadow-sm rounded-3 mb-4" role="alert">
     <div class="d-flex align-items-center justify-content-between">
         <div>
-            <h6 class="fw-bold mb-1" id="testResultTitle"></h6>
-            <div class="small" id="testResultText"></div>
+            <h6 class="fw-bold mb-1" id="diagTitle"></h6>
+            <div class="small" id="diagText"></div>
         </div>
-        <span class="badge bg-secondary font-monospace" id="testLatencyBadge"></span>
+        <span class="badge bg-secondary font-monospace" id="diagBadge"></span>
     </div>
 </div>
 
-<div class="row g-4">
+<div class="row g-4 mb-4">
     <!-- Active Gateway Specification Card -->
     <div class="col-lg-8">
         <div class="card border-0 shadow-sm rounded-4">
             <div class="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center">
-                <h5 class="fw-bold mb-0"><i class="bi bi-gear text-primary me-2"></i>Active HTTP API Profile</h5>
-                {% if gateway_config %}
+                <h5 class="fw-bold mb-0"><i class="bi bi-shield-lock text-primary me-2"></i>Active Gateway Credentials</h5>
+                {% if active_config %}
                     <span class="badge bg-success">Active Profile</span>
                 {% else %}
                     <span class="badge bg-danger">No Active Profile</span>
                 {% endif %}
             </div>
             <div class="card-body p-4">
-                {% if gateway_config %}
+                {% if active_config %}
                     <div class="row g-3">
                         <div class="col-md-6">
                             <small class="text-muted d-block">Provider Name</small>
-                            <span class="fw-bold fs-6">{{ gateway_config.provider_name }}</span>
+                            <span class="fw-bold fs-6">{{ active_config.provider_name }}</span>
                         </div>
                         <div class="col-md-6">
-                            <small class="text-muted d-block">HTTP Method</small>
-                            <span class="badge bg-secondary">{{ gateway_config.request_method }}</span>
+                            <small class="text-muted d-block">HTTP Method & Format</small>
+                            <span class="badge bg-secondary">{{ active_config.request_method }}</span>
+                            <span class="badge bg-info text-dark">{{ active_config.response_format|upper }}</span>
                         </div>
                         <div class="col-12">
                             <small class="text-muted d-block">API Dispatch Endpoint</small>
-                            <span class="font-monospace text-primary bg-light p-2 rounded d-block border">{{ gateway_config.api_url }}</span>
+                            <span class="font-monospace text-primary bg-light p-2 rounded d-block border">{{ active_config.api_url }}</span>
                         </div>
                         <div class="col-md-6">
-                            <small class="text-muted d-block">Masked API Key / Secret</small>
-                            <code>{{ gateway_config.masked_api_key }}</code>
+                            <small class="text-muted d-block">Masked API Key</small>
+                            <code class="fs-6">{{ active_config.masked_api_key }}</code>
                         </div>
                         <div class="col-md-6">
-                            <small class="text-muted d-block">Default Sender ID (Header)</small>
-                            <span class="badge bg-dark font-monospace fs-6">{{ gateway_config.default_sender_id }}</span>
+                            <small class="text-muted d-block">Sender ID (Header)</small>
+                            <span class="badge bg-dark font-monospace fs-6">{{ active_config.default_sender_id }}</span>
                         </div>
                         <div class="col-md-6">
-                            <small class="text-muted d-block">Default Principal Entity ID</small>
-                            <code>{{ gateway_config.default_entity_id|default:"Not Configured" }}</code>
+                            <small class="text-muted d-block">Route ID</small>
+                            <span class="badge bg-light text-dark border">{{ active_config.route_id|default:"1" }}</span>
                         </div>
                         <div class="col-md-6">
-                            <small class="text-muted d-block">Last Updated</small>
-                            <span>{{ gateway_config.updated_at|date:"M d, Y H:i" }}</span>
+                            <small class="text-muted d-block">Request Timeout</small>
+                            <span class="fw-semibold">{{ active_config.timeout }} Seconds</span>
                         </div>
                     </div>
                 {% else %}
                     <div class="alert alert-warning text-center my-3">
                         <i class="bi bi-exclamation-triangle display-6 d-block mb-2"></i>
-                        No active SMS Gateway configuration profile found. Please register an active profile in Django Admin.
+                        No active SMS Gateway configuration profile found. Please create or activate a profile below.
                     </div>
                 {% endif %}
             </div>
@@ -101,10 +105,98 @@
                     N/A
                 {% endif %}
             </h2>
-            <small class="text-muted d-block mb-3">Provider: {{ gateway_config.provider_name|default:"None" }}</small>
+            <small class="text-muted d-block mb-3">Provider: {{ active_config.provider_name|default:"None" }}</small>
             <button class="btn btn-outline-secondary btn-sm" id="refreshBalanceBtn">
-                <i class="bi bi-arrow-clockwise me-1"></i> Refresh Balance
+                <i class="bi bi-arrow-clockwise me-1"></i> Check Balance
             </button>
+        </div>
+    </div>
+</div>
+
+<!-- All Gateway Profiles Directory -->
+<div class="card border-0 shadow-sm rounded-4">
+    <div class="card-header bg-white py-3 border-0">
+        <h5 class="fw-bold mb-0"><i class="bi bi-sliders text-primary me-2"></i>Configured Gateway Profiles</h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Provider Name</th>
+                        <th>API Endpoint</th>
+                        <th>Masked API Key</th>
+                        <th>Sender ID</th>
+                        <th>Route ID</th>
+                        <th>Status</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for cfg in configs %}
+                    <tr>
+                        <td class="fw-bold">{{ cfg.provider_name }}</td>
+                        <td><small class="font-monospace text-muted">{{ cfg.api_url|truncatechars:40 }}</small></td>
+                        <td><code>{{ cfg.masked_api_key }}</code></td>
+                        <td><span class="badge bg-secondary font-monospace">{{ cfg.default_sender_id }}</span></td>
+                        <td><code>{{ cfg.route_id }}</code></td>
+                        <td>
+                            {% if cfg.is_active %}
+                                <span class="badge bg-success">Active Profile</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            <div class="btn-group btn-group-sm">
+                                <a href="{% url 'settings_app:edit' cfg.pk %}" class="btn btn-outline-primary" title="Edit Configuration">
+                                    <i class="bi bi-pencil-square"></i> Edit
+                                </a>
+                                {% if not cfg.is_active %}
+                                    <form method="post" action="{% url 'settings_app:activate' cfg.pk %}" class="d-inline">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-outline-success" title="Activate Profile">
+                                            <i class="bi bi-check-circle"></i> Activate
+                                        </button>
+                                    </form>
+                                    <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ cfg.pk }}" title="Delete">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                {% endif %}
+                            </div>
+
+                            <!-- Delete Modal -->
+                            {% if not cfg.is_active %}
+                            <div class="modal fade text-start" id="deleteModal{{ cfg.pk }}" tabindex="-1" aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title fw-bold">Delete Profile</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            Are you sure you want to delete profile <strong>{{ cfg.provider_name }}</strong>?
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                                            <form method="post" action="{% url 'settings_app:delete' cfg.pk %}">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-danger">Confirm Delete</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center py-4 text-muted">No gateway profiles configured yet.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
     </div>
 </div>
@@ -114,17 +206,17 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const testBtn = document.getElementById('testConnectionBtn');
-    const alertBox = document.getElementById('testResultAlert');
-    const alertTitle = document.getElementById('testResultTitle');
-    const alertText = document.getElementById('testResultText');
-    const latencyBadge = document.getElementById('testLatencyBadge');
+    const diagAlert = document.getElementById('diagAlert');
+    const diagTitle = document.getElementById('diagTitle');
+    const diagText = document.getElementById('diagText');
+    const diagBadge = document.getElementById('diagBadge');
     const refreshBtn = document.getElementById('refreshBalanceBtn');
     const balanceDisplay = document.getElementById('balanceDisplay');
 
     testBtn.addEventListener('click', function() {
-        testBtn.disabled = True;
+        testBtn.disabled = true;
         testBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Testing...';
-        alertBox.classList.add('d-none');
+        diagAlert.classList.add('d-none');
 
         fetch("{% url 'settings_app:test_connection' %}", {
             method: 'POST',
@@ -135,33 +227,33 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .then(res => res.json())
         .then(data => {
-            testBtn.disabled = False;
-            testBtn.innerHTML = '<i class="bi bi-broadcast me-1"></i> Test API Connectivity';
-            alertBox.classList.remove('d-none', 'alert-success', 'alert-danger');
+            testBtn.disabled = false;
+            testBtn.innerHTML = '<i class="bi bi-broadcast me-1"></i> Test Connection';
+            diagAlert.classList.remove('d-none', 'alert-success', 'alert-danger');
 
             if (data.success) {
-                alertBox.classList.add('alert-success');
-                alertTitle.innerText = "Gateway Connectivity Successful!";
-                alertText.innerText = "Connected to " + data.gateway_name + " (HTTP Status: " + data.status_code + ")";
-                latencyBadge.innerText = data.response_time_ms + " ms";
+                diagAlert.classList.add('alert-success');
+                diagTitle.innerText = "Connection Successful!";
+                diagText.innerText = "Connected to " + data.gateway_name + " (HTTP Status: " + (data.status_code || 200) + ")";
+                diagBadge.innerText = data.response_time_ms + " ms";
             } else {
-                alertBox.classList.add('alert-danger');
-                alertTitle.innerText = "Connectivity Error!";
-                alertText.innerText = data.error_message || "Failed to establish connection to SMS Gateway.";
-                latencyBadge.innerText = data.response_time_ms + " ms";
+                diagAlert.classList.add('alert-danger');
+                diagTitle.innerText = "Connection Failed!";
+                diagText.innerText = data.error_message || "Failed to establish connection to SMS Gateway.";
+                diagBadge.innerText = data.response_time_ms + " ms";
             }
         });
     });
 
     refreshBtn.addEventListener('click', function() {
-        refreshBtn.disabled = True;
+        refreshBtn.disabled = true;
         refreshBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Fetching...';
 
         fetch("{% url 'settings_app:balance' %}")
         .then(res => res.json())
         .then(data => {
-            refreshBtn.disabled = False;
-            refreshBtn.innerHTML = '<i class="bi bi-arrow-clockwise me-1"></i> Refresh Balance';
+            refreshBtn.disabled = false;
+            refreshBtn.innerHTML = '<i class="bi bi-arrow-clockwise me-1"></i> Check Balance';
             if (data.success) {
                 balanceDisplay.innerText = data.balance;
             } else {

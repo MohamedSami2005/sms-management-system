@@ -1,18 +1,18 @@
 {% extends 'base.html' %}
 {% load crispy_forms_tags %}
 
-{% block title %}Login{% endblock %}
+{% block title %}Sign In - Campus Communication Management System{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center align-items-center min-vh-75 mt-4 mb-5">
-    <div class="col-md-6 col-lg-4">
+    <div class="col-md-7 col-lg-5">
         <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
             <div class="card-header bg-primary text-white text-center py-4 border-0">
-                <i class="bi bi-chat-left-dots-fill display-5 mb-2 d-block"></i>
-                <h4 class="fw-bold mb-0">College SMS Portal</h4>
-                <small class="text-white-50">Sign in to access your DLT SMS account</small>
+                <i class="bi bi-building-gear display-5 mb-2 d-block"></i>
+                <h4 class="fw-bold mb-1">Campus Communication Management System</h4>
+                <small class="text-white-50">Secure Communication Platform for Educational Institutions</small>
             </div>
-            <div class="card-body p-4">
+            <div class="card-body p-4 p-md-5">
                 <form method="post">
                     {% csrf_token %}
                     
@@ -46,13 +46,13 @@
 
                     <div class="d-grid gap-2">
                         <button type="submit" class="btn btn-primary btn-lg rounded-3 fw-bold">
-                            <i class="bi bi-box-arrow-in-right me-1"></i> Sign In
+                            <i class="bi bi-box-arrow-in-right me-1"></i> Sign In to CCMS
                         </button>
                     </div>
                 </form>
             </div>
             <div class="card-footer bg-light text-center py-3 border-0">
-                <small class="text-muted">SMS Management System with DLT Integration</small>
+                <small class="text-muted">Campus Communication Management System (CCMS) &bull; Version 1.0</small>
             </div>
         </div>
     </div>

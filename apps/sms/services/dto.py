@@ -20,6 +20,8 @@ class GatewayResult:
     raw_response: Optional[str] = None
     execution_time_ms: float = 0.0
     error_message: Optional[str] = None
+    totnumber: int = 1
+    totalcredit: int = 1
 
 
 @dataclass

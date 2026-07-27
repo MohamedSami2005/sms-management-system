@@ -67,6 +67,25 @@ class SMSGatewayConfig(AuditModel):
         default=HTTPMethodChoices.POST,
         verbose_name=_("HTTP Request Method")
     )
+    route_id = models.CharField(
+        max_length=50,
+        default='1',
+        blank=True,
+        verbose_name=_("Route ID"),
+        help_text=_("SMS Provider Route ID (e.g. 1 for Transactional/DLT)")
+    )
+    response_format = models.CharField(
+        max_length=20,
+        default='json',
+        blank=True,
+        verbose_name=_("Response Format"),
+        help_text=_("Expected API response format (json)")
+    )
+    timeout = models.PositiveIntegerField(
+        default=10,
+        verbose_name=_("Request Timeout (Seconds)"),
+        help_text=_("HTTP request timeout limit in seconds.")
+    )
     http_headers = models.JSONField(
         default=dict,
         blank=True,

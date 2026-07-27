@@ -200,3 +200,26 @@ class TemplatePreviewAjaxView(LoginRequiredMixin, RoleRequiredMixin, View):
             'sms_credits': sms_credits,
             'is_unicode': any(ord(c) > 127 for c in preview_text)
         })
+
+
+class TemplateVariableSchemaAjaxView(LoginRequiredMixin, RoleRequiredMixin, View):
+    """
+    JSON API view returning extracted variables schema, header, and content for a selected DLT Template.
+    """
+    allowed_roles = ALLOWED_TEMPLATE_ROLES
+
+    def get(self, request, pk):
+        template = get_object_or_404(DLTTemplate, pk=pk)
+        template.sync_variables()
+        vars_list = [
+            {'position': v.position, 'name': v.name, 'sample_value': v.sample_value}
+            for v in template.variables.order_by('position')
+        ]
+        return JsonResponse({
+            'id': template.id,
+            'name': template.name,
+            'dlt_template_id': template.dlt_template_id,
+            'header_sender_id': template.header_sender_id,
+            'template_content': template.template_content,
+            'variables': vars_list
+        })

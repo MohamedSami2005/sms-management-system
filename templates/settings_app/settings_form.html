@@ -1,0 +1,153 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}{% if object %}Edit Gateway Profile: {{ object.provider_name }}{% else %}Add Gateway Profile{% endif %}{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'dashboard:home' %}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'settings_app:index' %}">Gateway Settings</a></li>
+        <li class="breadcrumb-item active" aria-current="page">{% if object %}Edit Profile{% else %}Create Profile{% endif %}</li>
+    </ol>
+</nav>
+
+<div class="row justify-content-center">
+    <div class="col-md-10 col-lg-8">
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-header bg-white py-3 border-0">
+                <h4 class="fw-bold mb-0">
+                    <i class="bi bi-shield-lock text-primary me-2"></i>
+                    {% if object %}Edit Gateway Profile: {{ object.provider_name }}{% else %}Add New SMS Gateway Configuration{% endif %}
+                </h4>
+            </div>
+            <div class="card-body p-4">
+                <form method="post">
+                    {% csrf_token %}
+
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <label class="form-label fw-semibold">Provider Name *</label>
+                            {{ form.provider_name }}
+                            {% if form.provider_name.errors %}<div class="text-danger small mt-1">{{ form.provider_name.errors }}</div>{% endif %}
+                        </div>
+
+                        <div class="col-md-4 d-flex align-items-end">
+                            <div class="form-check mb-2">
+                                {{ form.is_active }}
+                                <label class="form-check-label fw-semibold ms-1" for="{{ form.is_active.id_for_label }}">
+                                    Set as Active Profile
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">SMS Dispatch API URL *</label>
+                            {{ form.api_url }}
+                            <small class="form-text text-muted">Draft4SMS Endpoint: <code>https://text.draft4sms.com/vb/apikey.php</code></small>
+                            {% if form.api_url.errors %}<div class="text-danger small mt-1">{{ form.api_url.errors }}</div>{% endif %}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Balance API URL</label>
+                            {{ form.balance_api_url }}
+                            <small class="form-text text-muted">Draft4SMS Balance Endpoint: <code>https://text.draft4sms.com/vb/http-credit.php</code></small>
+                            {% if form.balance_api_url.errors %}<div class="text-danger small mt-1">{{ form.balance_api_url.errors }}</div>{% endif %}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">DLR Status API URL</label>
+                            {{ form.dlr_api_url }}
+                            <small class="form-text text-muted">Draft4SMS DLR Endpoint: <code>https://text.draft4sms.com/vb/http-dlr.php</code></small>
+                            {% if form.dlr_api_url.errors %}<div class="text-danger small mt-1">{{ form.dlr_api_url.errors }}</div>{% endif %}
+                        </div>
+
+                        <!-- API Key Input with Show/Hide Eye Toggle -->
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">API Key / Secret Token *</label>
+                            <div class="input-group">
+                                {{ form.api_key }}
+                                <button class="btn btn-outline-secondary" type="button" id="toggleApiKeyBtn">
+                                    <i class="bi bi-eye" id="toggleApiKeyIcon"></i>
+                                </button>
+                            </div>
+                            <small class="form-text text-muted">API key is encrypted in database and masked everywhere in logs.</small>
+                            {% if form.api_key.errors %}<div class="text-danger small mt-1">{{ form.api_key.errors }}</div>{% endif %}
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Sender ID (Header) *</label>
+                            {{ form.default_sender_id }}
+                            <small class="form-text text-muted">6 uppercase letters (e.g. CLGEXM)</small>
+                            {% if form.default_sender_id.errors %}<div class="text-danger small mt-1">{{ form.default_sender_id.errors }}</div>{% endif %}
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Principal Entity ID</label>
+                            {{ form.default_entity_id }}
+                            <small class="form-text text-muted">11-19 digit DLT Entity ID</small>
+                            {% if form.default_entity_id.errors %}<div class="text-danger small mt-1">{{ form.default_entity_id.errors }}</div>{% endif %}
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Route ID</label>
+                            {{ form.route_id }}
+                            <small class="form-text text-muted">Default route (e.g. 1)</small>
+                            {% if form.route_id.errors %}<div class="text-danger small mt-1">{{ form.route_id.errors }}</div>{% endif %}
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">HTTP Method</label>
+                            {{ form.request_method }}
+                            {% if form.request_method.errors %}<div class="text-danger small mt-1">{{ form.request_method.errors }}</div>{% endif %}
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Timeout (Seconds) *</label>
+                            {{ form.timeout }}
+                            {% if form.timeout.errors %}<div class="text-danger small mt-1">{{ form.timeout.errors }}</div>{% endif %}
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Response Format</label>
+                            {{ form.response_format }}
+                            {% if form.response_format.errors %}<div class="text-danger small mt-1">{{ form.response_format.errors }}</div>{% endif %}
+                        </div>
+                    </div>
+
+                    <div class="mt-4 d-flex justify-content-between">
+                        <a href="{% url 'settings_app:index' %}" class="btn btn-outline-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary fw-bold px-4">
+                            <i class="bi bi-save me-1"></i> Save Configuration
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const keyInput = document.getElementById('apiKeyInput');
+    const toggleBtn = document.getElementById('toggleApiKeyBtn');
+    const toggleIcon = document.getElementById('toggleApiKeyIcon');
+
+    if (keyInput && toggleBtn) {
+        toggleBtn.addEventListener('click', function() {
+            if (keyInput.type === 'password') {
+                keyInput.type = 'text';
+                toggleIcon.classList.remove('bi-eye');
+                toggleIcon.classList.add('bi-eye-slash');
+            } else {
+                keyInput.type = 'password';
+                toggleIcon.classList.remove('bi-eye-slash');
+                toggleIcon.classList.add('bi-eye');
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

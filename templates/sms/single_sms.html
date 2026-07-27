@@ -1,21 +1,251 @@
 {% extends 'base.html' %}
+{% load crispy_forms_tags %}
 
 {% block title %}Send Single SMS{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-8">
-        <div class="card border-0 shadow-sm rounded-3">
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'dashboard:home' %}">Dashboard</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Send Single SMS</li>
+    </ol>
+</nav>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="fw-bold mb-1">Send Single SMS</h3>
+        <p class="text-muted mb-0">Dispatch transactional & notification SMS using approved DLT templates.</p>
+    </div>
+</div>
+
+<!-- Dispatch Outcome Card (If Form Submitted) -->
+{% if dispatch_attempted %}
+<div class="card border-0 shadow-sm rounded-4 mb-4 {% if dispatch_success %}border-start border-success border-4{% else %}border-start border-danger border-4{% endif %}">
+    <div class="card-body p-4">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+            <h5 class="fw-bold mb-0">
+                {% if dispatch_success %}
+                    <i class="bi bi-check-circle-fill text-success me-2"></i> SMS Dispatched Successfully
+                {% else %}
+                    <i class="bi bi-x-circle-fill text-danger me-2"></i> SMS Dispatch Failed
+                {% endif %}
+            </h5>
+            <span class="badge {% if dispatch_success %}bg-success{% else %}bg-danger{% endif %} font-monospace">
+                HTTP {{ gw_result.status_code|default:"ERR" }}
+            </span>
+        </div>
+
+        <div class="row g-3 text-start">
+            <div class="col-md-4">
+                <small class="text-muted d-block">Gateway Message ID</small>
+                <code class="fw-bold">{{ gw_result.gateway_message_id|default:"N/A" }}</code>
+            </div>
+            <div class="col-md-4">
+                <small class="text-muted d-block">Recipient Mobile</small>
+                <span class="fw-semibold font-monospace">{{ log_entry.mobile_number }}</span>
+            </div>
+            <div class="col-md-4">
+                <small class="text-muted d-block">Execution Timing</small>
+                <span class="badge bg-secondary font-monospace">{{ gw_result.execution_time_ms }} ms</span>
+            </div>
+            <div class="col-12">
+                <small class="text-muted d-block mb-1">Dispatched Message Content</small>
+                <div class="p-3 bg-light rounded-3 font-monospace border small">{{ log_entry.message_content }}</div>
+            </div>
+            {% if gw_result.error_message %}
+                <div class="col-12">
+                    <small class="text-danger d-block mb-1">Gateway Error Reason</small>
+                    <div class="p-2 bg-danger-soft text-danger rounded small font-monospace">{{ gw_result.error_message }}</div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="row g-4">
+    <!-- Form Inputs Column -->
+    <div class="col-lg-7">
+        <div class="card border-0 shadow-sm rounded-4">
             <div class="card-header bg-white py-3 border-0">
-                <h4 class="fw-bold mb-0"><i class="bi bi-send text-primary me-2"></i>Send Single SMS</h4>
+                <h5 class="fw-bold mb-0"><i class="bi bi-send text-primary me-2"></i>Single SMS Dispatch Form</h5>
             </div>
             <div class="card-body p-4">
-                <p class="text-muted">Select a registered DLT Template and fill in variable parameters.</p>
-                <div class="alert alert-info">
-                    <i class="bi bi-info-circle me-1"></i> SMS Gateway Dispatch logic will be wired in the next module step.
+                <form method="post" id="singleSmsForm">
+                    {% csrf_token %}
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Recipient Mobile Number *</label>
+                        {{ form.mobile_number }}
+                        <small class="form-text text-muted">10-digit Indian mobile number (e.g. 9876543210)</small>
+                        {% if form.mobile_number.errors %}<div class="text-danger small mt-1">{{ form.mobile_number.errors }}</div>{% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Department Scope</label>
+                        {{ form.department }}
+                        {% if form.department.errors %}<div class="text-danger small mt-1">{{ form.department.errors }}</div>{% endif %}
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Select Approved DLT Template *</label>
+                        {{ form.template }}
+                        {% if form.template.errors %}<div class="text-danger small mt-1">{{ form.template.errors }}</div>{% endif %}
+                    </div>
+
+                    <!-- Dynamic Variables Container -->
+                    <div id="variablesCard" class="card bg-light border-0 rounded-3 p-3 mb-4 d-none">
+                        <h6 class="fw-bold text-primary mb-3"><i class="bi bi-sliders me-2"></i>Template Variable Parameters</h6>
+                        <div id="dynamicVariablesContainer" class="row g-3">
+                            <!-- Dynamic inputs generated via JavaScript -->
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg rounded-3 fw-bold" id="sendSmsBtn">
+                            <i class="bi bi-send-fill me-1"></i> Send Single SMS Now
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Live Preview Column -->
+    <div class="col-lg-5">
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-header bg-primary text-white py-3 border-0">
+                <h5 class="fw-bold mb-0"><i class="bi bi-phone me-2"></i>Real-Time Message Preview</h5>
+            </div>
+            <div class="card-body p-4">
+                <div id="noTemplateNotice" class="text-center py-5 text-muted">
+                    <i class="bi bi-chat-square-dots display-4 d-block mb-3 opacity-50"></i>
+                    Select a DLT template from the dropdown to load variable parameters and live message preview.
+                </div>
+
+                <div id="previewContainer" class="d-none">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <small class="text-muted">Header: <strong id="headerSenderIdBadge" class="font-monospace text-dark">CLGEXM</strong></small>
+                        <small class="text-muted">DLT ID: <code id="dltIdBadge">1107...</code></small>
+                    </div>
+
+                    <!-- Live Render Box -->
+                    <div class="p-3 bg-light rounded-3 border text-dark font-monospace mb-3" id="renderedLiveText" style="min-height: 100px;">
+                        Select template...
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="badge bg-primary-soft text-primary p-2">
+                            <i class="bi bi-fonts me-1"></i> <span id="charCount">0</span> Chars
+                        </span>
+                        <span class="badge bg-purple-soft text-purple p-2">
+                            <i class="bi bi-envelope-paper me-1"></i> <span id="creditCount">0</span> SMS Credit(s)
+                        </span>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const templateSelect = document.getElementById('dltTemplateSelect');
+    const variablesCard = document.getElementById('variablesCard');
+    const varsContainer = document.getElementById('dynamicVariablesContainer');
+    const noTemplateNotice = document.getElementById('noTemplateNotice');
+    const previewContainer = document.getElementById('previewContainer');
+    const renderedLiveText = document.getElementById('renderedLiveText');
+    const charCountEl = document.getElementById('charCount');
+    const creditCountEl = document.getElementById('creditCount');
+    const headerSenderIdBadge = document.getElementById('headerSenderIdBadge');
+    const dltIdBadge = document.getElementById('dltIdBadge');
+
+    let currentTemplate = null;
+
+    templateSelect.addEventListener('change', function() {
+        const templateId = this.value;
+        if (!templateId) {
+            variablesCard.classList.add('d-none');
+            previewContainer.classList.add('d-none');
+            noTemplateNotice.classList.remove('d-none');
+            return;
+        }
+
+        fetch('/templates/' + templateId + '/schema-ajax/')
+            .then(res => res.json())
+            .then(data => {
+                currentTemplate = data;
+                headerSenderIdBadge.innerText = data.header_sender_id;
+                dltIdBadge.innerText = data.dlt_template_id;
+
+                varsContainer.innerHTML = '';
+                if (data.variables && data.variables.length > 0) {
+                    variablesCard.classList.remove('d-none');
+                    data.variables.forEach(v => {
+                        const col = document.createElement('div');
+                        col.className = 'col-md-6';
+                        col.innerHTML = `
+                            <label class="form-label small fw-semibold">Var #${v.position}: ${v.name}</label>
+                            <input type="text" name="var_${v.position}" class="form-control var-dynamic-input" data-pos="${v.position}" value="${v.sample_value || ''}" placeholder="Enter ${v.name}">
+                        `;
+                        varsContainer.appendChild(col);
+                    });
+
+                    // Attach input change listeners
+                    document.querySelectorAll('.var-dynamic-input').forEach(input => {
+                        input.addEventListener('input', updateLivePreview);
+                    });
+                } else {
+                    variablesCard.classList.add('d-none');
+                }
+
+                noTemplateNotice.classList.add('d-none');
+                previewContainer.classList.remove('d-none');
+                updateLivePreview();
+            });
+    });
+
+    function updateLivePreview() {
+        if (!currentTemplate) return;
+
+        let content = currentTemplate.template_content;
+        const inputs = document.querySelectorAll('.var-dynamic-input');
+
+        inputs.forEach(input => {
+            const pos = input.dataset.pos;
+            const val = input.value.trim() || `[${input.placeholder}]`;
+            
+            // Replace {#var#} or {pos} placeholders
+            const pattern = /\{#[^#]*#\}|\{\d+\}/;
+            content = content.replace(pattern, val);
+        });
+
+        renderedLiveText.innerText = content;
+        const len = content.length;
+        charCountEl.innerText = len;
+
+        // Calculate credits (GSM 160 chars vs Unicode 70 chars)
+        let isUnicode = false;
+        for (let i = 0; i < len; i++) {
+            if (content.charCodeAt(i) > 127) { isUnicode = true; break; }
+        }
+
+        let credits = 1;
+        if (!isUnicode) {
+            credits = len <= 160 ? 1 : Math.ceil(len / 153);
+        } else {
+            credits = len <= 70 ? 1 : Math.ceil(len / 67);
+        }
+        creditCountEl.innerText = credits;
+    }
+
+    // Trigger initial check if template pre-selected
+    if (templateSelect.value) {
+        templateSelect.dispatchEvent(new Event('change'));
+    }
+});
+</script>
 {% endblock %}

@@ -1,0 +1,352 @@
+{% extends 'base.html' %}
+
+{% block title %}Personalized Bulk SMS - Compose & Preview{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'dashboard:home' %}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'sms:bulk_select' %}">Bulk Staff Selection</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Compose Personalized Bulk SMS</li>
+    </ol>
+</nav>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="fw-bold mb-1">Personalized Bulk Staff SMS Engine</h3>
+        <p class="text-muted mb-0">Map DLT template variables to Staff Database fields or static values to generate individual personalized SMS messages.</p>
+    </div>
+    <div>
+        <a href="{% url 'sms:bulk_select' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i> Back to Selection
+        </a>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Form & Variable Mapping Column -->
+    <div class="col-lg-7">
+        <div class="card border-0 shadow-sm rounded-4 mb-4">
+            <div class="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold mb-0"><i class="bi bi-people text-primary me-2"></i>Selected Recipients</h5>
+                <span class="badge bg-primary fs-6">{{ selected_count }} Staff Members</span>
+            </div>
+            <div class="card-body p-3">
+                <div class="d-flex flex-wrap gap-1" style="max-height: 100px; overflow-y: auto;">
+                    {% for staff in staff_members %}
+                        <span class="badge bg-light text-dark border p-2">
+                            <i class="bi bi-person me-1 text-muted"></i> {{ staff.get_full_name|default:staff.username }}
+                            <small class="text-muted">({{ staff.phone_number|default:"No Phone" }})</small>
+                        </span>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-header bg-white py-3 border-0">
+                <h5 class="fw-bold mb-0"><i class="bi bi-diagram-2 text-primary me-2"></i>DLT Template & Variable Mapping</h5>
+            </div>
+            <div class="card-body p-4">
+                <form method="post" id="bulkComposeForm">
+                    {% csrf_token %}
+
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Select Approved DLT Template *</label>
+                        <select name="template" id="dltTemplateSelect" class="form-select form-select-lg" required>
+                            <option value="">-- Choose Approved DLT Template --</option>
+                            {% for tmpl in dlt_templates %}
+                                <option value="{{ tmpl.pk }}">{{ tmpl.name }} (ID: {{ tmpl.dlt_template_id }} - Header: {{ tmpl.header_sender_id }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Variable Mapping Engine UI Container -->
+                    <div id="mappingCard" class="card bg-light border-0 rounded-3 p-3 mb-4 d-none">
+                        <h6 class="fw-bold text-primary mb-3"><i class="bi bi-sliders me-2"></i>Configure Variable Mapping Sources</h6>
+                        <div id="dynamicMappingContainer" class="row g-3">
+                            <!-- Dynamic mapping source cards injected via JS -->
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="button" class="btn btn-primary btn-lg rounded-3 fw-bold" id="confirmDispatchBtn" data-bs-toggle="modal" data-bs-target="#confirmModal" disabled>
+                            <i class="bi bi-send-fill me-1"></i> Review & Dispatch Personalized SMS
+                        </button>
+                    </div>
+
+                    <!-- Dispatch Confirmation Modal -->
+                    <div class="modal fade text-start" id="confirmModal" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title fw-bold"><i class="bi bi-question-circle text-primary me-2"></i>Confirm Personalized Bulk SMS</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <p>Are you ready to generate and dispatch personalized SMS to <strong>{{ selected_count }}</strong> staff members?</p>
+                                    <ul class="list-group list-group-flush small mb-3">
+                                        <li class="list-group-item d-flex justify-content-between">
+                                            <span>Recipient Count:</span> <strong>{{ selected_count }} Staff Members</strong>
+                                        </li>
+                                        <li class="list-group-item d-flex justify-content-between">
+                                            <span>Credits Per SMS:</span> <strong id="modalSingleCredits">1</strong>
+                                        </li>
+                                        <li class="list-group-item d-flex justify-content-between">
+                                            <span>Est. Total Batch Credits:</span> <strong id="modalTotalCredits" class="text-primary fs-6">0</strong>
+                                        </li>
+                                    </ul>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                                    <button type="submit" class="btn btn-primary fw-bold px-4">Confirm & Launch Dispatch</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Live Preview Sandbox Column -->
+    <div class="col-lg-5">
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-header bg-primary text-white py-3 border-0 d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold mb-0"><i class="bi bi-phone me-2"></i>Personalized Live Preview</h5>
+            </div>
+            <div class="card-body p-4">
+                <div id="noTemplateNotice" class="text-center py-5 text-muted">
+                    <i class="bi bi-chat-square-dots display-4 d-block mb-3 opacity-50"></i>
+                    Select a DLT template to configure variable mappings and test live recipient preview.
+                </div>
+
+                <div id="previewContainer" class="d-none">
+                    <!-- Recipient Selection Dropdown: Preview As -->
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-uppercase text-primary mb-1">
+                            <i class="bi bi-person-bounding-box me-1"></i> Preview As Recipient
+                        </label>
+                        <select id="previewRecipientSelect" class="form-select border-primary fw-semibold">
+                            {% for staff in staff_members %}
+                                <option value="{{ staff.id }}" {% if forloop.first %}selected{% endif %}>
+                                    {{ staff.get_full_name|default:staff.username }} ({{ staff.employee_id|default:"Staff" }})
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <small class="text-muted">Header: <strong id="headerSenderIdBadge" class="font-monospace text-dark">CLGEXM</strong></small>
+                        <small class="text-muted">DLT ID: <code id="dltIdBadge">1107...</code></small>
+                    </div>
+
+                    <!-- Live Rendered Personalized SMS Box -->
+                    <div class="p-3 bg-light rounded-3 border text-dark font-monospace mb-3" id="renderedLiveText" style="min-height: 110px;">
+                        Select template...
+                    </div>
+
+                    <div class="row g-2 text-center">
+                        <div class="col-6">
+                            <div class="p-2 bg-light rounded border">
+                                <small class="text-muted d-block">Message Length</small>
+                                <span class="fw-bold text-primary" id="charCount">0</span> Chars
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="p-2 bg-light rounded border">
+                                <small class="text-muted d-block">Credits / SMS</small>
+                                <span class="fw-bold text-purple" id="creditCount">1</span> Credit
+                            </div>
+                        </div>
+                        <div class="col-12 mt-2">
+                            <div class="p-2 bg-purple-soft rounded text-purple border border-purple">
+                                <small class="d-block fw-semibold">Est. Total Batch Credits</small>
+                                <strong class="fs-5" id="totalBatchCredits">{{ selected_count }}</strong> Credits
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const templateSelect = document.getElementById('dltTemplateSelect');
+    const mappingCard = document.getElementById('mappingCard');
+    const mappingContainer = document.getElementById('dynamicMappingContainer');
+    const noTemplateNotice = document.getElementById('noTemplateNotice');
+    const previewContainer = document.getElementById('previewContainer');
+    const previewRecipientSelect = document.getElementById('previewRecipientSelect');
+
+    const renderedLiveText = document.getElementById('renderedLiveText');
+    const charCountEl = document.getElementById('charCount');
+    const creditCountEl = document.getElementById('creditCount');
+    const totalBatchCreditsEl = document.getElementById('totalBatchCredits');
+    const headerSenderIdBadge = document.getElementById('headerSenderIdBadge');
+    const dltIdBadge = document.getElementById('dltIdBadge');
+    const confirmBtn = document.getElementById('confirmDispatchBtn');
+
+    const modalSingleCredits = document.getElementById('modalSingleCredits');
+    const modalTotalCredits = document.getElementById('modalTotalCredits');
+
+    const selectedCount = parseInt("{{ selected_count }}");
+    const dbFields = {{ db_fields|safe }};
+    let currentTemplate = null;
+
+    templateSelect.addEventListener('change', function() {
+        const templateId = this.value;
+        if (!templateId) {
+            mappingCard.classList.add('d-none');
+            previewContainer.classList.add('d-none');
+            noTemplateNotice.classList.remove('d-none');
+            confirmBtn.disabled = true;
+            return;
+        }
+
+        fetch('/templates/' + templateId + '/schema-ajax/')
+            .then(res => res.json())
+            .then(data => {
+                currentTemplate = data;
+                headerSenderIdBadge.innerText = data.header_sender_id;
+                dltIdBadge.innerText = data.dlt_template_id;
+
+                mappingContainer.innerHTML = '';
+                if (data.variables && data.variables.length > 0) {
+                    mappingCard.classList.remove('d-none');
+                    data.variables.forEach(v => {
+                        const col = document.createElement('div');
+                        col.className = 'col-12';
+                        
+                        // Default smart mapping suggestion: if variable name contains "name" -> default to full_name
+                        const lname = v.name.toLowerCase();
+                        let defaultField = 'full_name';
+                        if (lname.includes('id') || lname.includes('emp')) defaultField = 'employee_id';
+                        else if (lname.includes('dept')) defaultField = 'department';
+                        else if (lname.includes('role') || lname.includes('desig')) defaultField = 'designation';
+
+                        col.innerHTML = `
+                            <div class="card bg-white border p-3 rounded-3 mb-2">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <h6 class="fw-bold text-primary mb-0"><i class="bi bi-tag me-1"></i>Variable #${v.position}: ${v.name}</h6>
+                                    <span class="badge bg-light text-dark border">Pos #${v.position}</span>
+                                </div>
+                                <div class="row g-2 align-items-center">
+                                    <div class="col-md-5">
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input source-radio" type="radio" name="var_${v.position}_source_type" id="var_${v.position}_radio_static" value="static" data-pos="${v.position}">
+                                            <label class="form-check-label small fw-semibold" for="var_${v.position}_radio_static">Static Value</label>
+                                        </div>
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input source-radio" type="radio" name="var_${v.position}_source_type" id="var_${v.position}_radio_field" value="field" checked data-pos="${v.position}">
+                                            <label class="form-check-label small fw-semibold" for="var_${v.position}_radio_field">Staff Database Field</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-7" id="var_${v.position}_input_wrapper">
+                                        <select name="var_${v.position}_field_val" class="form-select form-select-sm var-mapping-control" data-pos="${v.position}">
+                                            ${dbFields.map(f => `<option value="${f.key}" ${f.key === defaultField ? 'selected' : ''}>${f.label}</option>`).join('')}
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        mappingContainer.appendChild(col);
+                    });
+
+                    // Radio toggle handlers
+                    document.querySelectorAll('.source-radio').forEach(radio => {
+                        radio.addEventListener('change', function() {
+                            const pos = this.dataset.pos;
+                            const wrapper = document.getElementById(`var_${pos}_input_wrapper`);
+                            if (this.value === 'static') {
+                                wrapper.innerHTML = `<input type="text" name="var_${pos}_static_val" class="form-control form-control-sm var-mapping-control" data-pos="${pos}" placeholder="Enter static value" value="">`;
+                            } else {
+                                wrapper.innerHTML = `<select name="var_${pos}_field_val" class="form-select form-select-sm var-mapping-control" data-pos="${pos}">${dbFields.map(f => `<option value="${f.key}">${f.label}</option>`).join('')}</select>`;
+                            }
+                            attachControlListeners();
+                            triggerPersonalizedPreview();
+                        });
+                    });
+
+                    attachControlListeners();
+                } else {
+                    mappingCard.classList.add('d-none');
+                }
+
+                noTemplateNotice.classList.add('d-none');
+                previewContainer.classList.remove('d-none');
+                confirmBtn.disabled = false;
+                triggerPersonalizedPreview();
+            });
+    });
+
+    function attachControlListeners() {
+        document.querySelectorAll('.var-mapping-control').forEach(ctrl => {
+            ctrl.removeEventListener('input', triggerPersonalizedPreview);
+            ctrl.removeEventListener('change', triggerPersonalizedPreview);
+            ctrl.addEventListener('input', triggerPersonalizedPreview);
+            ctrl.addEventListener('change', triggerPersonalizedPreview);
+        });
+    }
+
+    if (previewRecipientSelect) {
+        previewRecipientSelect.addEventListener('change', triggerPersonalizedPreview);
+    }
+
+    function triggerPersonalizedPreview() {
+        if (!currentTemplate || !previewRecipientSelect.value) return;
+
+        const staffId = previewRecipientSelect.value;
+        const mappingConfig = {};
+
+        if (currentTemplate.variables) {
+            currentTemplate.variables.forEach(v => {
+                const key = `var_${v.position}`;
+                const radioField = document.getElementById(`var_${v.position}_radio_field`);
+                const stype = (radioField && radioField.checked) ? 'field' : 'static';
+
+                let sval = '';
+                if (stype === 'field') {
+                    const sel = document.querySelector(`select[name="var_${v.position}_field_val"]`);
+                    sval = sel ? sel.value : 'full_name';
+                } else {
+                    const txt = document.querySelector(`input[name="var_${v.position}_static_val"]`);
+                    sval = txt ? txt.value : '';
+                }
+                mappingConfig[key] = { type: stype, value: sval };
+            });
+        }
+
+        fetch("{% url 'sms:bulk_preview_personalized_ajax' %}", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": "{{ csrf_token }}"
+            },
+            body: JSON.stringify({
+                staff_id: staffId,
+                template_id: currentTemplate.id,
+                mapping_config: mappingConfig
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                renderedLiveText.innerText = data.rendered_text;
+                charCountEl.innerText = data.char_count;
+                creditCountEl.innerText = data.single_credits;
+
+                const totalCredits = data.single_credits * selectedCount;
+                totalBatchCreditsEl.innerText = totalCredits;
+                if (modalSingleCredits) modalSingleCredits.innerText = data.single_credits;
+                if (modalTotalCredits) modalTotalCredits.innerText = totalCredits;
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

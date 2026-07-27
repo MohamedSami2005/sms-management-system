@@ -29,3 +29,549 @@ INFO 2026-07-25 16:23:05,350 gateway_service 27812 19320 GATEWAY_REQ | Attempt 1
 DEBUG 2026-07-25 16:23:05,350 gateway_service 27812 19320 GATEWAY_PAYLOAD | Params: {'apikey': 'TEST_API_KEY_999', 'mobile': '9876543210', 'message': 'Dear Student, your exam is tomorrow.', 'sender': 'CLGEXM', 'template_id': '1107160000000123456', 'entity_id': '1001999988887777666'} | Headers: {}
 INFO 2026-07-25 16:23:05,350 gateway_service 27812 19320 GATEWAY_RESP | Status: 200 | Execution Time: 0.28ms
 DEBUG 2026-07-25 16:23:05,350 gateway_service 27812 19320 GATEWAY_RAW_BODY | {"status": "success", "message_id": "GW_MSG_12345"}
+INFO 2026-07-25 16:26:49,889 gateway_service 30952 32560 GATEWAY_REQ | Attempt 1/3 | Method: POST | URL: http://api.sms-gateway.com/send
+DEBUG 2026-07-25 16:26:49,890 gateway_service 30952 32560 GATEWAY_PAYLOAD | Params: {'apikey': 'DEMO_API_KEY_123', 'mobile': '9876543210', 'message': 'Dear Sami, your exam for Mathematics is scheduled on 28th July. Regards, College COE.', 'sender': 'CLGEXM', 'template_id': '1107160000000123456', 'entity_id': '1001999988887777666'} | Headers: {}
+ERROR 2026-07-25 16:26:50,095 gateway_service 30952 32560 GATEWAY_HTTP_ERR | Attempt 1 failed: HTTPConnectionPool(host='api.sms-gateway.com', port=80): Max retries exceeded with url: /send (Caused by NameResolutionError("HTTPConnection(host='api.sms-gateway.com', port=80): Failed to resolve 'api.sms-gateway.com' ([Errno 11001] getaddrinfo failed)"))
+INFO 2026-07-25 16:26:51,095 gateway_service 30952 32560 GATEWAY_REQ | Attempt 2/3 | Method: POST | URL: http://api.sms-gateway.com/send
+DEBUG 2026-07-25 16:26:51,096 gateway_service 30952 32560 GATEWAY_PAYLOAD | Params: {'apikey': 'DEMO_API_KEY_123', 'mobile': '9876543210', 'message': 'Dear Sami, your exam for Mathematics is scheduled on 28th July. Regards, College COE.', 'sender': 'CLGEXM', 'template_id': '1107160000000123456', 'entity_id': '1001999988887777666'} | Headers: {}
+ERROR 2026-07-25 16:26:51,103 gateway_service 30952 32560 GATEWAY_HTTP_ERR | Attempt 2 failed: HTTPConnectionPool(host='api.sms-gateway.com', port=80): Max retries exceeded with url: /send (Caused by NameResolutionError("HTTPConnection(host='api.sms-gateway.com', port=80): Failed to resolve 'api.sms-gateway.com' ([Errno 11001] getaddrinfo failed)"))
+INFO 2026-07-25 16:26:53,103 gateway_service 30952 32560 GATEWAY_REQ | Attempt 3/3 | Method: POST | URL: http://api.sms-gateway.com/send
+DEBUG 2026-07-25 16:26:53,103 gateway_service 30952 32560 GATEWAY_PAYLOAD | Params: {'apikey': 'DEMO_API_KEY_123', 'mobile': '9876543210', 'message': 'Dear Sami, your exam for Mathematics is scheduled on 28th July. Regards, College COE.', 'sender': 'CLGEXM', 'template_id': '1107160000000123456', 'entity_id': '1001999988887777666'} | Headers: {}
+ERROR 2026-07-25 16:26:53,111 gateway_service 30952 32560 GATEWAY_HTTP_ERR | Attempt 3 failed: HTTPConnectionPool(host='api.sms-gateway.com', port=80): Max retries exceeded with url: /send (Caused by NameResolutionError("HTTPConnection(host='api.sms-gateway.com', port=80): Failed to resolve 'api.sms-gateway.com' ([Errno 11001] getaddrinfo failed)"))
+INFO 2026-07-25 16:26:53,133 single_sms 30952 32560 SINGLE_SMS_DISPATCH | User: 'admin' | Mobile: '9876543210' | Template ID: '1107160000000123456' | Status: 'FAILED' | GW Msg ID: 'None'
+INFO 2026-07-25 16:29:20,054 gateway_service 15176 6104 GATEWAY_REQ | Attempt 1/3 | Method: POST | URL: http://api.sms-gateway.com/send
+DEBUG 2026-07-25 16:29:20,054 gateway_service 15176 6104 GATEWAY_PAYLOAD | Params: {'apikey': 'DEMO_API_KEY_123', 'mobile': '8098778622', 'message': 'Dear Sample, your exam for Sample is scheduled on Sample. Regards, College COE.', 'sender': 'CLGEXM', 'template_id': '1107160000000123456', 'entity_id': '1001999988887777666'} | Headers: {}
+ERROR 2026-07-25 16:29:20,078 gateway_service 15176 6104 GATEWAY_HTTP_ERR | Attempt 1 failed: HTTPConnectionPool(host='api.sms-gateway.com', port=80): Max retries exceeded with url: /send (Caused by NameResolutionError("HTTPConnection(host='api.sms-gateway.com', port=80): Failed to resolve 'api.sms-gateway.com' ([Errno 11001] getaddrinfo failed)"))
+INFO 2026-07-25 16:29:21,079 gateway_service 15176 6104 GATEWAY_REQ | Attempt 2/3 | Method: POST | URL: http://api.sms-gateway.com/send
+DEBUG 2026-07-25 16:29:21,079 gateway_service 15176 6104 GATEWAY_PAYLOAD | Params: {'apikey': 'DEMO_API_KEY_123', 'mobile': '8098778622', 'message': 'Dear Sample, your exam for Sample is scheduled on Sample. Regards, College COE.', 'sender': 'CLGEXM', 'template_id': '1107160000000123456', 'entity_id': '1001999988887777666'} | Headers: {}
+ERROR 2026-07-25 16:29:21,082 gateway_service 15176 6104 GATEWAY_HTTP_ERR | Attempt 2 failed: HTTPConnectionPool(host='api.sms-gateway.com', port=80): Max retries exceeded with url: /send (Caused by NameResolutionError("HTTPConnection(host='api.sms-gateway.com', port=80): Failed to resolve 'api.sms-gateway.com' ([Errno 11001] getaddrinfo failed)"))
+INFO 2026-07-25 16:29:23,083 gateway_service 15176 6104 GATEWAY_REQ | Attempt 3/3 | Method: POST | URL: http://api.sms-gateway.com/send
+DEBUG 2026-07-25 16:29:23,083 gateway_service 15176 6104 GATEWAY_PAYLOAD | Params: {'apikey': 'DEMO_API_KEY_123', 'mobile': '8098778622', 'message': 'Dear Sample, your exam for Sample is scheduled on Sample. Regards, College COE.', 'sender': 'CLGEXM', 'template_id': '1107160000000123456', 'entity_id': '1001999988887777666'} | Headers: {}
+ERROR 2026-07-25 16:29:23,085 gateway_service 15176 6104 GATEWAY_HTTP_ERR | Attempt 3 failed: HTTPConnectionPool(host='api.sms-gateway.com', port=80): Max retries exceeded with url: /send (Caused by NameResolutionError("HTTPConnection(host='api.sms-gateway.com', port=80): Failed to resolve 'api.sms-gateway.com' ([Errno 11001] getaddrinfo failed)"))
+INFO 2026-07-25 16:29:23,098 single_sms 15176 6104 SINGLE_SMS_DISPATCH | User: 'admin' | Mobile: '8098778622' | Template ID: '1107160000000123456' | Status: 'FAILED' | GW Msg ID: 'None'
+INFO 2026-07-25 16:45:01,300 gateway_service 17448 8932 GATEWAY_REQ | Attempt 1/3 | Method: GET | URL: https://text.draft4sms.com/vb/http-credit.php
+DEBUG 2026-07-25 16:45:01,301 gateway_service 17448 8932 GATEWAY_PAYLOAD | Params: {'apikey': 'DRAF****7890', 'route_id': '1', 'format': 'json'}
+INFO 2026-07-25 16:45:01,301 gateway_service 17448 8932 GATEWAY_RESP | Status: 200 | Execution Time: 1.11ms
+DEBUG 2026-07-25 16:45:01,301 gateway_service 17448 8932 GATEWAY_RAW_BODY | {"status":"Success","code":"011","balance":25000}
+INFO 2026-07-25 16:45:01,307 gateway_service 17448 8932 GATEWAY_REQ | Attempt 1/3 | Method: GET | URL: https://text.draft4sms.com/vb/http-dlr.php
+DEBUG 2026-07-25 16:45:01,308 gateway_service 17448 8932 GATEWAY_PAYLOAD | Params: {'apikey': 'DRAF****7890', 'msgid': '9876543210123', 'format': 'json'}
+INFO 2026-07-25 16:45:01,309 gateway_service 17448 8932 GATEWAY_RESP | Status: 200 | Execution Time: 0.88ms
+DEBUG 2026-07-25 16:45:01,309 gateway_service 17448 8932 GATEWAY_RAW_BODY | {"status":"DELIVERED","msgid":"9876543210123"}
+INFO 2026-07-25 16:45:01,318 gateway_service 17448 8932 GATEWAY_REQ | Attempt 1/3 | Method: POST | URL: https://text.draft4sms.com/vb/apikey.php
+DEBUG 2026-07-25 16:45:01,319 gateway_service 17448 8932 GATEWAY_PAYLOAD | Params: {'apikey': 'DRAF****7890', 'senderid': 'CLGEXM', 'number': '9876543210', 'message': 'Dear Student, your exam schedule is published.', 'templateid': '1107160000000123456', 'unicode': '0', 'format': 'json'}
+INFO 2026-07-25 16:45:01,320 gateway_service 17448 8932 GATEWAY_RESP | Status: 200 | Execution Time: 1.02ms
+DEBUG 2026-07-25 16:45:01,320 gateway_service 17448 8932 GATEWAY_RAW_BODY | {"status":"Failure","code":"001","description":"Invalid API Key"}
+INFO 2026-07-25 16:45:01,324 gateway_service 17448 8932 GATEWAY_REQ | Attempt 1/3 | Method: POST | URL: https://text.draft4sms.com/vb/apikey.php
+DEBUG 2026-07-25 16:45:01,324 gateway_service 17448 8932 GATEWAY_PAYLOAD | Params: {'apikey': 'DRAF****7890', 'senderid': 'CLGEXM', 'number': '9876543210', 'message': 'Dear Student, your exam schedule is published.', 'templateid': '1107160000000123456', 'unicode': '0', 'format': 'json'}
+INFO 2026-07-25 16:45:01,325 gateway_service 17448 8932 GATEWAY_RESP | Status: 200 | Execution Time: 0.67ms
+DEBUG 2026-07-25 16:45:01,325 gateway_service 17448 8932 GATEWAY_RAW_BODY | {"status":"Failure","code":"008","description":"Insufficient Credit"}
+INFO 2026-07-25 16:45:01,333 gateway_service 17448 8932 GATEWAY_REQ | Attempt 1/3 | Method: POST | URL: https://text.draft4sms.com/vb/apikey.php
+DEBUG 2026-07-25 16:45:01,333 gateway_service 17448 8932 GATEWAY_PAYLOAD | Params: {'apikey': 'DRAF****7890', 'senderid': 'CLGEXM', 'number': '9876543210', 'message': 'Dear Student, your exam schedule is published.', 'templateid': '1107160000000123456', 'unicode': '0', 'format': 'json'}
+INFO 2026-07-25 16:45:01,334 gateway_service 17448 8932 GATEWAY_RESP | Status: 401 | Execution Time: 1.17ms
+DEBUG 2026-07-25 16:45:01,334 gateway_service 17448 8932 GATEWAY_RAW_BODY | {"error":"Unauthorized access"}
+INFO 2026-07-25 16:45:01,340 gateway_service 17448 8932 GATEWAY_REQ | Attempt 1/3 | Method: POST | URL: https://text.draft4sms.com/vb/apikey.php
+DEBUG 2026-07-25 16:45:01,341 gateway_service 17448 8932 GATEWAY_PAYLOAD | Params: {'apikey': 'DRAF****7890', 'senderid': 'CLGEXM', 'number': '9876543210', 'message': 'Dear Student, your exam schedule is published.', 'templateid': '1107160000000123456', 'unicode': '0', 'format': 'json'}
+INFO 2026-07-25 16:45:01,341 gateway_service 17448 8932 GATEWAY_RESP | Status: 200 | Execution Time: 1.5ms
+DEBUG 2026-07-25 16:45:01,342 gateway_service 17448 8932 GATEWAY_RAW_BODY | {"status":"Success","code":"011","messageid":"9876543210123","totnumber":1,"totalcredit":1,"description":"Message Sent Successfully"}
+INFO 2026-07-25 16:45:01,353 gateway_service 17448 8932 GATEWAY_REQ | Attempt 1/3 | Method: POST | URL: https://text.draft4sms.com/vb/apikey.php
+DEBUG 2026-07-25 16:45:01,355 gateway_service 17448 8932 GATEWAY_PAYLOAD | Params: {'apikey': 'DRAF****7890', 'senderid': 'CLGEXM', 'number': '9876543210', 'message': 'Dear Student, your exam schedule is published.', 'templateid': '1107160000000123456', 'unicode': '0', 'format': 'json'}
+INFO 2026-07-25 16:45:01,355 gateway_service 17448 8932 GATEWAY_RESP | Status: 500 | Execution Time: 1.85ms
+DEBUG 2026-07-25 16:45:01,355 gateway_service 17448 8932 GATEWAY_RAW_BODY | Internal Gateway Error
+WARNING 2026-07-25 16:45:01,355 gateway_service 17448 8932 GATEWAY_5XX_ERROR | Attempt 1 returned 500. Retrying...
+INFO 2026-07-25 16:45:01,356 gateway_service 17448 8932 GATEWAY_REQ | Attempt 2/3 | Method: POST | URL: https://text.draft4sms.com/vb/apikey.php
+DEBUG 2026-07-25 16:45:01,356 gateway_service 17448 8932 GATEWAY_PAYLOAD | Params: {'apikey': 'DRAF****7890', 'senderid': 'CLGEXM', 'number': '9876543210', 'message': 'Dear Student, your exam schedule is published.', 'templateid': '1107160000000123456', 'unicode': '0', 'format': 'json'}
+INFO 2026-07-25 16:45:01,357 gateway_service 17448 8932 GATEWAY_RESP | Status: 500 | Execution Time: 0.57ms
+DEBUG 2026-07-25 16:45:01,357 gateway_service 17448 8932 GATEWAY_RAW_BODY | Internal Gateway Error
+WARNING 2026-07-25 16:45:01,359 gateway_service 17448 8932 GATEWAY_5XX_ERROR | Attempt 2 returned 500. Retrying...
+INFO 2026-07-25 16:45:01,359 gateway_service 17448 8932 GATEWAY_REQ | Attempt 3/3 | Method: POST | URL: https://text.draft4sms.com/vb/apikey.php
+DEBUG 2026-07-25 16:45:01,359 gateway_service 17448 8932 GATEWAY_PAYLOAD | Params: {'apikey': 'DRAF****7890', 'senderid': 'CLGEXM', 'number': '9876543210', 'message': 'Dear Student, your exam schedule is published.', 'templateid': '1107160000000123456', 'unicode': '0', 'format': 'json'}
+INFO 2026-07-25 16:45:01,360 gateway_service 17448 8932 GATEWAY_RESP | Status: 500 | Execution Time: 0.35ms
+DEBUG 2026-07-25 16:45:01,360 gateway_service 17448 8932 GATEWAY_RAW_BODY | Internal Gateway Error
+WARNING 2026-07-25 16:45:01,360 gateway_service 17448 8932 GATEWAY_5XX_ERROR | Attempt 3 returned 500. Retrying...
+INFO 2026-07-25 16:48:13,463 gateway_service 22728 4256 GATEWAY_REQ | Attempt 1/3 | Method: GET | URL: https://text.draft4sms.com/vb/http-credit.php
+DEBUG 2026-07-25 16:48:13,464 gateway_service 22728 4256 GATEWAY_PAYLOAD | Params: {'apikey': 'DRAF****7890', 'route_id': '1', 'format': 'json'}
+INFO 2026-07-25 16:48:13,465 gateway_service 22728 4256 GATEWAY_RESP | Status: 200 | Execution Time: 2.44ms
+DEBUG 2026-07-25 16:48:13,465 gateway_service 22728 4256 GATEWAY_RAW_BODY | {"status":"Success","code":"011","balance":25000}
+INFO 2026-07-25 16:48:13,471 gateway_service 22728 4256 GATEWAY_REQ | Attempt 1/3 | Method: GET | URL: https://text.draft4sms.com/vb/http-dlr.php
+DEBUG 2026-07-25 16:48:13,471 gateway_service 22728 4256 GATEWAY_PAYLOAD | Params: {'apikey': 'DRAF****7890', 'msgid': '9876543210123', 'format': 'json'}
+INFO 2026-07-25 16:48:13,471 gateway_service 22728 4256 GATEWAY_RESP | Status: 200 | Execution Time: 0.56ms
+DEBUG 2026-07-25 16:48:13,472 gateway_service 22728 4256 GATEWAY_RAW_BODY | {"status":"DELIVERED","msgid":"9876543210123"}
+INFO 2026-07-25 16:48:13,474 gateway_service 22728 4256 GATEWAY_REQ | Attempt 1/3 | Method: POST | URL: https://text.draft4sms.com/vb/apikey.php
+DEBUG 2026-07-25 16:48:13,474 gateway_service 22728 4256 GATEWAY_PAYLOAD | Params: {'apikey': 'DRAF****7890', 'senderid': 'CLGEXM', 'number': '9876543210', 'message': 'Dear Student, your exam schedule is published.', 'templateid': '1107160000000123456', 'unicode': '0', 'format': 'json'}
+INFO 2026-07-25 16:48:13,474 gateway_service 22728 4256 GATEWAY_RESP | Status: 200 | Execution Time: 0.39ms
+DEBUG 2026-07-25 16:48:13,474 gateway_service 22728 4256 GATEWAY_RAW_BODY | {"status":"Failure","code":"001","description":"Invalid API Key"}
+INFO 2026-07-25 16:48:13,477 gateway_service 22728 4256 GATEWAY_REQ | Attempt 1/3 | Method: POST | URL: https://text.draft4sms.com/vb/apikey.php
+DEBUG 2026-07-25 16:48:13,477 gateway_service 22728 4256 GATEWAY_PAYLOAD | Params: {'apikey': 'DRAF****7890', 'senderid': 'CLGEXM', 'number': '9876543210', 'message': 'Dear Student, your exam schedule is published.', 'templateid': '1107160000000123456', 'unicode': '0', 'format': 'json'}
+INFO 2026-07-25 16:48:13,477 gateway_service 22728 4256 GATEWAY_RESP | Status: 200 | Execution Time: 0.32ms
+DEBUG 2026-07-25 16:48:13,477 gateway_service 22728 4256 GATEWAY_RAW_BODY | {"status":"Failure","code":"008","description":"Insufficient Credit"}
+INFO 2026-07-25 16:48:13,481 gateway_service 22728 4256 GATEWAY_REQ | Attempt 1/3 | Method: POST | URL: https://text.draft4sms.com/vb/apikey.php
+DEBUG 2026-07-25 16:48:13,482 gateway_service 22728 4256 GATEWAY_PAYLOAD | Params: {'apikey': 'DRAF****7890', 'senderid': 'CLGEXM', 'number': '9876543210', 'message': 'Dear Student, your exam schedule is published.', 'templateid': '1107160000000123456', 'unicode': '0', 'format': 'json'}
+INFO 2026-07-25 16:48:13,482 gateway_service 22728 4256 GATEWAY_RESP | Status: 401 | Execution Time: 0.91ms
+DEBUG 2026-07-25 16:48:13,482 gateway_service 22728 4256 GATEWAY_RAW_BODY | {"error":"Unauthorized access"}
+INFO 2026-07-25 16:48:13,487 gateway_service 22728 4256 GATEWAY_REQ | Attempt 1/3 | Method: POST | URL: https://text.draft4sms.com/vb/apikey.php
+DEBUG 2026-07-25 16:48:13,488 gateway_service 22728 4256 GATEWAY_PAYLOAD | Params: {'apikey': 'DRAF****7890', 'senderid': 'CLGEXM', 'number': '9876543210', 'message': 'Dear Student, your exam schedule is published.', 'templateid': '1107160000000123456', 'unicode': '0', 'format': 'json'}
+INFO 2026-07-25 16:48:13,488 gateway_service 22728 4256 GATEWAY_RESP | Status: 200 | Execution Time: 0.93ms
+DEBUG 2026-07-25 16:48:13,488 gateway_service 22728 4256 GATEWAY_RAW_BODY | {"status":"Success","code":"011","messageid":"9876543210123","totnumber":1,"totalcredit":1,"description":"Message Sent Successfully"}
+INFO 2026-07-25 16:48:13,494 gateway_service 22728 4256 GATEWAY_REQ | Attempt 1/3 | Method: POST | URL: https://text.draft4sms.com/vb/apikey.php
+DEBUG 2026-07-25 16:48:13,494 gateway_service 22728 4256 GATEWAY_PAYLOAD | Params: {'apikey': 'DRAF****7890', 'senderid': 'CLGEXM', 'number': '9876543210', 'message': 'Dear Student, your exam schedule is published.', 'templateid': '1107160000000123456', 'unicode': '0', 'format': 'json'}
+INFO 2026-07-25 16:48:13,495 gateway_service 22728 4256 GATEWAY_RESP | Status: 500 | Execution Time: 0.98ms
+DEBUG 2026-07-25 16:48:13,495 gateway_service 22728 4256 GATEWAY_RAW_BODY | Internal Gateway Error
+WARNING 2026-07-25 16:48:13,495 gateway_service 22728 4256 GATEWAY_5XX_ERROR | Attempt 1 returned 500. Retrying...
+INFO 2026-07-25 16:48:13,496 gateway_service 22728 4256 GATEWAY_REQ | Attempt 2/3 | Method: POST | URL: https://text.draft4sms.com/vb/apikey.php
+DEBUG 2026-07-25 16:48:13,496 gateway_service 22728 4256 GATEWAY_PAYLOAD | Params: {'apikey': 'DRAF****7890', 'senderid': 'CLGEXM', 'number': '9876543210', 'message': 'Dear Student, your exam schedule is published.', 'templateid': '1107160000000123456', 'unicode': '0', 'format': 'json'}
+INFO 2026-07-25 16:48:13,496 gateway_service 22728 4256 GATEWAY_RESP | Status: 500 | Execution Time: 0.47ms
+DEBUG 2026-07-25 16:48:13,496 gateway_service 22728 4256 GATEWAY_RAW_BODY | Internal Gateway Error
+WARNING 2026-07-25 16:48:13,496 gateway_service 22728 4256 GATEWAY_5XX_ERROR | Attempt 2 returned 500. Retrying...
+INFO 2026-07-25 16:48:13,497 gateway_service 22728 4256 GATEWAY_REQ | Attempt 3/3 | Method: POST | URL: https://text.draft4sms.com/vb/apikey.php
+DEBUG 2026-07-25 16:48:13,497 gateway_service 22728 4256 GATEWAY_PAYLOAD | Params: {'apikey': 'DRAF****7890', 'senderid': 'CLGEXM', 'number': '9876543210', 'message': 'Dear Student, your exam schedule is published.', 'templateid': '1107160000000123456', 'unicode': '0', 'format': 'json'}
+INFO 2026-07-25 16:48:13,497 gateway_service 22728 4256 GATEWAY_RESP | Status: 500 | Execution Time: 0.31ms
+DEBUG 2026-07-25 16:48:13,497 gateway_service 22728 4256 GATEWAY_RAW_BODY | Internal Gateway Error
+WARNING 2026-07-25 16:48:13,497 gateway_service 22728 4256 GATEWAY_5XX_ERROR | Attempt 3 returned 500. Retrying...
+INFO 2026-07-25 16:48:53,969 gateway_service 30368 30056 GATEWAY_REQ | Attempt 1/3 | Method: GET | URL: https://text.draft4sms.com/vb/http-credit.php
+DEBUG 2026-07-25 16:48:53,969 gateway_service 30368 30056 GATEWAY_PAYLOAD | Params: {'apikey': 'DEMO****_123', 'route_id': '1', 'format': 'json'}
+INFO 2026-07-25 16:48:56,007 gateway_service 30368 30056 GATEWAY_RESP | Status: 200 | Execution Time: 2038.02ms
+DEBUG 2026-07-25 16:48:56,008 gateway_service 30368 30056 GATEWAY_RAW_BODY | 
+
+{"status":"false","code":"001","description":"Invalid Api Key"}
+INFO 2026-07-25 17:16:13,410 gateway_service 17420 13368 GATEWAY_REQ | Attempt 1/3 | Method: GET | URL: https://text.draft4sms.com/vb/http-credit.php
+DEBUG 2026-07-25 17:16:13,411 gateway_service 17420 13368 GATEWAY_PAYLOAD | Params: {'apikey': 'DEMO****_123', 'route_id': '1', 'format': 'json'}
+INFO 2026-07-25 17:16:15,624 gateway_service 17420 13368 GATEWAY_RESP | Status: 200 | Execution Time: 2213.89ms
+DEBUG 2026-07-25 17:16:15,627 gateway_service 17420 13368 GATEWAY_RAW_BODY | 
+
+{"status":"false","code":"001","description":"Invalid Api Key"}
+INFO 2026-07-25 17:25:05,689 gateway_service 17420 1968 GATEWAY_REQ | Attempt 1/3 | Method: GET | URL: https://text.draft4sms.com/vb/http-credit.php
+DEBUG 2026-07-25 17:25:05,689 gateway_service 17420 1968 GATEWAY_PAYLOAD | Params: {'apikey': 'vHOV****UsHq', 'route_id': '1', 'format': 'json'}
+INFO 2026-07-25 17:25:07,738 gateway_service 17420 1968 GATEWAY_RESP | Status: 200 | Execution Time: 2049.3ms
+DEBUG 2026-07-25 17:25:07,740 gateway_service 17420 1968 GATEWAY_RAW_BODY | 
+
+{"status":"success","code":"003","balance":"104991"}
+INFO 2026-07-25 17:29:50,469 gateway_service 17420 1968 GATEWAY_REQ | Attempt 1/3 | Method: POST | URL: https://text.draft4sms.com/vb/apikey.php
+DEBUG 2026-07-25 17:29:50,472 gateway_service 17420 1968 GATEWAY_PAYLOAD | Params: {'apikey': 'vHOV****UsHq', 'senderid': 'JMCCOE', 'number': '9894152022', 'message': 'Prof. Qadir, your claim of Rs.100000 for Practical exam has been credited to your account. COE, JMC.', 'templateid': '1277178471813361703', 'unicode': '0', 'format': 'json'}
+INFO 2026-07-25 17:29:52,549 gateway_service 17420 1968 GATEWAY_RESP | Status: 200 | Execution Time: 2079.89ms
+DEBUG 2026-07-25 17:29:52,551 gateway_service 17420 1968 GATEWAY_RAW_BODY | {"status":"Success","code":"011","description":"Message submitted successfully","data":{"messageid":"NDAzNjE1MDU=","totnumber":1,"totalcredit":1}}
+INFO 2026-07-25 17:29:52,581 single_sms 17420 1968 SINGLE_SMS_DISPATCH | User: 'admin' | Mobile: '9894152022' | Template ID: '1277178471813361703' | Status: 'SENT' | GW Msg ID: 'GW_1784980792'
+INFO 2026-07-25 17:33:22,411 gateway_service 17420 1968 GATEWAY_REQ | Attempt 1/3 | Method: POST | URL: https://text.draft4sms.com/vb/apikey.php
+DEBUG 2026-07-25 17:33:22,412 gateway_service 17420 1968 GATEWAY_PAYLOAD | Params: {'apikey': 'vHOV****UsHq', 'senderid': 'JMCCOE', 'number': '9952498660', 'message': 'Prof. Jaffer, your claim of Rs.10000 for Practical has been credited to your account. COE, JMC.', 'templateid': '1277178471813361703', 'unicode': '0', 'format': 'json'}
+INFO 2026-07-25 17:33:24,174 gateway_service 17420 1968 GATEWAY_RESP | Status: 200 | Execution Time: 1763.02ms
+DEBUG 2026-07-25 17:33:24,177 gateway_service 17420 1968 GATEWAY_RAW_BODY | {"status":"Success","code":"011","description":"Message submitted successfully","data":{"messageid":"NDAzNjE2MTM=","totnumber":1,"totalcredit":1}}
+INFO 2026-07-25 17:33:24,205 single_sms 17420 1968 SINGLE_SMS_DISPATCH | User: 'admin' | Mobile: '9952498660' | Template ID: '1277178471813361703' | Status: 'SENT' | GW Msg ID: 'GW_1784981004'
+INFO 2026-07-26 20:24:20,826 gateway_service 19920 23556 GATEWAY_REQ | Attempt 1/3 | Method: GET | URL: https://text.draft4sms.com/vb/http-credit.php
+DEBUG 2026-07-26 20:24:20,828 gateway_service 19920 23556 GATEWAY_PAYLOAD | Params: {'apikey': 'DRAF****7890', 'route_id': '1', 'format': 'json'}
+INFO 2026-07-26 20:24:20,828 gateway_service 19920 23556 GATEWAY_RESP | Status: 200 | Execution Time: 2.56ms
+DEBUG 2026-07-26 20:24:20,829 gateway_service 19920 23556 GATEWAY_RAW_BODY | {"status":"Success","code":"011","balance":25000}
+INFO 2026-07-26 20:24:20,834 gateway_service 19920 23556 GATEWAY_REQ | Attempt 1/3 | Method: GET | URL: https://text.draft4sms.com/vb/http-dlr.php
+DEBUG 2026-07-26 20:24:20,835 gateway_service 19920 23556 GATEWAY_PAYLOAD | Params: {'apikey': 'DRAF****7890', 'msgid': '9876543210123', 'format': 'json'}
+INFO 2026-07-26 20:24:20,835 gateway_service 19920 23556 GATEWAY_RESP | Status: 200 | Execution Time: 1.31ms
+DEBUG 2026-07-26 20:24:20,836 gateway_service 19920 23556 GATEWAY_RAW_BODY | {"status":"DELIVERED","msgid":"9876543210123"}
+INFO 2026-07-26 20:24:20,842 gateway_service 19920 23556 GATEWAY_REQ | Attempt 1/3 | Method: POST | URL: https://text.draft4sms.com/vb/apikey.php
+DEBUG 2026-07-26 20:24:20,842 gateway_service 19920 23556 GATEWAY_PAYLOAD | Params: {'apikey': 'DRAF****7890', 'senderid': 'CLGEXM', 'number': '9876543210', 'message': 'Dear Student, your exam schedule is published.', 'templateid': '1107160000000123456', 'unicode': '0', 'format': 'json'}
+INFO 2026-07-26 20:24:20,843 gateway_service 19920 23556 GATEWAY_RESP | Status: 200 | Execution Time: 0.96ms
+DEBUG 2026-07-26 20:24:20,843 gateway_service 19920 23556 GATEWAY_RAW_BODY | {"status":"Failure","code":"001","description":"Invalid API Key"}
+INFO 2026-07-26 20:24:20,847 gateway_service 19920 23556 GATEWAY_REQ | Attempt 1/3 | Method: POST | URL: https://text.draft4sms.com/vb/apikey.php
+DEBUG 2026-07-26 20:24:20,847 gateway_service 19920 23556 GATEWAY_PAYLOAD | Params: {'apikey': 'DRAF****7890', 'senderid': 'CLGEXM', 'number': '9876543210', 'message': 'Dear Student, your exam schedule is published.', 'templateid': '1107160000000123456', 'unicode': '0', 'format': 'json'}
+INFO 2026-07-26 20:24:20,848 gateway_service 19920 23556 GATEWAY_RESP | Status: 200 | Execution Time: 0.79ms
+DEBUG 2026-07-26 20:24:20,848 gateway_service 19920 23556 GATEWAY_RAW_BODY | {"status":"Failure","code":"008","description":"Insufficient Credit"}
+INFO 2026-07-26 20:24:20,854 gateway_service 19920 23556 GATEWAY_REQ | Attempt 1/3 | Method: POST | URL: https://text.draft4sms.com/vb/apikey.php
+DEBUG 2026-07-26 20:24:20,854 gateway_service 19920 23556 GATEWAY_PAYLOAD | Params: {'apikey': 'DRAF****7890', 'senderid': 'CLGEXM', 'number': '9876543210', 'message': 'Dear Student, your exam schedule is published.', 'templateid': '1107160000000123456', 'unicode': '0', 'format': 'json'}
+INFO 2026-07-26 20:24:20,855 gateway_service 19920 23556 GATEWAY_RESP | Status: 401 | Execution Time: 1.18ms
+DEBUG 2026-07-26 20:24:20,855 gateway_service 19920 23556 GATEWAY_RAW_BODY | {"error":"Unauthorized access"}
+INFO 2026-07-26 20:24:20,860 gateway_service 19920 23556 GATEWAY_REQ | Attempt 1/3 | Method: POST | URL: https://text.draft4sms.com/vb/apikey.php
+DEBUG 2026-07-26 20:24:20,861 gateway_service 19920 23556 GATEWAY_PAYLOAD | Params: {'apikey': 'DRAF****7890', 'senderid': 'CLGEXM', 'number': '9876543210', 'message': 'Dear Student, your exam schedule is published.', 'templateid': '1107160000000123456', 'unicode': '0', 'format': 'json'}
+INFO 2026-07-26 20:24:20,861 gateway_service 19920 23556 GATEWAY_RESP | Status: 200 | Execution Time: 0.98ms
+DEBUG 2026-07-26 20:24:20,862 gateway_service 19920 23556 GATEWAY_RAW_BODY | {"status":"Success","code":"011","messageid":"9876543210123","totnumber":1,"totalcredit":1,"description":"Message Sent Successfully"}
+INFO 2026-07-26 20:24:20,867 gateway_service 19920 23556 GATEWAY_REQ | Attempt 1/3 | Method: POST | URL: https://text.draft4sms.com/vb/apikey.php
+DEBUG 2026-07-26 20:24:20,867 gateway_service 19920 23556 GATEWAY_PAYLOAD | Params: {'apikey': 'DRAF****7890', 'senderid': 'CLGEXM', 'number': '9876543210', 'message': 'Dear Student, your exam schedule is published.', 'templateid': '1107160000000123456', 'unicode': '0', 'format': 'json'}
+INFO 2026-07-26 20:24:20,868 gateway_service 19920 23556 GATEWAY_RESP | Status: 500 | Execution Time: 0.87ms
+DEBUG 2026-07-26 20:24:20,868 gateway_service 19920 23556 GATEWAY_RAW_BODY | Internal Gateway Error
+WARNING 2026-07-26 20:24:20,868 gateway_service 19920 23556 GATEWAY_5XX_ERROR | Attempt 1 returned 500. Retrying...
+INFO 2026-07-26 20:24:20,869 gateway_service 19920 23556 GATEWAY_REQ | Attempt 2/3 | Method: POST | URL: https://text.draft4sms.com/vb/apikey.php
+DEBUG 2026-07-26 20:24:20,869 gateway_service 19920 23556 GATEWAY_PAYLOAD | Params: {'apikey': 'DRAF****7890', 'senderid': 'CLGEXM', 'number': '9876543210', 'message': 'Dear Student, your exam schedule is published.', 'templateid': '1107160000000123456', 'unicode': '0', 'format': 'json'}
+INFO 2026-07-26 20:24:20,870 gateway_service 19920 23556 GATEWAY_RESP | Status: 500 | Execution Time: 0.64ms
+DEBUG 2026-07-26 20:24:20,870 gateway_service 19920 23556 GATEWAY_RAW_BODY | Internal Gateway Error
+WARNING 2026-07-26 20:24:20,870 gateway_service 19920 23556 GATEWAY_5XX_ERROR | Attempt 2 returned 500. Retrying...
+INFO 2026-07-26 20:24:20,870 gateway_service 19920 23556 GATEWAY_REQ | Attempt 3/3 | Method: POST | URL: https://text.draft4sms.com/vb/apikey.php
+DEBUG 2026-07-26 20:24:20,871 gateway_service 19920 23556 GATEWAY_PAYLOAD | Params: {'apikey': 'DRAF****7890', 'senderid': 'CLGEXM', 'number': '9876543210', 'message': 'Dear Student, your exam schedule is published.', 'templateid': '1107160000000123456', 'unicode': '0', 'format': 'json'}
+INFO 2026-07-26 20:24:20,872 gateway_service 19920 23556 GATEWAY_RESP | Status: 500 | Execution Time: 1.32ms
+DEBUG 2026-07-26 20:24:20,872 gateway_service 19920 23556 GATEWAY_RAW_BODY | Internal Gateway Error
+WARNING 2026-07-26 20:24:20,873 gateway_service 19920 23556 GATEWAY_5XX_ERROR | Attempt 3 returned 500. Retrying...
+INFO 2026-07-26 20:24:32,345 gateway_service 32748 32832 GATEWAY_REQ | Attempt 1/3 | Method: GET | URL: https://text.draft4sms.com/vb/http-credit.php
+DEBUG 2026-07-26 20:24:32,345 gateway_service 32748 32832 GATEWAY_PAYLOAD | Params: {'apikey': 'DRAF****7890', 'route_id': '1', 'format': 'json'}
+INFO 2026-07-26 20:24:32,346 gateway_service 32748 32832 GATEWAY_RESP | Status: 200 | Execution Time: 0.75ms
+DEBUG 2026-07-26 20:24:32,346 gateway_service 32748 32832 GATEWAY_RAW_BODY | {"status":"Success","code":"011","balance":25000}
+INFO 2026-07-26 20:24:32,349 gateway_service 32748 32832 GATEWAY_REQ | Attempt 1/3 | Method: GET | URL: https://text.draft4sms.com/vb/http-dlr.php
+DEBUG 2026-07-26 20:24:32,349 gateway_service 32748 32832 GATEWAY_PAYLOAD | Params: {'apikey': 'DRAF****7890', 'msgid': '9876543210123', 'format': 'json'}
+INFO 2026-07-26 20:24:32,349 gateway_service 32748 32832 GATEWAY_RESP | Status: 200 | Execution Time: 0.59ms
+DEBUG 2026-07-26 20:24:32,350 gateway_service 32748 32832 GATEWAY_RAW_BODY | {"status":"DELIVERED","msgid":"9876543210123"}
+INFO 2026-07-26 20:24:32,352 gateway_service 32748 32832 GATEWAY_REQ | Attempt 1/3 | Method: POST | URL: https://text.draft4sms.com/vb/apikey.php
+DEBUG 2026-07-26 20:24:32,353 gateway_service 32748 32832 GATEWAY_PAYLOAD | Params: {'apikey': 'DRAF****7890', 'senderid': 'CLGEXM', 'number': '9876543210', 'message': 'Dear Student, your exam schedule is published.', 'templateid': '1107160000000123456', 'unicode': '0', 'format': 'json'}
+INFO 2026-07-26 20:24:32,353 gateway_service 32748 32832 GATEWAY_RESP | Status: 200 | Execution Time: 0.47ms
+DEBUG 2026-07-26 20:24:32,353 gateway_service 32748 32832 GATEWAY_RAW_BODY | {"status":"Failure","code":"001","description":"Invalid API Key"}
+INFO 2026-07-26 20:24:32,356 gateway_service 32748 32832 GATEWAY_REQ | Attempt 1/3 | Method: POST | URL: https://text.draft4sms.com/vb/apikey.php
+DEBUG 2026-07-26 20:24:32,356 gateway_service 32748 32832 GATEWAY_PAYLOAD | Params: {'apikey': 'DRAF****7890', 'senderid': 'CLGEXM', 'number': '9876543210', 'message': 'Dear Student, your exam schedule is published.', 'templateid': '1107160000000123456', 'unicode': '0', 'format': 'json'}
+INFO 2026-07-26 20:24:32,356 gateway_service 32748 32832 GATEWAY_RESP | Status: 200 | Execution Time: 0.34ms
+DEBUG 2026-07-26 20:24:32,356 gateway_service 32748 32832 GATEWAY_RAW_BODY | {"status":"Failure","code":"008","description":"Insufficient Credit"}
+INFO 2026-07-26 20:24:32,358 gateway_service 32748 32832 GATEWAY_REQ | Attempt 1/3 | Method: POST | URL: https://text.draft4sms.com/vb/apikey.php
+DEBUG 2026-07-26 20:24:32,358 gateway_service 32748 32832 GATEWAY_PAYLOAD | Params: {'apikey': 'DRAF****7890', 'senderid': 'CLGEXM', 'number': '9876543210', 'message': 'Dear Student, your exam schedule is published.', 'templateid': '1107160000000123456', 'unicode': '0', 'format': 'json'}
+INFO 2026-07-26 20:24:32,359 gateway_service 32748 32832 GATEWAY_RESP | Status: 401 | Execution Time: 0.63ms
+DEBUG 2026-07-26 20:24:32,359 gateway_service 32748 32832 GATEWAY_RAW_BODY | {"error":"Unauthorized access"}
+INFO 2026-07-26 20:24:32,362 gateway_service 32748 32832 GATEWAY_REQ | Attempt 1/3 | Method: POST | URL: https://text.draft4sms.com/vb/apikey.php
+DEBUG 2026-07-26 20:24:32,362 gateway_service 32748 32832 GATEWAY_PAYLOAD | Params: {'apikey': 'DRAF****7890', 'senderid': 'CLGEXM', 'number': '9876543210', 'message': 'Dear Student, your exam schedule is published.', 'templateid': '1107160000000123456', 'unicode': '0', 'format': 'json'}
+INFO 2026-07-26 20:24:32,362 gateway_service 32748 32832 GATEWAY_RESP | Status: 200 | Execution Time: 0.35ms
+DEBUG 2026-07-26 20:24:32,362 gateway_service 32748 32832 GATEWAY_RAW_BODY | {"status":"Success","code":"011","messageid":"9876543210123","totnumber":1,"totalcredit":1,"description":"Message Sent Successfully"}
+INFO 2026-07-26 20:24:32,365 gateway_service 32748 32832 GATEWAY_REQ | Attempt 1/3 | Method: POST | URL: https://text.draft4sms.com/vb/apikey.php
+DEBUG 2026-07-26 20:24:32,365 gateway_service 32748 32832 GATEWAY_PAYLOAD | Params: {'apikey': 'DRAF****7890', 'senderid': 'CLGEXM', 'number': '9876543210', 'message': 'Dear Student, your exam schedule is published.', 'templateid': '1107160000000123456', 'unicode': '0', 'format': 'json'}
+INFO 2026-07-26 20:24:32,366 gateway_service 32748 32832 GATEWAY_RESP | Status: 500 | Execution Time: 0.39ms
+DEBUG 2026-07-26 20:24:32,366 gateway_service 32748 32832 GATEWAY_RAW_BODY | Internal Gateway Error
+WARNING 2026-07-26 20:24:32,366 gateway_service 32748 32832 GATEWAY_5XX_ERROR | Attempt 1 returned 500. Retrying...
+INFO 2026-07-26 20:24:32,366 gateway_service 32748 32832 GATEWAY_REQ | Attempt 2/3 | Method: POST | URL: https://text.draft4sms.com/vb/apikey.php
+DEBUG 2026-07-26 20:24:32,366 gateway_service 32748 32832 GATEWAY_PAYLOAD | Params: {'apikey': 'DRAF****7890', 'senderid': 'CLGEXM', 'number': '9876543210', 'message': 'Dear Student, your exam schedule is published.', 'templateid': '1107160000000123456', 'unicode': '0', 'format': 'json'}
+INFO 2026-07-26 20:24:32,367 gateway_service 32748 32832 GATEWAY_RESP | Status: 500 | Execution Time: 0.37ms
+DEBUG 2026-07-26 20:24:32,367 gateway_service 32748 32832 GATEWAY_RAW_BODY | Internal Gateway Error
+WARNING 2026-07-26 20:24:32,367 gateway_service 32748 32832 GATEWAY_5XX_ERROR | Attempt 2 returned 500. Retrying...
+INFO 2026-07-26 20:24:32,367 gateway_service 32748 32832 GATEWAY_REQ | Attempt 3/3 | Method: POST | URL: https://text.draft4sms.com/vb/apikey.php
+DEBUG 2026-07-26 20:24:32,367 gateway_service 32748 32832 GATEWAY_PAYLOAD | Params: {'apikey': 'DRAF****7890', 'senderid': 'CLGEXM', 'number': '9876543210', 'message': 'Dear Student, your exam schedule is published.', 'templateid': '1107160000000123456', 'unicode': '0', 'format': 'json'}
+INFO 2026-07-26 20:24:32,367 gateway_service 32748 32832 GATEWAY_RESP | Status: 500 | Execution Time: 0.22ms
+DEBUG 2026-07-26 20:24:32,367 gateway_service 32748 32832 GATEWAY_RAW_BODY | Internal Gateway Error
+WARNING 2026-07-26 20:24:32,367 gateway_service 32748 32832 GATEWAY_5XX_ERROR | Attempt 3 returned 500. Retrying...
+INFO 2026-07-26 20:24:53,058 bulk_sms 31572 23836 BULK_DISPATCH_START | Batch #1 | Initiator: 'staff_one' | Recipients: 3 | Template: 'Meeting Notice'
+INFO 2026-07-26 20:24:53,060 gateway_service 31572 23836 GATEWAY_REQ | Attempt 1/3 | Method: POST | URL: https://text.draft4sms.com/vb/apikey.php
+DEBUG 2026-07-26 20:24:53,061 gateway_service 31572 23836 GATEWAY_PAYLOAD | Params: {'apikey': 'TEST****_999', 'senderid': 'CLGEXM', 'number': '9876543210', 'message': 'Dear Faculty, staff meeting is scheduled for Tuesday 2 PM.', 'templateid': '1107160000000123456', 'unicode': '0', 'format': 'json'}
+INFO 2026-07-26 20:24:53,061 gateway_service 31572 23836 GATEWAY_RESP | Status: 200 | Execution Time: 0.4ms
+DEBUG 2026-07-26 20:24:53,061 gateway_service 31572 23836 GATEWAY_RAW_BODY | {"status":"Success","code":"011","messageid":"GW_BATCH_999"}
+INFO 2026-07-26 20:24:53,062 single_sms 31572 23836 SINGLE_SMS_DISPATCH | User: 'staff_one' | Mobile: '9876543210' | Template ID: '1107160000000123456' | Status: 'SENT' | GW Msg ID: 'GW_BATCH_999'
+WARNING 2026-07-26 20:24:53,063 bulk_sms 31572 23836 BULK_SMS_SKIP | Staff 'staff_three' missing phone number.
+INFO 2026-07-26 20:24:53,064 gateway_service 31572 23836 GATEWAY_REQ | Attempt 1/3 | Method: POST | URL: https://text.draft4sms.com/vb/apikey.php
+DEBUG 2026-07-26 20:24:53,064 gateway_service 31572 23836 GATEWAY_PAYLOAD | Params: {'apikey': 'TEST****_999', 'senderid': 'CLGEXM', 'number': '9876543211', 'message': 'Dear Faculty, staff meeting is scheduled for Tuesday 2 PM.', 'templateid': '1107160000000123456', 'unicode': '0', 'format': 'json'}
+INFO 2026-07-26 20:24:53,064 gateway_service 31572 23836 GATEWAY_RESP | Status: 200 | Execution Time: 0.25ms
+DEBUG 2026-07-26 20:24:53,064 gateway_service 31572 23836 GATEWAY_RAW_BODY | {"status":"Success","code":"011","messageid":"GW_BATCH_999"}
+INFO 2026-07-26 20:24:53,065 single_sms 31572 23836 SINGLE_SMS_DISPATCH | User: 'staff_one' | Mobile: '9876543211' | Template ID: '1107160000000123456' | Status: 'SENT' | GW Msg ID: 'GW_BATCH_999'
+INFO 2026-07-26 20:24:53,067 bulk_sms 31572 23836 BULK_DISPATCH_COMPLETE | Batch #1 | Sent: 2/3 | Failed: 1 | Time: 0.01s | Credits: 2
+INFO 2026-07-26 20:24:53,073 bulk_sms 31572 23836 BULK_DISPATCH_START | Batch #1 | Initiator: 'staff_one' | Recipients: 2 | Template: 'Meeting Notice'
+INFO 2026-07-26 20:24:53,075 gateway_service 31572 23836 GATEWAY_REQ | Attempt 1/3 | Method: POST | URL: https://text.draft4sms.com/vb/apikey.php
+DEBUG 2026-07-26 20:24:53,075 gateway_service 31572 23836 GATEWAY_PAYLOAD | Params: {'apikey': 'TEST****_999', 'senderid': 'CLGEXM', 'number': '9876543210', 'message': 'Dear Professor, staff meeting is scheduled for Monday 10 AM.', 'templateid': '1107160000000123456', 'unicode': '0', 'format': 'json'}
+INFO 2026-07-26 20:24:53,075 gateway_service 31572 23836 GATEWAY_RESP | Status: 200 | Execution Time: 0.37ms
+DEBUG 2026-07-26 20:24:53,075 gateway_service 31572 23836 GATEWAY_RAW_BODY | {"status":"Success","code":"011","messageid":"GW_BATCH_123"}
+INFO 2026-07-26 20:24:53,076 single_sms 31572 23836 SINGLE_SMS_DISPATCH | User: 'staff_one' | Mobile: '9876543210' | Template ID: '1107160000000123456' | Status: 'SENT' | GW Msg ID: 'GW_BATCH_123'
+INFO 2026-07-26 20:24:53,077 gateway_service 31572 23836 GATEWAY_REQ | Attempt 1/3 | Method: POST | URL: https://text.draft4sms.com/vb/apikey.php
+DEBUG 2026-07-26 20:24:53,078 gateway_service 31572 23836 GATEWAY_PAYLOAD | Params: {'apikey': 'TEST****_999', 'senderid': 'CLGEXM', 'number': '9876543211', 'message': 'Dear Professor, staff meeting is scheduled for Monday 10 AM.', 'templateid': '1107160000000123456', 'unicode': '0', 'format': 'json'}
+INFO 2026-07-26 20:24:53,078 gateway_service 31572 23836 GATEWAY_RESP | Status: 200 | Execution Time: 0.52ms
+DEBUG 2026-07-26 20:24:53,078 gateway_service 31572 23836 GATEWAY_RAW_BODY | {"status":"Success","code":"011","messageid":"GW_BATCH_123"}
+INFO 2026-07-26 20:24:53,079 single_sms 31572 23836 SINGLE_SMS_DISPATCH | User: 'staff_one' | Mobile: '9876543211' | Template ID: '1107160000000123456' | Status: 'SENT' | GW Msg ID: 'GW_BATCH_123'
+INFO 2026-07-26 20:24:53,080 bulk_sms 31572 23836 BULK_DISPATCH_COMPLETE | Batch #1 | Sent: 2/2 | Failed: 0 | Time: 0.01s | Credits: 2
+INFO 2026-07-26 20:24:53,086 gateway_service 31572 23836 GATEWAY_REQ | Attempt 1/3 | Method: GET | URL: https://text.draft4sms.com/vb/http-credit.php
+DEBUG 2026-07-26 20:24:53,087 gateway_service 31572 23836 GATEWAY_PAYLOAD | Params: {'apikey': 'DRAF****7890', 'route_id': '1', 'format': 'json'}
+INFO 2026-07-26 20:24:53,087 gateway_service 31572 23836 GATEWAY_RESP | Status: 200 | Execution Time: 0.38ms
+DEBUG 2026-07-26 20:24:53,087 gateway_service 31572 23836 GATEWAY_RAW_BODY | {"status":"Success","code":"011","balance":25000}
+INFO 2026-07-26 20:24:53,089 gateway_service 31572 23836 GATEWAY_REQ | Attempt 1/3 | Method: GET | URL: https://text.draft4sms.com/vb/http-dlr.php
+DEBUG 2026-07-26 20:24:53,089 gateway_service 31572 23836 GATEWAY_PAYLOAD | Params: {'apikey': 'DRAF****7890', 'msgid': '9876543210123', 'format': 'json'}
+INFO 2026-07-26 20:24:53,089 gateway_service 31572 23836 GATEWAY_RESP | Status: 200 | Execution Time: 0.29ms
+DEBUG 2026-07-26 20:24:53,089 gateway_service 31572 23836 GATEWAY_RAW_BODY | {"status":"DELIVERED","msgid":"9876543210123"}
+INFO 2026-07-26 20:24:53,091 gateway_service 31572 23836 GATEWAY_REQ | Attempt 1/3 | Method: POST | URL: https://text.draft4sms.com/vb/apikey.php
+DEBUG 2026-07-26 20:24:53,091 gateway_service 31572 23836 GATEWAY_PAYLOAD | Params: {'apikey': 'DRAF****7890', 'senderid': 'CLGEXM', 'number': '9876543210', 'message': 'Dear Student, your exam schedule is published.', 'templateid': '1107160000000123456', 'unicode': '0', 'format': 'json'}
+INFO 2026-07-26 20:24:53,091 gateway_service 31572 23836 GATEWAY_RESP | Status: 200 | Execution Time: 0.27ms
+DEBUG 2026-07-26 20:24:53,091 gateway_service 31572 23836 GATEWAY_RAW_BODY | {"status":"Failure","code":"001","description":"Invalid API Key"}
+INFO 2026-07-26 20:24:53,094 gateway_service 31572 23836 GATEWAY_REQ | Attempt 1/3 | Method: POST | URL: https://text.draft4sms.com/vb/apikey.php
+DEBUG 2026-07-26 20:24:53,094 gateway_service 31572 23836 GATEWAY_PAYLOAD | Params: {'apikey': 'DRAF****7890', 'senderid': 'CLGEXM', 'number': '9876543210', 'message': 'Dear Student, your exam schedule is published.', 'templateid': '1107160000000123456', 'unicode': '0', 'format': 'json'}
+INFO 2026-07-26 20:24:53,094 gateway_service 31572 23836 GATEWAY_RESP | Status: 200 | Execution Time: 0.55ms
+DEBUG 2026-07-26 20:24:53,094 gateway_service 31572 23836 GATEWAY_RAW_BODY | {"status":"Failure","code":"008","description":"Insufficient Credit"}
+INFO 2026-07-26 20:24:53,096 gateway_service 31572 23836 GATEWAY_REQ | Attempt 1/3 | Method: POST | URL: https://text.draft4sms.com/vb/apikey.php
+DEBUG 2026-07-26 20:24:53,096 gateway_service 31572 23836 GATEWAY_PAYLOAD | Params: {'apikey': 'DRAF****7890', 'senderid': 'CLGEXM', 'number': '9876543210', 'message': 'Dear Student, your exam schedule is published.', 'templateid': '1107160000000123456', 'unicode': '0', 'format': 'json'}
+INFO 2026-07-26 20:24:53,097 gateway_service 31572 23836 GATEWAY_RESP | Status: 401 | Execution Time: 0.27ms
+DEBUG 2026-07-26 20:24:53,097 gateway_service 31572 23836 GATEWAY_RAW_BODY | {"error":"Unauthorized access"}
+INFO 2026-07-26 20:24:53,098 gateway_service 31572 23836 GATEWAY_REQ | Attempt 1/3 | Method: POST | URL: https://text.draft4sms.com/vb/apikey.php
+DEBUG 2026-07-26 20:24:53,099 gateway_service 31572 23836 GATEWAY_PAYLOAD | Params: {'apikey': 'DRAF****7890', 'senderid': 'CLGEXM', 'number': '9876543210', 'message': 'Dear Student, your exam schedule is published.', 'templateid': '1107160000000123456', 'unicode': '0', 'format': 'json'}
+INFO 2026-07-26 20:24:53,099 gateway_service 31572 23836 GATEWAY_RESP | Status: 200 | Execution Time: 0.3ms
+DEBUG 2026-07-26 20:24:53,099 gateway_service 31572 23836 GATEWAY_RAW_BODY | {"status":"Success","code":"011","messageid":"9876543210123","totnumber":1,"totalcredit":1,"description":"Message Sent Successfully"}
+INFO 2026-07-26 20:24:53,101 gateway_service 31572 23836 GATEWAY_REQ | Attempt 1/3 | Method: POST | URL: https://text.draft4sms.com/vb/apikey.php
+DEBUG 2026-07-26 20:24:53,101 gateway_service 31572 23836 GATEWAY_PAYLOAD | Params: {'apikey': 'DRAF****7890', 'senderid': 'CLGEXM', 'number': '9876543210', 'message': 'Dear Student, your exam schedule is published.', 'templateid': '1107160000000123456', 'unicode': '0', 'format': 'json'}
+INFO 2026-07-26 20:24:53,101 gateway_service 31572 23836 GATEWAY_RESP | Status: 500 | Execution Time: 0.3ms
+DEBUG 2026-07-26 20:24:53,101 gateway_service 31572 23836 GATEWAY_RAW_BODY | Internal Gateway Error
+WARNING 2026-07-26 20:24:53,101 gateway_service 31572 23836 GATEWAY_5XX_ERROR | Attempt 1 returned 500. Retrying...
+INFO 2026-07-26 20:24:53,102 gateway_service 31572 23836 GATEWAY_REQ | Attempt 2/3 | Method: POST | URL: https://text.draft4sms.com/vb/apikey.php
+DEBUG 2026-07-26 20:24:53,102 gateway_service 31572 23836 GATEWAY_PAYLOAD | Params: {'apikey': 'DRAF****7890', 'senderid': 'CLGEXM', 'number': '9876543210', 'message': 'Dear Student, your exam schedule is published.', 'templateid': '1107160000000123456', 'unicode': '0', 'format': 'json'}
+INFO 2026-07-26 20:24:53,102 gateway_service 31572 23836 GATEWAY_RESP | Status: 500 | Execution Time: 0.22ms
+DEBUG 2026-07-26 20:24:53,102 gateway_service 31572 23836 GATEWAY_RAW_BODY | Internal Gateway Error
+WARNING 2026-07-26 20:24:53,102 gateway_service 31572 23836 GATEWAY_5XX_ERROR | Attempt 2 returned 500. Retrying...
+INFO 2026-07-26 20:24:53,102 gateway_service 31572 23836 GATEWAY_REQ | Attempt 3/3 | Method: POST | URL: https://text.draft4sms.com/vb/apikey.php
+DEBUG 2026-07-26 20:24:53,102 gateway_service 31572 23836 GATEWAY_PAYLOAD | Params: {'apikey': 'DRAF****7890', 'senderid': 'CLGEXM', 'number': '9876543210', 'message': 'Dear Student, your exam schedule is published.', 'templateid': '1107160000000123456', 'unicode': '0', 'format': 'json'}
+INFO 2026-07-26 20:24:53,102 gateway_service 31572 23836 GATEWAY_RESP | Status: 500 | Execution Time: 0.18ms
+DEBUG 2026-07-26 20:24:53,102 gateway_service 31572 23836 GATEWAY_RAW_BODY | Internal Gateway Error
+WARNING 2026-07-26 20:24:53,102 gateway_service 31572 23836 GATEWAY_5XX_ERROR | Attempt 3 returned 500. Retrying...
+INFO 2026-07-26 20:39:24,695 bulk_sms 33632 27396 BULK_DISPATCH_START | Batch #1 | Initiator: 'staff_one' | Recipients: 3 | Template: 'Meeting Notice'
+INFO 2026-07-26 20:39:24,697 gateway_service 33632 27396 GATEWAY_REQ | Attempt 1/3 | Method: POST | URL: https://text.draft4sms.com/vb/apikey.php
+DEBUG 2026-07-26 20:39:24,697 gateway_service 33632 27396 GATEWAY_PAYLOAD | Params: {'apikey': 'TEST****_999', 'senderid': 'CLGEXM', 'number': '9876543210', 'message': 'Dear Faculty, staff meeting is scheduled for Tuesday 2 PM.', 'templateid': '1107160000000123456', 'unicode': '0', 'format': 'json'}
+INFO 2026-07-26 20:39:24,697 gateway_service 33632 27396 GATEWAY_RESP | Status: 200 | Execution Time: 0.37ms
+DEBUG 2026-07-26 20:39:24,697 gateway_service 33632 27396 GATEWAY_RAW_BODY | {"status":"Success","code":"011","messageid":"GW_BATCH_999"}
+INFO 2026-07-26 20:39:24,698 single_sms 33632 27396 SINGLE_SMS_DISPATCH | User: 'staff_one' | Mobile: '9876543210' | Template ID: '1107160000000123456' | Status: 'SENT' | GW Msg ID: 'GW_BATCH_999'
+WARNING 2026-07-26 20:39:24,700 bulk_sms 33632 27396 BULK_SMS_SKIP | Staff 'staff_three' missing phone number.
+INFO 2026-07-26 20:39:24,701 gateway_service 33632 27396 GATEWAY_REQ | Attempt 1/3 | Method: POST | URL: https://text.draft4sms.com/vb/apikey.php
+DEBUG 2026-07-26 20:39:24,701 gateway_service 33632 27396 GATEWAY_PAYLOAD | Params: {'apikey': 'TEST****_999', 'senderid': 'CLGEXM', 'number': '9876543211', 'message': 'Dear Faculty, staff meeting is scheduled for Tuesday 2 PM.', 'templateid': '1107160000000123456', 'unicode': '0', 'format': 'json'}
+INFO 2026-07-26 20:39:24,701 gateway_service 33632 27396 GATEWAY_RESP | Status: 200 | Execution Time: 0.22ms
+DEBUG 2026-07-26 20:39:24,701 gateway_service 33632 27396 GATEWAY_RAW_BODY | {"status":"Success","code":"011","messageid":"GW_BATCH_999"}
+INFO 2026-07-26 20:39:24,701 single_sms 33632 27396 SINGLE_SMS_DISPATCH | User: 'staff_one' | Mobile: '9876543211' | Template ID: '1107160000000123456' | Status: 'SENT' | GW Msg ID: 'GW_BATCH_999'
+INFO 2026-07-26 20:39:24,702 bulk_sms 33632 27396 BULK_DISPATCH_COMPLETE | Batch #1 | Sent: 2/3 | Failed: 1 | Time: 0.01s | Credits: 2
+INFO 2026-07-26 20:39:24,707 bulk_sms 33632 27396 BULK_DISPATCH_START | Batch #1 | Initiator: 'staff_one' | Recipients: 2 | Template: 'Meeting Notice'
+INFO 2026-07-26 20:39:24,708 gateway_service 33632 27396 GATEWAY_REQ | Attempt 1/3 | Method: POST | URL: https://text.draft4sms.com/vb/apikey.php
+DEBUG 2026-07-26 20:39:24,708 gateway_service 33632 27396 GATEWAY_PAYLOAD | Params: {'apikey': 'TEST****_999', 'senderid': 'CLGEXM', 'number': '9876543210', 'message': 'Dear Professor, staff meeting is scheduled for Monday 10 AM.', 'templateid': '1107160000000123456', 'unicode': '0', 'format': 'json'}
+INFO 2026-07-26 20:39:24,708 gateway_service 33632 27396 GATEWAY_RESP | Status: 200 | Execution Time: 0.21ms
+DEBUG 2026-07-26 20:39:24,708 gateway_service 33632 27396 GATEWAY_RAW_BODY | {"status":"Success","code":"011","messageid":"GW_BATCH_123"}
+INFO 2026-07-26 20:39:24,709 single_sms 33632 27396 SINGLE_SMS_DISPATCH | User: 'staff_one' | Mobile: '9876543210' | Template ID: '1107160000000123456' | Status: 'SENT' | GW Msg ID: 'GW_BATCH_123'
+INFO 2026-07-26 20:39:24,710 gateway_service 33632 27396 GATEWAY_REQ | Attempt 1/3 | Method: POST | URL: https://text.draft4sms.com/vb/apikey.php
+DEBUG 2026-07-26 20:39:24,710 gateway_service 33632 27396 GATEWAY_PAYLOAD | Params: {'apikey': 'TEST****_999', 'senderid': 'CLGEXM', 'number': '9876543211', 'message': 'Dear Professor, staff meeting is scheduled for Monday 10 AM.', 'templateid': '1107160000000123456', 'unicode': '0', 'format': 'json'}
+INFO 2026-07-26 20:39:24,710 gateway_service 33632 27396 GATEWAY_RESP | Status: 200 | Execution Time: 0.2ms
+DEBUG 2026-07-26 20:39:24,710 gateway_service 33632 27396 GATEWAY_RAW_BODY | {"status":"Success","code":"011","messageid":"GW_BATCH_123"}
+INFO 2026-07-26 20:39:24,711 single_sms 33632 27396 SINGLE_SMS_DISPATCH | User: 'staff_one' | Mobile: '9876543211' | Template ID: '1107160000000123456' | Status: 'SENT' | GW Msg ID: 'GW_BATCH_123'
+INFO 2026-07-26 20:39:24,711 bulk_sms 33632 27396 BULK_DISPATCH_COMPLETE | Batch #1 | Sent: 2/2 | Failed: 0 | Time: 0.01s | Credits: 2
+INFO 2026-07-26 20:39:24,716 gateway_service 33632 27396 GATEWAY_REQ | Attempt 1/3 | Method: GET | URL: https://text.draft4sms.com/vb/http-credit.php
+DEBUG 2026-07-26 20:39:24,717 gateway_service 33632 27396 GATEWAY_PAYLOAD | Params: {'apikey': 'DRAF****7890', 'route_id': '1', 'format': 'json'}
+INFO 2026-07-26 20:39:24,717 gateway_service 33632 27396 GATEWAY_RESP | Status: 200 | Execution Time: 0.38ms
+DEBUG 2026-07-26 20:39:24,717 gateway_service 33632 27396 GATEWAY_RAW_BODY | {"status":"Success","code":"011","balance":25000}
+INFO 2026-07-26 20:39:24,718 gateway_service 33632 27396 GATEWAY_REQ | Attempt 1/3 | Method: GET | URL: https://text.draft4sms.com/vb/http-dlr.php
+DEBUG 2026-07-26 20:39:24,719 gateway_service 33632 27396 GATEWAY_PAYLOAD | Params: {'apikey': 'DRAF****7890', 'msgid': '9876543210123', 'format': 'json'}
+INFO 2026-07-26 20:39:24,719 gateway_service 33632 27396 GATEWAY_RESP | Status: 200 | Execution Time: 0.26ms
+DEBUG 2026-07-26 20:39:24,719 gateway_service 33632 27396 GATEWAY_RAW_BODY | {"status":"DELIVERED","msgid":"9876543210123"}
+INFO 2026-07-26 20:39:24,720 gateway_service 33632 27396 GATEWAY_REQ | Attempt 1/3 | Method: POST | URL: https://text.draft4sms.com/vb/apikey.php
+DEBUG 2026-07-26 20:39:24,721 gateway_service 33632 27396 GATEWAY_PAYLOAD | Params: {'apikey': 'DRAF****7890', 'senderid': 'CLGEXM', 'number': '9876543210', 'message': 'Dear Student, your exam schedule is published.', 'templateid': '1107160000000123456', 'unicode': '0', 'format': 'json'}
+INFO 2026-07-26 20:39:24,721 gateway_service 33632 27396 GATEWAY_RESP | Status: 200 | Execution Time: 0.26ms
+DEBUG 2026-07-26 20:39:24,721 gateway_service 33632 27396 GATEWAY_RAW_BODY | {"status":"Failure","code":"001","description":"Invalid API Key"}
+INFO 2026-07-26 20:39:24,722 gateway_service 33632 27396 GATEWAY_REQ | Attempt 1/3 | Method: POST | URL: https://text.draft4sms.com/vb/apikey.php
+DEBUG 2026-07-26 20:39:24,722 gateway_service 33632 27396 GATEWAY_PAYLOAD | Params: {'apikey': 'DRAF****7890', 'senderid': 'CLGEXM', 'number': '9876543210', 'message': 'Dear Student, your exam schedule is published.', 'templateid': '1107160000000123456', 'unicode': '0', 'format': 'json'}
+INFO 2026-07-26 20:39:24,722 gateway_service 33632 27396 GATEWAY_RESP | Status: 200 | Execution Time: 0.25ms
+DEBUG 2026-07-26 20:39:24,722 gateway_service 33632 27396 GATEWAY_RAW_BODY | {"status":"Failure","code":"008","description":"Insufficient Credit"}
+INFO 2026-07-26 20:39:24,724 gateway_service 33632 27396 GATEWAY_REQ | Attempt 1/3 | Method: POST | URL: https://text.draft4sms.com/vb/apikey.php
+DEBUG 2026-07-26 20:39:24,724 gateway_service 33632 27396 GATEWAY_PAYLOAD | Params: {'apikey': 'DRAF****7890', 'senderid': 'CLGEXM', 'number': '9876543210', 'message': 'Dear Student, your exam schedule is published.', 'templateid': '1107160000000123456', 'unicode': '0', 'format': 'json'}
+INFO 2026-07-26 20:39:24,724 gateway_service 33632 27396 GATEWAY_RESP | Status: 401 | Execution Time: 0.32ms
+DEBUG 2026-07-26 20:39:24,724 gateway_service 33632 27396 GATEWAY_RAW_BODY | {"error":"Unauthorized access"}
+INFO 2026-07-26 20:39:24,726 gateway_service 33632 27396 GATEWAY_REQ | Attempt 1/3 | Method: POST | URL: https://text.draft4sms.com/vb/apikey.php
+DEBUG 2026-07-26 20:39:24,726 gateway_service 33632 27396 GATEWAY_PAYLOAD | Params: {'apikey': 'DRAF****7890', 'senderid': 'CLGEXM', 'number': '9876543210', 'message': 'Dear Student, your exam schedule is published.', 'templateid': '1107160000000123456', 'unicode': '0', 'format': 'json'}
+INFO 2026-07-26 20:39:24,726 gateway_service 33632 27396 GATEWAY_RESP | Status: 200 | Execution Time: 0.23ms
+DEBUG 2026-07-26 20:39:24,726 gateway_service 33632 27396 GATEWAY_RAW_BODY | {"status":"Success","code":"011","messageid":"9876543210123","totnumber":1,"totalcredit":1,"description":"Message Sent Successfully"}
+INFO 2026-07-26 20:39:24,727 gateway_service 33632 27396 GATEWAY_REQ | Attempt 1/3 | Method: POST | URL: https://text.draft4sms.com/vb/apikey.php
+DEBUG 2026-07-26 20:39:24,727 gateway_service 33632 27396 GATEWAY_PAYLOAD | Params: {'apikey': 'DRAF****7890', 'senderid': 'CLGEXM', 'number': '9876543210', 'message': 'Dear Student, your exam schedule is published.', 'templateid': '1107160000000123456', 'unicode': '0', 'format': 'json'}
+INFO 2026-07-26 20:39:24,728 gateway_service 33632 27396 GATEWAY_RESP | Status: 500 | Execution Time: 0.22ms
+DEBUG 2026-07-26 20:39:24,728 gateway_service 33632 27396 GATEWAY_RAW_BODY | Internal Gateway Error
+WARNING 2026-07-26 20:39:24,728 gateway_service 33632 27396 GATEWAY_5XX_ERROR | Attempt 1 returned 500. Retrying...
+INFO 2026-07-26 20:39:24,728 gateway_service 33632 27396 GATEWAY_REQ | Attempt 2/3 | Method: POST | URL: https://text.draft4sms.com/vb/apikey.php
+DEBUG 2026-07-26 20:39:24,728 gateway_service 33632 27396 GATEWAY_PAYLOAD | Params: {'apikey': 'DRAF****7890', 'senderid': 'CLGEXM', 'number': '9876543210', 'message': 'Dear Student, your exam schedule is published.', 'templateid': '1107160000000123456', 'unicode': '0', 'format': 'json'}
+INFO 2026-07-26 20:39:24,728 gateway_service 33632 27396 GATEWAY_RESP | Status: 500 | Execution Time: 0.19ms
+DEBUG 2026-07-26 20:39:24,728 gateway_service 33632 27396 GATEWAY_RAW_BODY | Internal Gateway Error
+WARNING 2026-07-26 20:39:24,728 gateway_service 33632 27396 GATEWAY_5XX_ERROR | Attempt 2 returned 500. Retrying...
+INFO 2026-07-26 20:39:24,728 gateway_service 33632 27396 GATEWAY_REQ | Attempt 3/3 | Method: POST | URL: https://text.draft4sms.com/vb/apikey.php
+DEBUG 2026-07-26 20:39:24,728 gateway_service 33632 27396 GATEWAY_PAYLOAD | Params: {'apikey': 'DRAF****7890', 'senderid': 'CLGEXM', 'number': '9876543210', 'message': 'Dear Student, your exam schedule is published.', 'templateid': '1107160000000123456', 'unicode': '0', 'format': 'json'}
+INFO 2026-07-26 20:39:24,728 gateway_service 33632 27396 GATEWAY_RESP | Status: 500 | Execution Time: 0.12ms
+DEBUG 2026-07-26 20:39:24,728 gateway_service 33632 27396 GATEWAY_RAW_BODY | Internal Gateway Error
+WARNING 2026-07-26 20:39:24,728 gateway_service 33632 27396 GATEWAY_5XX_ERROR | Attempt 3 returned 500. Retrying...
+INFO 2026-07-26 21:38:57,724 bulk_sms 30712 3992 PERSONALIZED_BULK_START | Batch #1 | Initiator: 'sami_user' | Recipients: 3 | Template: 'Claim Notification'
+WARNING 2026-07-26 21:38:57,727 bulk_sms 30712 3992 PERSONALIZED_SMS_SKIP | Staff 'jaffer_user' missing phone number.
+INFO 2026-07-26 21:38:57,735 gateway_service 30712 3992 GATEWAY_REQ | Attempt 1/3 | Method: POST | URL: https://text.draft4sms.com/vb/apikey.php
+DEBUG 2026-07-26 21:38:57,737 gateway_service 30712 3992 GATEWAY_PAYLOAD | Params: {'apikey': 'TEST****_999', 'senderid': 'CLGEXM', 'number': '9876543211', 'message': 'Prof. Abdul Qadir, your claim of Rs.15000 has been credited.', 'templateid': '1107160000000123456', 'unicode': '0', 'format': 'json'}
+INFO 2026-07-26 21:38:57,737 gateway_service 30712 3992 GATEWAY_RESP | Status: 200 | Execution Time: 2.34ms
+DEBUG 2026-07-26 21:38:57,737 gateway_service 30712 3992 GATEWAY_RAW_BODY | {"status":"Success","code":"011","messageid":"GW_BATCH_999"}
+INFO 2026-07-26 21:38:57,740 single_sms 30712 3992 SINGLE_SMS_DISPATCH | User: 'sami_user' | Mobile: '9876543211' | Template ID: '1107160000000123456' | Status: 'SENT' | GW Msg ID: 'GW_BATCH_999'
+INFO 2026-07-26 21:38:57,743 gateway_service 30712 3992 GATEWAY_REQ | Attempt 1/3 | Method: POST | URL: https://text.draft4sms.com/vb/apikey.php
+DEBUG 2026-07-26 21:38:57,743 gateway_service 30712 3992 GATEWAY_PAYLOAD | Params: {'apikey': 'TEST****_999', 'senderid': 'CLGEXM', 'number': '9876543210', 'message': 'Prof. Mohamed Sami, your claim of Rs.15000 has been credited.', 'templateid': '1107160000000123456', 'unicode': '0', 'format': 'json'}
+INFO 2026-07-26 21:38:57,743 gateway_service 30712 3992 GATEWAY_RESP | Status: 200 | Execution Time: 0.35ms
+DEBUG 2026-07-26 21:38:57,743 gateway_service 30712 3992 GATEWAY_RAW_BODY | {"status":"Success","code":"011","messageid":"GW_BATCH_999"}
+INFO 2026-07-26 21:38:57,744 single_sms 30712 3992 SINGLE_SMS_DISPATCH | User: 'sami_user' | Mobile: '9876543210' | Template ID: '1107160000000123456' | Status: 'SENT' | GW Msg ID: 'GW_BATCH_999'
+INFO 2026-07-26 21:38:57,747 bulk_sms 30712 3992 PERSONALIZED_BULK_COMPLETE | Batch #1 | Sent: 2/3 | Failed: 1 | Time: 0.03s | Credits: 2
+INFO 2026-07-26 21:38:57,760 bulk_sms 30712 3992 PERSONALIZED_BULK_START | Batch #1 | Initiator: 'sami_user' | Recipients: 2 | Template: 'Claim Notification'
+INFO 2026-07-26 21:38:57,763 gateway_service 30712 3992 GATEWAY_REQ | Attempt 1/3 | Method: POST | URL: https://text.draft4sms.com/vb/apikey.php
+DEBUG 2026-07-26 21:38:57,763 gateway_service 30712 3992 GATEWAY_PAYLOAD | Params: {'apikey': 'TEST****_999', 'senderid': 'CLGEXM', 'number': '9876543211', 'message': 'Prof. Abdul Qadir, your claim of Rs.10000 has been credited.', 'templateid': '1107160000000123456', 'unicode': '0', 'format': 'json'}
+INFO 2026-07-26 21:38:57,764 gateway_service 30712 3992 GATEWAY_RESP | Status: 200 | Execution Time: 1.06ms
+DEBUG 2026-07-26 21:38:57,764 gateway_service 30712 3992 GATEWAY_RAW_BODY | {"status":"Success","code":"011","messageid":"GW_BATCH_123"}
+INFO 2026-07-26 21:38:57,766 single_sms 30712 3992 SINGLE_SMS_DISPATCH | User: 'sami_user' | Mobile: '9876543211' | Template ID: '1107160000000123456' | Status: 'SENT' | GW Msg ID: 'GW_BATCH_123'
+INFO 2026-07-26 21:38:57,774 gateway_service 30712 3992 GATEWAY_REQ | Attempt 1/3 | Method: POST | URL: https://text.draft4sms.com/vb/apikey.php
+DEBUG 2026-07-26 21:38:57,775 gateway_service 30712 3992 GATEWAY_PAYLOAD | Params: {'apikey': 'TEST****_999', 'senderid': 'CLGEXM', 'number': '9876543210', 'message': 'Prof. Mohamed Sami, your claim of Rs.10000 has been credited.', 'templateid': '1107160000000123456', 'unicode': '0', 'format': 'json'}
+INFO 2026-07-26 21:38:57,775 gateway_service 30712 3992 GATEWAY_RESP | Status: 200 | Execution Time: 1.1ms
+DEBUG 2026-07-26 21:38:57,775 gateway_service 30712 3992 GATEWAY_RAW_BODY | {"status":"Success","code":"011","messageid":"GW_BATCH_123"}
+INFO 2026-07-26 21:38:57,777 single_sms 30712 3992 SINGLE_SMS_DISPATCH | User: 'sami_user' | Mobile: '9876543210' | Template ID: '1107160000000123456' | Status: 'SENT' | GW Msg ID: 'GW_BATCH_123'
+INFO 2026-07-26 21:38:57,781 bulk_sms 30712 3992 PERSONALIZED_BULK_COMPLETE | Batch #1 | Sent: 2/2 | Failed: 0 | Time: 0.02s | Credits: 2
+INFO 2026-07-26 21:38:57,806 gateway_service 30712 3992 GATEWAY_REQ | Attempt 1/3 | Method: GET | URL: https://text.draft4sms.com/vb/http-credit.php
+DEBUG 2026-07-26 21:38:57,806 gateway_service 30712 3992 GATEWAY_PAYLOAD | Params: {'apikey': 'DRAF****7890', 'route_id': '1', 'format': 'json'}
+INFO 2026-07-26 21:38:57,806 gateway_service 30712 3992 GATEWAY_RESP | Status: 200 | Execution Time: 0.59ms
+DEBUG 2026-07-26 21:38:57,806 gateway_service 30712 3992 GATEWAY_RAW_BODY | {"status":"Success","code":"011","balance":25000}
+INFO 2026-07-26 21:38:57,809 gateway_service 30712 3992 GATEWAY_REQ | Attempt 1/3 | Method: GET | URL: https://text.draft4sms.com/vb/http-dlr.php
+DEBUG 2026-07-26 21:38:57,809 gateway_service 30712 3992 GATEWAY_PAYLOAD | Params: {'apikey': 'DRAF****7890', 'msgid': '9876543210123', 'format': 'json'}
+INFO 2026-07-26 21:38:57,809 gateway_service 30712 3992 GATEWAY_RESP | Status: 200 | Execution Time: 0.33ms
+DEBUG 2026-07-26 21:38:57,810 gateway_service 30712 3992 GATEWAY_RAW_BODY | {"status":"DELIVERED","msgid":"9876543210123"}
+INFO 2026-07-26 21:38:57,813 gateway_service 30712 3992 GATEWAY_REQ | Attempt 1/3 | Method: POST | URL: https://text.draft4sms.com/vb/apikey.php
+DEBUG 2026-07-26 21:38:57,814 gateway_service 30712 3992 GATEWAY_PAYLOAD | Params: {'apikey': 'DRAF****7890', 'senderid': 'CLGEXM', 'number': '9876543210', 'message': 'Dear Student, your exam schedule is published.', 'templateid': '1107160000000123456', 'unicode': '0', 'format': 'json'}
+INFO 2026-07-26 21:38:57,815 gateway_service 30712 3992 GATEWAY_RESP | Status: 200 | Execution Time: 1.68ms
+DEBUG 2026-07-26 21:38:57,815 gateway_service 30712 3992 GATEWAY_RAW_BODY | {"status":"Failure","code":"001","description":"Invalid API Key"}
+INFO 2026-07-26 21:38:57,821 gateway_service 30712 3992 GATEWAY_REQ | Attempt 1/3 | Method: POST | URL: https://text.draft4sms.com/vb/apikey.php
+DEBUG 2026-07-26 21:38:57,821 gateway_service 30712 3992 GATEWAY_PAYLOAD | Params: {'apikey': 'DRAF****7890', 'senderid': 'CLGEXM', 'number': '9876543210', 'message': 'Dear Student, your exam schedule is published.', 'templateid': '1107160000000123456', 'unicode': '0', 'format': 'json'}
+INFO 2026-07-26 21:38:57,822 gateway_service 30712 3992 GATEWAY_RESP | Status: 200 | Execution Time: 1.37ms
+DEBUG 2026-07-26 21:38:57,823 gateway_service 30712 3992 GATEWAY_RAW_BODY | {"status":"Failure","code":"008","description":"Insufficient Credit"}
+INFO 2026-07-26 21:38:57,827 gateway_service 30712 3992 GATEWAY_REQ | Attempt 1/3 | Method: POST | URL: https://text.draft4sms.com/vb/apikey.php
+DEBUG 2026-07-26 21:38:57,827 gateway_service 30712 3992 GATEWAY_PAYLOAD | Params: {'apikey': 'DRAF****7890', 'senderid': 'CLGEXM', 'number': '9876543210', 'message': 'Dear Student, your exam schedule is published.', 'templateid': '1107160000000123456', 'unicode': '0', 'format': 'json'}
+INFO 2026-07-26 21:38:57,828 gateway_service 30712 3992 GATEWAY_RESP | Status: 401 | Execution Time: 0.81ms
+DEBUG 2026-07-26 21:38:57,828 gateway_service 30712 3992 GATEWAY_RAW_BODY | {"error":"Unauthorized access"}
+INFO 2026-07-26 21:38:57,832 gateway_service 30712 3992 GATEWAY_REQ | Attempt 1/3 | Method: POST | URL: https://text.draft4sms.com/vb/apikey.php
+DEBUG 2026-07-26 21:38:57,832 gateway_service 30712 3992 GATEWAY_PAYLOAD | Params: {'apikey': 'DRAF****7890', 'senderid': 'CLGEXM', 'number': '9876543210', 'message': 'Dear Student, your exam schedule is published.', 'templateid': '1107160000000123456', 'unicode': '0', 'format': 'json'}
+INFO 2026-07-26 21:38:57,833 gateway_service 30712 3992 GATEWAY_RESP | Status: 200 | Execution Time: 0.97ms
+DEBUG 2026-07-26 21:38:57,833 gateway_service 30712 3992 GATEWAY_RAW_BODY | {"status":"Success","code":"011","messageid":"9876543210123","totnumber":1,"totalcredit":1,"description":"Message Sent Successfully"}
+INFO 2026-07-26 21:38:57,839 gateway_service 30712 3992 GATEWAY_REQ | Attempt 1/3 | Method: POST | URL: https://text.draft4sms.com/vb/apikey.php
+DEBUG 2026-07-26 21:38:57,840 gateway_service 30712 3992 GATEWAY_PAYLOAD | Params: {'apikey': 'DRAF****7890', 'senderid': 'CLGEXM', 'number': '9876543210', 'message': 'Dear Student, your exam schedule is published.', 'templateid': '1107160000000123456', 'unicode': '0', 'format': 'json'}
+INFO 2026-07-26 21:38:57,840 gateway_service 30712 3992 GATEWAY_RESP | Status: 500 | Execution Time: 0.43ms
+DEBUG 2026-07-26 21:38:57,840 gateway_service 30712 3992 GATEWAY_RAW_BODY | Internal Gateway Error
+WARNING 2026-07-26 21:38:57,840 gateway_service 30712 3992 GATEWAY_5XX_ERROR | Attempt 1 returned 500. Retrying...
+INFO 2026-07-26 21:38:57,842 gateway_service 30712 3992 GATEWAY_REQ | Attempt 2/3 | Method: POST | URL: https://text.draft4sms.com/vb/apikey.php
+DEBUG 2026-07-26 21:38:57,842 gateway_service 30712 3992 GATEWAY_PAYLOAD | Params: {'apikey': 'DRAF****7890', 'senderid': 'CLGEXM', 'number': '9876543210', 'message': 'Dear Student, your exam schedule is published.', 'templateid': '1107160000000123456', 'unicode': '0', 'format': 'json'}
+INFO 2026-07-26 21:38:57,842 gateway_service 30712 3992 GATEWAY_RESP | Status: 500 | Execution Time: 0.45ms
+DEBUG 2026-07-26 21:38:57,842 gateway_service 30712 3992 GATEWAY_RAW_BODY | Internal Gateway Error
+WARNING 2026-07-26 21:38:57,842 gateway_service 30712 3992 GATEWAY_5XX_ERROR | Attempt 2 returned 500. Retrying...
+INFO 2026-07-26 21:38:57,842 gateway_service 30712 3992 GATEWAY_REQ | Attempt 3/3 | Method: POST | URL: https://text.draft4sms.com/vb/apikey.php
+DEBUG 2026-07-26 21:38:57,843 gateway_service 30712 3992 GATEWAY_PAYLOAD | Params: {'apikey': 'DRAF****7890', 'senderid': 'CLGEXM', 'number': '9876543210', 'message': 'Dear Student, your exam schedule is published.', 'templateid': '1107160000000123456', 'unicode': '0', 'format': 'json'}
+INFO 2026-07-26 21:38:57,843 gateway_service 30712 3992 GATEWAY_RESP | Status: 500 | Execution Time: 0.32ms
+DEBUG 2026-07-26 21:38:57,843 gateway_service 30712 3992 GATEWAY_RAW_BODY | Internal Gateway Error
+WARNING 2026-07-26 21:38:57,843 gateway_service 30712 3992 GATEWAY_5XX_ERROR | Attempt 3 returned 500. Retrying...
+INFO 2026-07-26 22:04:02,968 bulk_sms 32088 33572 PERSONALIZED_BULK_START | Batch #1 | Initiator: 'admin' | Recipients: 4 | Template: 'Credit confirmation'
+INFO 2026-07-26 22:04:03,003 gateway_service 32088 33572 GATEWAY_REQ | Attempt 1/3 | Method: POST | URL: https://text.draft4sms.com/vb/apikey.php
+DEBUG 2026-07-26 22:04:03,005 gateway_service 32088 33572 GATEWAY_PAYLOAD | Params: {'apikey': 'vHOV****UsHq', 'senderid': 'JMCCOE', 'number': '9952498660', 'message': 'Prof. jaffer sir, your claim of Rs.20000 for Practical Exam has been credited to your account. COE, JMC.', 'templateid': '1277178471813361703', 'unicode': '0', 'format': 'json'}
+INFO 2026-07-26 22:04:04,567 gateway_service 32088 33572 GATEWAY_RESP | Status: 200 | Execution Time: 1563.65ms
+DEBUG 2026-07-26 22:04:04,568 gateway_service 32088 33572 GATEWAY_RAW_BODY | {"status":"Success","code":"011","description":"Message submitted successfully","data":{"messageid":"NDA0MDIxMTA=","totnumber":1,"totalcredit":1}}
+INFO 2026-07-26 22:04:04,605 single_sms 32088 33572 SINGLE_SMS_DISPATCH | User: 'admin' | Mobile: '9952498660' | Template ID: '1277178471813361703' | Status: 'SENT' | GW Msg ID: 'GW_1785083644'
+INFO 2026-07-26 22:04:04,646 gateway_service 32088 33572 GATEWAY_REQ | Attempt 1/3 | Method: POST | URL: https://text.draft4sms.com/vb/apikey.php
+DEBUG 2026-07-26 22:04:04,649 gateway_service 32088 33572 GATEWAY_PAYLOAD | Params: {'apikey': 'vHOV****UsHq', 'senderid': 'JMCCOE', 'number': '9894152022', 'message': 'Prof. Abdul Qadir, your claim of Rs.20000 for Practical Exam has been credited to your account. COE, JMC.', 'templateid': '1277178471813361703', 'unicode': '0', 'format': 'json'}
+INFO 2026-07-26 22:04:05,522 gateway_service 32088 33572 GATEWAY_RESP | Status: 200 | Execution Time: 875.22ms
+DEBUG 2026-07-26 22:04:05,523 gateway_service 32088 33572 GATEWAY_RAW_BODY | {"status":"Success","code":"011","description":"Message submitted successfully","data":{"messageid":"NDA0MDIxMTE=","totnumber":1,"totalcredit":1}}
+INFO 2026-07-26 22:04:05,560 single_sms 32088 33572 SINGLE_SMS_DISPATCH | User: 'admin' | Mobile: '9894152022' | Template ID: '1277178471813361703' | Status: 'SENT' | GW Msg ID: 'GW_1785083645'
+INFO 2026-07-26 22:04:05,629 gateway_service 32088 33572 GATEWAY_REQ | Attempt 1/3 | Method: POST | URL: https://text.draft4sms.com/vb/apikey.php
+DEBUG 2026-07-26 22:04:05,630 gateway_service 32088 33572 GATEWAY_PAYLOAD | Params: {'apikey': 'vHOV****UsHq', 'senderid': 'JMCCOE', 'number': '8098778622', 'message': 'Prof. Mohamed Sami, your claim of Rs.20000 for Practical Exam has been credited to your account. COE, JMC.', 'templateid': '1277178471813361703', 'unicode': '0', 'format': 'json'}
+INFO 2026-07-26 22:04:07,773 gateway_service 32088 33572 GATEWAY_RESP | Status: 200 | Execution Time: 2144.02ms
+DEBUG 2026-07-26 22:04:07,774 gateway_service 32088 33572 GATEWAY_RAW_BODY | {"status":"Success","code":"011","description":"Message submitted successfully","data":{"messageid":"NDA0MDIxMTI=","totnumber":1,"totalcredit":1}}
+INFO 2026-07-26 22:04:07,816 single_sms 32088 33572 SINGLE_SMS_DISPATCH | User: 'admin' | Mobile: '8098778622' | Template ID: '1277178471813361703' | Status: 'SENT' | GW Msg ID: 'GW_1785083647'
+INFO 2026-07-26 22:04:07,888 gateway_service 32088 33572 GATEWAY_REQ | Attempt 1/3 | Method: POST | URL: https://text.draft4sms.com/vb/apikey.php
+DEBUG 2026-07-26 22:04:07,890 gateway_service 32088 33572 GATEWAY_PAYLOAD | Params: {'apikey': 'vHOV****UsHq', 'senderid': 'JMCCOE', 'number': '9487450122', 'message': 'Prof. sana fathima, your claim of Rs.20000 for Practical Exam has been credited to your account. COE, JMC.', 'templateid': '1277178471813361703', 'unicode': '0', 'format': 'json'}
+INFO 2026-07-26 22:04:08,870 gateway_service 32088 33572 GATEWAY_RESP | Status: 200 | Execution Time: 982.38ms
+DEBUG 2026-07-26 22:04:08,873 gateway_service 32088 33572 GATEWAY_RAW_BODY | {"status":"Success","code":"011","description":"Message submitted successfully","data":{"messageid":"NDA0MDIxMTM=","totnumber":1,"totalcredit":1}}
+INFO 2026-07-26 22:04:08,915 single_sms 32088 33572 SINGLE_SMS_DISPATCH | User: 'admin' | Mobile: '9487450122' | Template ID: '1277178471813361703' | Status: 'SENT' | GW Msg ID: 'GW_1785083648'
+INFO 2026-07-26 22:04:09,027 bulk_sms 32088 33572 PERSONALIZED_BULK_COMPLETE | Batch #1 | Sent: 4/4 | Failed: 0 | Time: 6.06s | Credits: 4
+INFO 2026-07-26 22:13:55,561 bulk_sms 21988 29052 PERSONALIZED_BULK_START | Batch #1 | Initiator: 'sami_user' | Recipients: 3 | Template: 'Claim Notification'
+WARNING 2026-07-26 22:13:55,564 bulk_sms 21988 29052 PERSONALIZED_SMS_SKIP | Staff 'jaffer_user' missing phone number.
+INFO 2026-07-26 22:13:55,568 gateway_service 21988 29052 GATEWAY_REQ | Attempt 1/3 | Method: POST | URL: https://text.draft4sms.com/vb/apikey.php
+DEBUG 2026-07-26 22:13:55,569 gateway_service 21988 29052 GATEWAY_PAYLOAD | Params: {'apikey': 'TEST****_999', 'senderid': 'CLGEXM', 'number': '9876543211', 'message': 'Prof. Abdul Qadir, your claim of Rs.15000 has been credited.', 'templateid': '1107160000000123456', 'unicode': '0', 'format': 'json'}
+INFO 2026-07-26 22:13:55,569 gateway_service 21988 29052 GATEWAY_RESP | Status: 200 | Execution Time: 0.92ms
+DEBUG 2026-07-26 22:13:55,570 gateway_service 21988 29052 GATEWAY_RAW_BODY | {"status":"Success","code":"011","messageid":"GW_BATCH_999"}
+INFO 2026-07-26 22:13:55,571 single_sms 21988 29052 SINGLE_SMS_DISPATCH | User: 'sami_user' | Mobile: '9876543211' | Template ID: '1107160000000123456' | Status: 'SENT' | GW Msg ID: 'GW_BATCH_999'
+INFO 2026-07-26 22:13:55,576 gateway_service 21988 29052 GATEWAY_REQ | Attempt 1/3 | Method: POST | URL: https://text.draft4sms.com/vb/apikey.php
+DEBUG 2026-07-26 22:13:55,577 gateway_service 21988 29052 GATEWAY_PAYLOAD | Params: {'apikey': 'TEST****_999', 'senderid': 'CLGEXM', 'number': '9876543210', 'message': 'Prof. Mohamed Sami, your claim of Rs.15000 has been credited.', 'templateid': '1107160000000123456', 'unicode': '0', 'format': 'json'}
+INFO 2026-07-26 22:13:55,577 gateway_service 21988 29052 GATEWAY_RESP | Status: 200 | Execution Time: 0.93ms
+DEBUG 2026-07-26 22:13:55,577 gateway_service 21988 29052 GATEWAY_RAW_BODY | {"status":"Success","code":"011","messageid":"GW_BATCH_999"}
+INFO 2026-07-26 22:13:55,579 single_sms 21988 29052 SINGLE_SMS_DISPATCH | User: 'sami_user' | Mobile: '9876543210' | Template ID: '1107160000000123456' | Status: 'SENT' | GW Msg ID: 'GW_BATCH_999'
+INFO 2026-07-26 22:13:55,582 bulk_sms 21988 29052 PERSONALIZED_BULK_COMPLETE | Batch #1 | Sent: 2/3 | Failed: 1 | Time: 0.03s | Credits: 2
+INFO 2026-07-26 22:13:55,597 bulk_sms 21988 29052 PERSONALIZED_BULK_START | Batch #1 | Initiator: 'sami_user' | Recipients: 2 | Template: 'Claim Notification'
+INFO 2026-07-26 22:13:55,601 gateway_service 21988 29052 GATEWAY_REQ | Attempt 1/3 | Method: POST | URL: https://text.draft4sms.com/vb/apikey.php
+DEBUG 2026-07-26 22:13:55,602 gateway_service 21988 29052 GATEWAY_PAYLOAD | Params: {'apikey': 'TEST****_999', 'senderid': 'CLGEXM', 'number': '9876543211', 'message': 'Prof. Abdul Qadir, your claim of Rs.10000 has been credited.', 'templateid': '1107160000000123456', 'unicode': '0', 'format': 'json'}
+INFO 2026-07-26 22:13:55,602 gateway_service 21988 29052 GATEWAY_RESP | Status: 200 | Execution Time: 1.56ms
+DEBUG 2026-07-26 22:13:55,603 gateway_service 21988 29052 GATEWAY_RAW_BODY | {"status":"Success","code":"011","messageid":"GW_BATCH_123"}
+INFO 2026-07-26 22:13:55,608 single_sms 21988 29052 SINGLE_SMS_DISPATCH | User: 'sami_user' | Mobile: '9876543211' | Template ID: '1107160000000123456' | Status: 'SENT' | GW Msg ID: 'GW_BATCH_123'
+INFO 2026-07-26 22:13:55,616 gateway_service 21988 29052 GATEWAY_REQ | Attempt 1/3 | Method: POST | URL: https://text.draft4sms.com/vb/apikey.php
+DEBUG 2026-07-26 22:13:55,617 gateway_service 21988 29052 GATEWAY_PAYLOAD | Params: {'apikey': 'TEST****_999', 'senderid': 'CLGEXM', 'number': '9876543210', 'message': 'Prof. Mohamed Sami, your claim of Rs.10000 has been credited.', 'templateid': '1107160000000123456', 'unicode': '0', 'format': 'json'}
+INFO 2026-07-26 22:13:55,618 gateway_service 21988 29052 GATEWAY_RESP | Status: 200 | Execution Time: 1.24ms
+DEBUG 2026-07-26 22:13:55,619 gateway_service 21988 29052 GATEWAY_RAW_BODY | {"status":"Success","code":"011","messageid":"GW_BATCH_123"}
+INFO 2026-07-26 22:13:55,622 single_sms 21988 29052 SINGLE_SMS_DISPATCH | User: 'sami_user' | Mobile: '9876543210' | Template ID: '1107160000000123456' | Status: 'SENT' | GW Msg ID: 'GW_BATCH_123'
+INFO 2026-07-26 22:13:55,627 bulk_sms 21988 29052 PERSONALIZED_BULK_COMPLETE | Batch #1 | Sent: 2/2 | Failed: 0 | Time: 0.03s | Credits: 2
+INFO 2026-07-26 22:13:55,654 gateway_service 21988 29052 GATEWAY_REQ | Attempt 1/3 | Method: GET | URL: https://text.draft4sms.com/vb/http-credit.php
+DEBUG 2026-07-26 22:13:55,655 gateway_service 21988 29052 GATEWAY_PAYLOAD | Params: {'apikey': 'DRAF****7890', 'route_id': '1', 'format': 'json'}
+INFO 2026-07-26 22:13:55,656 gateway_service 21988 29052 GATEWAY_RESP | Status: 200 | Execution Time: 1.05ms
+DEBUG 2026-07-26 22:13:55,656 gateway_service 21988 29052 GATEWAY_RAW_BODY | {"status":"Success","code":"011","balance":25000}
+INFO 2026-07-26 22:13:55,661 gateway_service 21988 29052 GATEWAY_REQ | Attempt 1/3 | Method: GET | URL: https://text.draft4sms.com/vb/http-dlr.php
+DEBUG 2026-07-26 22:13:55,661 gateway_service 21988 29052 GATEWAY_PAYLOAD | Params: {'apikey': 'DRAF****7890', 'msgid': '9876543210123', 'format': 'json'}
+INFO 2026-07-26 22:13:55,662 gateway_service 21988 29052 GATEWAY_RESP | Status: 200 | Execution Time: 1.02ms
+DEBUG 2026-07-26 22:13:55,662 gateway_service 21988 29052 GATEWAY_RAW_BODY | {"status":"DELIVERED","msgid":"9876543210123"}
+INFO 2026-07-26 22:13:55,667 gateway_service 21988 29052 GATEWAY_REQ | Attempt 1/3 | Method: POST | URL: https://text.draft4sms.com/vb/apikey.php
+DEBUG 2026-07-26 22:13:55,668 gateway_service 21988 29052 GATEWAY_PAYLOAD | Params: {'apikey': 'DRAF****7890', 'senderid': 'CLGEXM', 'number': '9876543210', 'message': 'Dear Student, your exam schedule is published.', 'templateid': '1107160000000123456', 'unicode': '0', 'format': 'json'}
+INFO 2026-07-26 22:13:55,670 gateway_service 21988 29052 GATEWAY_RESP | Status: 200 | Execution Time: 2.19ms
+DEBUG 2026-07-26 22:13:55,670 gateway_service 21988 29052 GATEWAY_RAW_BODY | {"status":"Failure","code":"001","description":"Invalid API Key"}
+INFO 2026-07-26 22:13:55,680 gateway_service 21988 29052 GATEWAY_REQ | Attempt 1/3 | Method: POST | URL: https://text.draft4sms.com/vb/apikey.php
+DEBUG 2026-07-26 22:13:55,681 gateway_service 21988 29052 GATEWAY_PAYLOAD | Params: {'apikey': 'DRAF****7890', 'senderid': 'CLGEXM', 'number': '9876543210', 'message': 'Dear Student, your exam schedule is published.', 'templateid': '1107160000000123456', 'unicode': '0', 'format': 'json'}
+INFO 2026-07-26 22:13:55,681 gateway_service 21988 29052 GATEWAY_RESP | Status: 200 | Execution Time: 1.27ms
+DEBUG 2026-07-26 22:13:55,682 gateway_service 21988 29052 GATEWAY_RAW_BODY | {"status":"Failure","code":"008","description":"Insufficient Credit"}
+INFO 2026-07-26 22:13:55,693 gateway_service 21988 29052 GATEWAY_REQ | Attempt 1/3 | Method: POST | URL: https://text.draft4sms.com/vb/apikey.php
+DEBUG 2026-07-26 22:13:55,694 gateway_service 21988 29052 GATEWAY_PAYLOAD | Params: {'apikey': 'DRAF****7890', 'senderid': 'CLGEXM', 'number': '9876543210', 'message': 'Dear Student, your exam schedule is published.', 'templateid': '1107160000000123456', 'unicode': '0', 'format': 'json'}
+INFO 2026-07-26 22:13:55,695 gateway_service 21988 29052 GATEWAY_RESP | Status: 401 | Execution Time: 1.82ms
+DEBUG 2026-07-26 22:13:55,695 gateway_service 21988 29052 GATEWAY_RAW_BODY | {"error":"Unauthorized access"}
+INFO 2026-07-26 22:13:55,703 gateway_service 21988 29052 GATEWAY_REQ | Attempt 1/3 | Method: POST | URL: https://text.draft4sms.com/vb/apikey.php
+DEBUG 2026-07-26 22:13:55,703 gateway_service 21988 29052 GATEWAY_PAYLOAD | Params: {'apikey': 'DRAF****7890', 'senderid': 'CLGEXM', 'number': '9876543210', 'message': 'Dear Student, your exam schedule is published.', 'templateid': '1107160000000123456', 'unicode': '0', 'format': 'json'}
+INFO 2026-07-26 22:13:55,704 gateway_service 21988 29052 GATEWAY_RESP | Status: 200 | Execution Time: 1.36ms
+DEBUG 2026-07-26 22:13:55,705 gateway_service 21988 29052 GATEWAY_RAW_BODY | {"status":"Success","code":"011","messageid":"9876543210123","totnumber":1,"totalcredit":1,"description":"Message Sent Successfully"}
+INFO 2026-07-26 22:13:55,712 gateway_service 21988 29052 GATEWAY_REQ | Attempt 1/3 | Method: POST | URL: https://text.draft4sms.com/vb/apikey.php
+DEBUG 2026-07-26 22:13:55,713 gateway_service 21988 29052 GATEWAY_PAYLOAD | Params: {'apikey': 'DRAF****7890', 'senderid': 'CLGEXM', 'number': '9876543210', 'message': 'Dear Student, your exam schedule is published.', 'templateid': '1107160000000123456', 'unicode': '0', 'format': 'json'}
+INFO 2026-07-26 22:13:55,714 gateway_service 21988 29052 GATEWAY_RESP | Status: 500 | Execution Time: 1.2ms
+DEBUG 2026-07-26 22:13:55,714 gateway_service 21988 29052 GATEWAY_RAW_BODY | Internal Gateway Error
+WARNING 2026-07-26 22:13:55,715 gateway_service 21988 29052 GATEWAY_5XX_ERROR | Attempt 1 returned 500. Retrying...
+INFO 2026-07-26 22:13:55,716 gateway_service 21988 29052 GATEWAY_REQ | Attempt 2/3 | Method: POST | URL: https://text.draft4sms.com/vb/apikey.php
+DEBUG 2026-07-26 22:13:55,717 gateway_service 21988 29052 GATEWAY_PAYLOAD | Params: {'apikey': 'DRAF****7890', 'senderid': 'CLGEXM', 'number': '9876543210', 'message': 'Dear Student, your exam schedule is published.', 'templateid': '1107160000000123456', 'unicode': '0', 'format': 'json'}
+INFO 2026-07-26 22:13:55,718 gateway_service 21988 29052 GATEWAY_RESP | Status: 500 | Execution Time: 1.22ms
+DEBUG 2026-07-26 22:13:55,718 gateway_service 21988 29052 GATEWAY_RAW_BODY | Internal Gateway Error
+WARNING 2026-07-26 22:13:55,718 gateway_service 21988 29052 GATEWAY_5XX_ERROR | Attempt 2 returned 500. Retrying...
+INFO 2026-07-26 22:13:55,719 gateway_service 21988 29052 GATEWAY_REQ | Attempt 3/3 | Method: POST | URL: https://text.draft4sms.com/vb/apikey.php
+DEBUG 2026-07-26 22:13:55,720 gateway_service 21988 29052 GATEWAY_PAYLOAD | Params: {'apikey': 'DRAF****7890', 'senderid': 'CLGEXM', 'number': '9876543210', 'message': 'Dear Student, your exam schedule is published.', 'templateid': '1107160000000123456', 'unicode': '0', 'format': 'json'}
+INFO 2026-07-26 22:13:55,720 gateway_service 21988 29052 GATEWAY_RESP | Status: 500 | Execution Time: 1.14ms
+DEBUG 2026-07-26 22:13:55,721 gateway_service 21988 29052 GATEWAY_RAW_BODY | Internal Gateway Error
+WARNING 2026-07-26 22:13:55,721 gateway_service 21988 29052 GATEWAY_5XX_ERROR | Attempt 3 returned 500. Retrying...
+INFO 2026-07-27 09:41:37,616 bulk_sms 20608 2392 PERSONALIZED_BULK_START | Batch #1 | Initiator: 'sami_user' | Recipients: 3 | Template: 'Claim Notification'
+WARNING 2026-07-27 09:41:37,617 bulk_sms 20608 2392 PERSONALIZED_SMS_SKIP | Staff 'jaffer_user' missing phone number.
+INFO 2026-07-27 09:41:37,618 gateway_service 20608 2392 GATEWAY_REQ | Attempt 1/3 | Method: POST | URL: https://text.draft4sms.com/vb/apikey.php
+DEBUG 2026-07-27 09:41:37,619 gateway_service 20608 2392 GATEWAY_PAYLOAD | Params: {'apikey': 'TEST****_999', 'senderid': 'CLGEXM', 'number': '9876543211', 'message': 'Prof. Abdul Qadir, your claim of Rs.15000 has been credited.', 'templateid': '1107160000000123456', 'unicode': '0', 'format': 'json'}
+INFO 2026-07-27 09:41:37,619 gateway_service 20608 2392 GATEWAY_RESP | Status: 200 | Execution Time: 0.25ms
+DEBUG 2026-07-27 09:41:37,619 gateway_service 20608 2392 GATEWAY_RAW_BODY | {"status":"Success","code":"011","messageid":"GW_BATCH_999"}
+INFO 2026-07-27 09:41:37,619 single_sms 20608 2392 SINGLE_SMS_DISPATCH | User: 'sami_user' | Mobile: '9876543211' | Template ID: '1107160000000123456' | Status: 'SENT' | GW Msg ID: 'GW_BATCH_999'
+INFO 2026-07-27 09:41:37,621 gateway_service 20608 2392 GATEWAY_REQ | Attempt 1/3 | Method: POST | URL: https://text.draft4sms.com/vb/apikey.php
+DEBUG 2026-07-27 09:41:37,621 gateway_service 20608 2392 GATEWAY_PAYLOAD | Params: {'apikey': 'TEST****_999', 'senderid': 'CLGEXM', 'number': '9876543210', 'message': 'Prof. Mohamed Sami, your claim of Rs.15000 has been credited.', 'templateid': '1107160000000123456', 'unicode': '0', 'format': 'json'}
+INFO 2026-07-27 09:41:37,621 gateway_service 20608 2392 GATEWAY_RESP | Status: 200 | Execution Time: 0.36ms
+DEBUG 2026-07-27 09:41:37,621 gateway_service 20608 2392 GATEWAY_RAW_BODY | {"status":"Success","code":"011","messageid":"GW_BATCH_999"}
+INFO 2026-07-27 09:41:37,622 single_sms 20608 2392 SINGLE_SMS_DISPATCH | User: 'sami_user' | Mobile: '9876543210' | Template ID: '1107160000000123456' | Status: 'SENT' | GW Msg ID: 'GW_BATCH_999'
+INFO 2026-07-27 09:41:37,623 bulk_sms 20608 2392 PERSONALIZED_BULK_COMPLETE | Batch #1 | Sent: 2/3 | Failed: 1 | Time: 0.01s | Credits: 2
+INFO 2026-07-27 09:41:37,629 bulk_sms 20608 2392 PERSONALIZED_BULK_START | Batch #1 | Initiator: 'sami_user' | Recipients: 2 | Template: 'Claim Notification'
+INFO 2026-07-27 09:41:37,631 gateway_service 20608 2392 GATEWAY_REQ | Attempt 1/3 | Method: POST | URL: https://text.draft4sms.com/vb/apikey.php
+DEBUG 2026-07-27 09:41:37,631 gateway_service 20608 2392 GATEWAY_PAYLOAD | Params: {'apikey': 'TEST****_999', 'senderid': 'CLGEXM', 'number': '9876543211', 'message': 'Prof. Abdul Qadir, your claim of Rs.10000 has been credited.', 'templateid': '1107160000000123456', 'unicode': '0', 'format': 'json'}
+INFO 2026-07-27 09:41:37,631 gateway_service 20608 2392 GATEWAY_RESP | Status: 200 | Execution Time: 0.35ms
+DEBUG 2026-07-27 09:41:37,631 gateway_service 20608 2392 GATEWAY_RAW_BODY | {"status":"Success","code":"011","messageid":"GW_BATCH_123"}
+INFO 2026-07-27 09:41:37,632 single_sms 20608 2392 SINGLE_SMS_DISPATCH | User: 'sami_user' | Mobile: '9876543211' | Template ID: '1107160000000123456' | Status: 'SENT' | GW Msg ID: 'GW_BATCH_123'
+INFO 2026-07-27 09:41:37,633 gateway_service 20608 2392 GATEWAY_REQ | Attempt 1/3 | Method: POST | URL: https://text.draft4sms.com/vb/apikey.php
+DEBUG 2026-07-27 09:41:37,633 gateway_service 20608 2392 GATEWAY_PAYLOAD | Params: {'apikey': 'TEST****_999', 'senderid': 'CLGEXM', 'number': '9876543210', 'message': 'Prof. Mohamed Sami, your claim of Rs.10000 has been credited.', 'templateid': '1107160000000123456', 'unicode': '0', 'format': 'json'}
+INFO 2026-07-27 09:41:37,633 gateway_service 20608 2392 GATEWAY_RESP | Status: 200 | Execution Time: 0.24ms
+DEBUG 2026-07-27 09:41:37,633 gateway_service 20608 2392 GATEWAY_RAW_BODY | {"status":"Success","code":"011","messageid":"GW_BATCH_123"}
+INFO 2026-07-27 09:41:37,634 single_sms 20608 2392 SINGLE_SMS_DISPATCH | User: 'sami_user' | Mobile: '9876543210' | Template ID: '1107160000000123456' | Status: 'SENT' | GW Msg ID: 'GW_BATCH_123'
+INFO 2026-07-27 09:41:37,635 bulk_sms 20608 2392 PERSONALIZED_BULK_COMPLETE | Batch #1 | Sent: 2/2 | Failed: 0 | Time: 0.01s | Credits: 2
+INFO 2026-07-27 09:41:37,643 gateway_service 20608 2392 GATEWAY_REQ | Attempt 1/3 | Method: GET | URL: https://text.draft4sms.com/vb/http-credit.php
+DEBUG 2026-07-27 09:41:37,643 gateway_service 20608 2392 GATEWAY_PAYLOAD | Params: {'apikey': 'DRAF****7890', 'route_id': '1', 'format': 'json'}
+INFO 2026-07-27 09:41:37,644 gateway_service 20608 2392 GATEWAY_RESP | Status: 200 | Execution Time: 0.93ms
+DEBUG 2026-07-27 09:41:37,644 gateway_service 20608 2392 GATEWAY_RAW_BODY | {"status":"Success","code":"011","balance":25000}
+INFO 2026-07-27 09:41:37,647 gateway_service 20608 2392 GATEWAY_REQ | Attempt 1/3 | Method: GET | URL: https://text.draft4sms.com/vb/http-dlr.php
+DEBUG 2026-07-27 09:41:37,647 gateway_service 20608 2392 GATEWAY_PAYLOAD | Params: {'apikey': 'DRAF****7890', 'msgid': '9876543210123', 'format': 'json'}
+INFO 2026-07-27 09:41:37,647 gateway_service 20608 2392 GATEWAY_RESP | Status: 200 | Execution Time: 0.53ms
+DEBUG 2026-07-27 09:41:37,647 gateway_service 20608 2392 GATEWAY_RAW_BODY | {"status":"DELIVERED","msgid":"9876543210123"}
+INFO 2026-07-27 09:41:37,650 gateway_service 20608 2392 GATEWAY_REQ | Attempt 1/3 | Method: POST | URL: https://text.draft4sms.com/vb/apikey.php
+DEBUG 2026-07-27 09:41:37,650 gateway_service 20608 2392 GATEWAY_PAYLOAD | Params: {'apikey': 'DRAF****7890', 'senderid': 'CLGEXM', 'number': '9876543210', 'message': 'Dear Student, your exam schedule is published.', 'templateid': '1107160000000123456', 'unicode': '0', 'format': 'json'}
+INFO 2026-07-27 09:41:37,650 gateway_service 20608 2392 GATEWAY_RESP | Status: 200 | Execution Time: 0.42ms
+DEBUG 2026-07-27 09:41:37,650 gateway_service 20608 2392 GATEWAY_RAW_BODY | {"status":"Failure","code":"001","description":"Invalid API Key"}
+INFO 2026-07-27 09:41:37,652 gateway_service 20608 2392 GATEWAY_REQ | Attempt 1/3 | Method: POST | URL: https://text.draft4sms.com/vb/apikey.php
+DEBUG 2026-07-27 09:41:37,652 gateway_service 20608 2392 GATEWAY_PAYLOAD | Params: {'apikey': 'DRAF****7890', 'senderid': 'CLGEXM', 'number': '9876543210', 'message': 'Dear Student, your exam schedule is published.', 'templateid': '1107160000000123456', 'unicode': '0', 'format': 'json'}
+INFO 2026-07-27 09:41:37,652 gateway_service 20608 2392 GATEWAY_RESP | Status: 200 | Execution Time: 0.24ms
+DEBUG 2026-07-27 09:41:37,652 gateway_service 20608 2392 GATEWAY_RAW_BODY | {"status":"Failure","code":"008","description":"Insufficient Credit"}
+INFO 2026-07-27 09:41:37,654 gateway_service 20608 2392 GATEWAY_REQ | Attempt 1/3 | Method: POST | URL: https://text.draft4sms.com/vb/apikey.php
+DEBUG 2026-07-27 09:41:37,654 gateway_service 20608 2392 GATEWAY_PAYLOAD | Params: {'apikey': 'DRAF****7890', 'senderid': 'CLGEXM', 'number': '9876543210', 'message': 'Dear Student, your exam schedule is published.', 'templateid': '1107160000000123456', 'unicode': '0', 'format': 'json'}
+INFO 2026-07-27 09:41:37,654 gateway_service 20608 2392 GATEWAY_RESP | Status: 401 | Execution Time: 0.23ms
+DEBUG 2026-07-27 09:41:37,655 gateway_service 20608 2392 GATEWAY_RAW_BODY | {"error":"Unauthorized access"}
+INFO 2026-07-27 09:41:37,656 gateway_service 20608 2392 GATEWAY_REQ | Attempt 1/3 | Method: POST | URL: https://text.draft4sms.com/vb/apikey.php
+DEBUG 2026-07-27 09:41:37,656 gateway_service 20608 2392 GATEWAY_PAYLOAD | Params: {'apikey': 'DRAF****7890', 'senderid': 'CLGEXM', 'number': '9876543210', 'message': 'Dear Student, your exam schedule is published.', 'templateid': '1107160000000123456', 'unicode': '0', 'format': 'json'}
+INFO 2026-07-27 09:41:37,656 gateway_service 20608 2392 GATEWAY_RESP | Status: 200 | Execution Time: 0.25ms
+DEBUG 2026-07-27 09:41:37,656 gateway_service 20608 2392 GATEWAY_RAW_BODY | {"status":"Success","code":"011","messageid":"9876543210123","totnumber":1,"totalcredit":1,"description":"Message Sent Successfully"}
+INFO 2026-07-27 09:41:37,658 gateway_service 20608 2392 GATEWAY_REQ | Attempt 1/3 | Method: POST | URL: https://text.draft4sms.com/vb/apikey.php
+DEBUG 2026-07-27 09:41:37,658 gateway_service 20608 2392 GATEWAY_PAYLOAD | Params: {'apikey': 'DRAF****7890', 'senderid': 'CLGEXM', 'number': '9876543210', 'message': 'Dear Student, your exam schedule is published.', 'templateid': '1107160000000123456', 'unicode': '0', 'format': 'json'}
+INFO 2026-07-27 09:41:37,658 gateway_service 20608 2392 GATEWAY_RESP | Status: 500 | Execution Time: 0.23ms
+DEBUG 2026-07-27 09:41:37,658 gateway_service 20608 2392 GATEWAY_RAW_BODY | Internal Gateway Error
+WARNING 2026-07-27 09:41:37,658 gateway_service 20608 2392 GATEWAY_5XX_ERROR | Attempt 1 returned 500. Retrying...
+INFO 2026-07-27 09:41:37,658 gateway_service 20608 2392 GATEWAY_REQ | Attempt 2/3 | Method: POST | URL: https://text.draft4sms.com/vb/apikey.php
+DEBUG 2026-07-27 09:41:37,658 gateway_service 20608 2392 GATEWAY_PAYLOAD | Params: {'apikey': 'DRAF****7890', 'senderid': 'CLGEXM', 'number': '9876543210', 'message': 'Dear Student, your exam schedule is published.', 'templateid': '1107160000000123456', 'unicode': '0', 'format': 'json'}
+INFO 2026-07-27 09:41:37,659 gateway_service 20608 2392 GATEWAY_RESP | Status: 500 | Execution Time: 0.19ms
+DEBUG 2026-07-27 09:41:37,659 gateway_service 20608 2392 GATEWAY_RAW_BODY | Internal Gateway Error
+WARNING 2026-07-27 09:41:37,659 gateway_service 20608 2392 GATEWAY_5XX_ERROR | Attempt 2 returned 500. Retrying...
+INFO 2026-07-27 09:41:37,659 gateway_service 20608 2392 GATEWAY_REQ | Attempt 3/3 | Method: POST | URL: https://text.draft4sms.com/vb/apikey.php
+DEBUG 2026-07-27 09:41:37,659 gateway_service 20608 2392 GATEWAY_PAYLOAD | Params: {'apikey': 'DRAF****7890', 'senderid': 'CLGEXM', 'number': '9876543210', 'message': 'Dear Student, your exam schedule is published.', 'templateid': '1107160000000123456', 'unicode': '0', 'format': 'json'}
+INFO 2026-07-27 09:41:37,659 gateway_service 20608 2392 GATEWAY_RESP | Status: 500 | Execution Time: 0.13ms
+DEBUG 2026-07-27 09:41:37,659 gateway_service 20608 2392 GATEWAY_RAW_BODY | Internal Gateway Error
+WARNING 2026-07-27 09:41:37,659 gateway_service 20608 2392 GATEWAY_5XX_ERROR | Attempt 3 returned 500. Retrying...

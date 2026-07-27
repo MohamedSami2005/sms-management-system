@@ -2,7 +2,7 @@ from django.urls import path
 from .views import (
     TemplateListView, TemplateDetailView, TemplateCreateView, TemplateUpdateView,
     TemplateToggleStatusView, TemplateDeleteView, TemplateImportView,
-    TemplateExportView, TemplatePreviewAjaxView
+    TemplateExportView, TemplatePreviewAjaxView, TemplateVariableSchemaAjaxView
 )
 
 app_name = 'dlt_templates'
@@ -19,6 +19,7 @@ urlpatterns = [
     path('import/', TemplateImportView.as_view(), name='import'),
     path('export/', TemplateExportView.as_view(), name='export'),
     
-    # AJAX Live Preview API
+    # AJAX Live Preview & Schema APIs
     path('<int:pk>/preview-ajax/', TemplatePreviewAjaxView.as_view(), name='preview_ajax'),
+    path('<int:pk>/schema-ajax/', TemplateVariableSchemaAjaxView.as_view(), name='schema_ajax'),
 ]
