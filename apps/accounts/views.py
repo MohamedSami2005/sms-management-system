@@ -8,6 +8,7 @@ from django.views.generic import UpdateView
 from django.urls import reverse_lazy
 from django.contrib import messages
 from django.shortcuts import redirect
+from django.utils import timezone
 
 from .forms import (
     CustomLoginForm, UserProfileForm, CustomPasswordChangeForm,
@@ -18,7 +19,7 @@ from .services import AuthService
 
 class UserLoginView(LoginView):
     """
-    Handles user authentication, remember me persistent sessions, and redirect upon login.
+    Handles user authentication, lock verification, persistent sessions, and redirect upon login.
     """
     template_name = 'accounts/login.html'
     form_class = CustomLoginForm
@@ -32,12 +33,12 @@ class UserLoginView(LoginView):
         password = form.cleaned_data.get('password')
         remember_me = form.cleaned_data.get('remember_me', True)
 
-        user = AuthService.login_user(self.request, username, password, remember_me=remember_me)
+        user, err_msg = AuthService.login_user(self.request, username, password, remember_me=remember_me)
         if user:
             messages.success(self.request, f"Welcome back, {user.get_full_name() or user.username}!")
             return redirect(self.get_success_url())
         else:
-            messages.error(self.request, "Invalid username or password. Please check your credentials.")
+            messages.error(self.request, err_msg or "Invalid username or password. Please check your credentials.")
             return self.form_invalid(form)
 
 
@@ -71,15 +72,21 @@ class UserProfileView(LoginRequiredMixin, UpdateView):
 
 class UserPasswordChangeView(LoginRequiredMixin, PasswordChangeView):
     """
-    Allows authenticated users to update their account password.
+    Allows authenticated users to update their account password and clear force password change flag.
     """
     template_name = 'accounts/change_password.html'
     form_class = CustomPasswordChangeForm
     success_url = reverse_lazy('accounts:profile')
 
     def form_valid(self, form):
-        messages.success(self.request, "Your password has been changed successfully.")
-        return super().form_valid(form)
+        response = super().form_valid(form)
+        user = self.request.user
+        if user.must_change_password:
+            user.must_change_password = False
+            user.password_changed_at = timezone.now()
+            user.save(update_fields=['must_change_password', 'password_changed_at'])
+        messages.success(self.request, "Your password has been changed successfully. You may now continue using CCMS.")
+        return response
 
 
 # --- Password Reset Workflow Views ---

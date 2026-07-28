@@ -1,4 +1,5 @@
 import logging
+from django.shortcuts import redirect
 from django.utils import timezone
 from django.utils.deprecation import MiddlewareMixin
 
@@ -43,4 +44,26 @@ class LastLoginUpdateMiddleware(MiddlewareMixin):
             if not last_login or (now - last_login).total_seconds() > 300:
                 request.user.last_login = now
                 request.user.save(update_fields=['last_login'])
+        return None
+
+
+class ForcePasswordChangeMiddleware(MiddlewareMixin):
+    """
+    Middleware enforcing password change on next login if user.must_change_password is True.
+    Exempts static/media, logout, and password change endpoints.
+    """
+    EXEMPT_PATHS = [
+        '/accounts/password-change/',
+        '/accounts/logout/',
+        '/static/',
+        '/media/',
+    ]
+
+    def process_request(self, request):
+        if hasattr(request, 'user') and request.user.is_authenticated:
+            if getattr(request.user, 'must_change_password', False):
+                path = request.path
+                if not any(path.startswith(exempt) for exempt in self.EXEMPT_PATHS):
+                    logger.info(f"FORCE_PASSWORD_CHANGE_REDIRECT | User '{request.user.username}' redirected to password change.")
+                    return redirect('accounts:password_change')
         return None

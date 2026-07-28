@@ -1,37 +1,37 @@
 {% extends 'base.html' %}
 
-{% block title %}Bulk Staff SMS - Select Recipients{% endblock %}
+{% block title %}Personalized Bulk Staff SMS - Select Recipients{% endblock %}
 
 {% block content %}
 <nav aria-label="breadcrumb" class="mb-3">
     <ol class="breadcrumb">
         <li class="breadcrumb-item"><a href="{% url 'dashboard:home' %}">Dashboard</a></li>
-        <li class="breadcrumb-item"><a href="{% url 'sms:single' %}">SMS Portal</a></li>
-        <li class="breadcrumb-item active" aria-current="page">Bulk Staff SMS</li>
+        <li class="breadcrumb-item"><a href="{% url 'sms:single' %}">Communication</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Personalized Bulk Staff SMS</li>
     </ol>
 </nav>
 
 <form method="post" id="staffSelectionForm">
     {% csrf_token %}
     
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
         <div>
-            <h3 class="fw-bold mb-1">Bulk Staff SMS Dispatch</h3>
-            <p class="text-muted mb-0">Select staff members from the directory to dispatch bulk DLT-approved SMS notifications.</p>
+            <h3 class="fw-bold mb-1"><i class="bi bi-people text-primary me-2"></i>Personalized Bulk Staff SMS Engine</h3>
+            <p class="text-muted mb-0">Select staff members from the directory to dispatch personalized DLT-approved SMS notifications.</p>
         </div>
         <div class="d-flex gap-2 align-items-center">
-            <span class="badge bg-primary fs-6 px-3 py-2" id="selectedCountBadge">
+            <span class="badge bg-primary-subtle text-primary border border-primary-subtle fs-6 px-3 py-2 rounded-pill" id="selectedCountBadge">
                 <i class="bi bi-person-check me-1"></i> <span id="selectedCount">0</span> Selected
             </span>
-            <button type="submit" class="btn btn-primary fw-bold px-4" id="nextButton" disabled>
-                Next: Compose SMS <i class="bi bi-arrow-right ms-1"></i>
+            <button type="submit" class="btn btn-primary fw-bold px-4 shadow-sm" id="nextButton" disabled>
+                Next: Configure Variables <i class="bi bi-arrow-right ms-1"></i>
             </button>
         </div>
     </div>
 </form>
 
-<!-- Search & Multi-Filter Controls -->
-<div class="card border-0 shadow-sm rounded-3 mb-4">
+<!-- Search & Multi-Filter Controls Toolbar -->
+<div class="card border-0 shadow-sm rounded-4 mb-4">
     <div class="card-body p-3">
         <form method="get" class="row g-2 align-items-center">
             <div class="col-md-4">
@@ -68,41 +68,41 @@
             </div>
 
             <div class="col-md-1 d-flex gap-1">
-                <button type="submit" class="btn btn-primary w-100"><i class="bi bi-filter"></i></button>
-                <a href="{% url 'sms:bulk_select' %}" class="btn btn-outline-secondary" title="Reset Filters"><i class="bi bi-x-circle"></i></a>
+                <button type="submit" class="btn btn-primary w-100" title="Apply Filters"><i class="bi bi-funnel"></i></button>
+                <a href="{% url 'sms:bulk_select' %}" class="btn btn-outline-secondary" title="Reset Filters"><i class="bi bi-arrow-clockwise"></i></a>
             </div>
         </form>
     </div>
 </div>
 
 <!-- Staff Directory Table -->
-<div class="card border-0 shadow-sm rounded-4">
+<div class="card border-0 shadow-sm rounded-4 overflow-hidden">
     <div class="card-body p-0">
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
-                <thead class="table-light">
+                <thead class="table-light text-uppercase small font-monospace text-muted">
                     <tr>
-                        <th width="40" class="text-center">
+                        <th width="45" class="text-center ps-3">
                             <input type="checkbox" class="form-check-input" id="selectAllCheckbox" title="Select All Visible Staff">
                         </th>
                         <th>Employee ID</th>
-                        <th>Staff Name</th>
+                        <th>Staff Member</th>
                         <th>Department</th>
                         <th>Role</th>
                         <th>Mobile Number</th>
-                        <th>Status</th>
+                        <th class="pe-4">Status</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for staff in staff_list %}
                     <tr>
-                        <td class="text-center">
+                        <td class="text-center ps-3">
                             <input type="checkbox" form="staffSelectionForm" name="selected_staff_ids" value="{{ staff.id }}" class="form-check-input staff-checkbox">
                         </td>
                         <td><code>{{ staff.employee_id|default:"-" }}</code></td>
                         <td>
-                            <span class="fw-bold text-dark">{{ staff.get_full_name|default:staff.username }}</span>
-                            <div><small class="text-muted">{{ staff.email }}</small></div>
+                            <div class="fw-bold text-dark">{{ staff.get_full_name|default:staff.username }}</div>
+                            <small class="text-muted">{{ staff.email }}</small>
                         </td>
                         <td>
                             {% if staff.department %}
@@ -112,30 +112,29 @@
                             {% endif %}
                         </td>
                         <td>
-                            {% if staff.role %}
-                                <span class="badge bg-purple-soft text-purple">{{ staff.role.name }}</span>
-                            {% else %}
-                                <span class="badge bg-secondary">Staff</span>
-                            {% endif %}
+                            <span class="badge bg-purple-soft text-purple">{{ staff.get_role_display|default:"Staff" }}</span>
                         </td>
                         <td>
                             {% if staff.phone_number %}
-                                <span class="font-monospace fw-semibold">{{ staff.phone_number }}</span>
+                                <span class="font-monospace fw-semibold text-dark">{{ staff.phone_number }}</span>
                             {% else %}
-                                <span class="badge bg-warning text-dark">Missing Mobile</span>
+                                <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle"><i class="bi bi-exclamation-triangle-fill me-1"></i> No Phone</span>
                             {% endif %}
                         </td>
-                        <td>
+                        <td class="pe-4">
                             {% if staff.is_active %}
-                                <span class="badge bg-success">Active</span>
+                                <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3"><i class="bi bi-check-circle-fill me-1"></i> Active</span>
                             {% else %}
-                                <span class="badge bg-secondary">Inactive</span>
+                                <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill px-3"><i class="bi bi-x-circle-fill me-1"></i> Inactive</span>
                             {% endif %}
                         </td>
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="7" class="text-center py-4 text-muted">No staff members found matching your search criteria.</td>
+                        <td colspan="7" class="text-center py-5 text-muted">
+                            <i class="bi bi-person-x display-5 d-block mb-3 opacity-50"></i>
+                            No staff members found matching your search criteria.
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -148,13 +147,13 @@
 {% if is_paginated %}
 <div class="mt-4 d-flex justify-content-center">
     <nav>
-        <ul class="pagination">
+        <ul class="pagination pagination-sm shadow-sm">
             {% if page_obj.has_previous %}
-                <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ search_query }}&department={{ selected_dept }}&role={{ selected_role }}">Previous</a></li>
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ search_query }}&department={{ selected_dept }}&role={{ selected_role }}">&laquo; Previous</a></li>
             {% endif %}
             <li class="page-item active"><span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span></li>
             {% if page_obj.has_next %}
-                <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ search_query }}&department={{ selected_dept }}&role={{ selected_role }}">Next</a></li>
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ search_query }}&department={{ selected_dept }}&role={{ selected_role }}">Next &raquo;</a></li>
             {% endif %}
         </ul>
     </nav>

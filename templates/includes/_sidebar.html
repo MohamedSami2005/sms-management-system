@@ -1,64 +1,107 @@
 <div id="sidebar-wrapper">
-    <div class="sidebar-heading d-flex align-items-center gap-2">
-        <i class="bi bi-chat-left-dots-fill fs-4 text-info"></i>
-        <span>CCMS Platform</span>
+    <!-- Brand Header -->
+    <div class="sidebar-brand px-3 py-4 d-flex align-items-center gap-3">
+        <div class="brand-icon rounded-3 p-2 d-flex align-items-center justify-content-center" style="width: 44px; height: 44px; background: rgba(56, 189, 248, 0.12);">
+            <i class="bi bi-chat-left-dots-fill fs-3 text-info"></i>
+        </div>
+        <div>
+            <h5 class="fw-bold mb-0 text-white" style="letter-spacing: -0.3px;">CCMS Platform</h5>
+            <small class="text-muted d-block" style="font-size: 0.75rem; line-height: 1.25; color: #94a3b8 !important;">Campus Communication<br>Management System</small>
+        </div>
     </div>
     
-    <div class="sidebar-menu nav flex-column">
-        <!-- Dashboard -->
-        <a href="{% url 'dashboard:home' %}" class="nav-link {% if request.resolver_match.app_name == 'dashboard' %}active{% endif %}">
-            <i class="bi bi-speedometer2"></i> Dashboard
-        </a>
+    <div class="sidebar-menu nav flex-column px-2 pb-4">
+        <!-- Dashboard Active Pill -->
+        <div class="mb-3">
+            <a href="{% url 'dashboard:home' %}" class="nav-link {% if request.resolver_match.app_name == 'dashboard' %}active{% endif %}">
+                <i class="bi bi-speedometer2 fs-5"></i>
+                <span>Dashboard</span>
+                <i class="bi bi-chevron-right ms-auto small"></i>
+            </a>
+        </div>
 
         <!-- Communication Module Group -->
-        <div class="sidebar-section-heading px-3 mt-3 mb-1 text-uppercase text-muted small font-monospace fw-bold">Communication</div>
+        <div class="sidebar-section-heading">
+            <span class="bullet-dot">&bull;</span> COMMUNICATION
+        </div>
         <a href="{% url 'sms:single' %}" class="nav-link {% if request.resolver_match.url_name == 'single' %}active{% endif %}">
-            <i class="bi bi-send"></i> Send Single SMS
+            <i class="bi bi-send text-info fs-5"></i>
+            <span>Send Single SMS</span>
+            <i class="bi bi-chevron-right ms-auto small text-muted"></i>
         </a>
         <a href="{% url 'sms:bulk_select' %}" class="nav-link {% if 'bulk' in request.resolver_match.url_name %}active{% endif %}">
-            <i class="bi bi-people"></i> Personalized Bulk SMS
+            <i class="bi bi-people text-purple fs-5"></i>
+            <span>Personalized Bulk SMS</span>
+            <i class="bi bi-chevron-right ms-auto small text-muted"></i>
         </a>
         <a href="{% url 'sms:queue' %}" class="nav-link {% if request.resolver_match.url_name == 'queue' %}active{% endif %}">
-            <i class="bi bi-hourglass-split"></i> SMS Queue
+            <i class="bi bi-hourglass-split text-warning fs-5"></i>
+            <span>SMS Queue</span>
+            <i class="bi bi-chevron-right ms-auto small text-muted"></i>
         </a>
+
+        <div class="sidebar-divider"></div>
 
         <!-- Template Management -->
         {% if user.is_admin or user.role == 'COE' or user.role == 'ADMISSION' or user.role == 'ACCOUNTS' or user.role == 'PLACEMENT' %}
-        <div class="sidebar-section-heading px-3 mt-3 mb-1 text-uppercase text-muted small font-monospace fw-bold">Template Management</div>
+        <div class="sidebar-section-heading">
+            <span class="bullet-dot">&bull;</span> TEMPLATE MANAGEMENT
+        </div>
         <a href="{% url 'dlt_templates:list' %}" class="nav-link {% if request.resolver_match.app_name == 'dlt_templates' %}active{% endif %}">
-            <i class="bi bi-file-earmark-text"></i> DLT Templates
+            <i class="bi bi-file-earmark-text text-success fs-5"></i>
+            <span>Add/Edit templates</span>
+            <i class="bi bi-chevron-right ms-auto small text-muted"></i>
         </a>
+        <div class="sidebar-divider"></div>
         {% endif %}
 
         <!-- Recipient Management (Admin only) -->
         {% if user.is_admin %}
-        <div class="sidebar-section-heading px-3 mt-3 mb-1 text-uppercase text-muted small font-monospace fw-bold">Recipient Management</div>
+        <div class="sidebar-section-heading">
+            <span class="bullet-dot">&bull;</span> RECIPIENT MANAGEMENT
+        </div>
         <a href="{% url 'users:user_list' %}" class="nav-link {% if request.resolver_match.url_name == 'user_list' %}active{% endif %}">
-            <i class="bi bi-person-badge"></i> Staff Directory
+            <i class="bi bi-person-badge text-primary fs-5"></i>
+            <span>Staff Directory</span>
+            <i class="bi bi-chevron-right ms-auto small text-muted"></i>
         </a>
         <a href="{% url 'users:department_list' %}" class="nav-link {% if request.resolver_match.url_name == 'department_list' %}active{% endif %}">
-            <i class="bi bi-building"></i> Departments
+            <i class="bi bi-building text-purple fs-5"></i>
+            <span>Departments</span>
+            <i class="bi bi-chevron-right ms-auto small text-muted"></i>
         </a>
+        <div class="sidebar-divider"></div>
         {% endif %}
 
         <!-- Communication Logs -->
-        <div class="sidebar-section-heading px-3 mt-3 mb-1 text-uppercase text-muted small font-monospace fw-bold">Audit & Analytics</div>
+        <div class="sidebar-section-heading">
+            <span class="bullet-dot">&bull;</span> AUDIT & ANALYTICS
+        </div>
         <a href="{% url 'logs:list' %}" class="nav-link {% if request.resolver_match.app_name == 'logs' %}active{% endif %}">
-            <i class="bi bi-journal-text"></i> Communication Logs
+            <i class="bi bi-journal-text text-danger fs-5"></i>
+            <span>Communication Logs</span>
+            <i class="bi bi-chevron-right ms-auto small text-muted"></i>
         </a>
 
         <!-- Reports & Analytics -->
         {% if user.is_admin or user.role == 'COE' or user.role == 'ADMISSION' or user.role == 'ACCOUNTS' or user.role == 'PLACEMENT' %}
         <a href="{% url 'reports:overview' %}" class="nav-link {% if request.resolver_match.app_name == 'reports' %}active{% endif %}">
-            <i class="bi bi-bar-chart-line"></i> Reports & Analytics
+            <i class="bi bi-bar-chart-line text-success fs-5"></i>
+            <span>Reports & Analytics</span>
+            <i class="bi bi-chevron-right ms-auto small text-muted"></i>
         </a>
+        <div class="sidebar-divider"></div>
         {% endif %}
 
         <!-- Gateway & System Settings (Admin only) -->
         {% if user.is_admin %}
-        <div class="sidebar-section-heading px-3 mt-3 mb-1 text-uppercase text-muted small font-monospace fw-bold">Administration</div>
+        <div class="sidebar-section-heading">
+            <span class="bullet-dot">&bull;</span> ADMINISTRATION
+        </div>
         <a href="{% url 'settings_app:index' %}" class="nav-link {% if request.resolver_match.app_name == 'settings_app' %}active{% endif %}">
-            <i class="bi bi-gear"></i> System Settings
+            <i class="bi bi-gear text-white fs-5"></i>
+            <span>System Settings</span>
+            <i class="bi bi-chevron-right ms-auto small text-muted"></i>
         </a>
         {% endif %}
     </div>

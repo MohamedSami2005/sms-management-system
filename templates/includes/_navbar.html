@@ -1,25 +1,27 @@
 <nav class="navbar navbar-expand-lg navbar-custom">
     <div class="container-fluid">
-        <span class="navbar-brand mb-0 h1 text-muted fs-6">College SMS Management System</span>
+        <span class="navbar-brand mb-0 h1 text-muted fs-6 fw-semibold">
+            <i class="bi bi-building-gear text-primary me-2"></i>Campus Communication Management System (CCMS)
+        </span>
         
         <div class="ms-auto d-flex align-items-center gap-3">
             {% if user.is_authenticated %}
                 <div class="dropdown">
-                    <button class="btn btn-light dropdown-toggle d-flex align-items-center gap-2 border" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <button class="btn btn-light dropdown-toggle d-flex align-items-center gap-2 border shadow-sm rounded-3 px-3 py-2" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                         <i class="bi bi-person-circle fs-5 text-primary"></i>
-                        <span>{{ user.username }}</span>
-                        <span class="badge bg-secondary ms-1">{{ user.get_role_display }}</span>
+                        <span class="fw-semibold">{{ user.get_full_name|default:user.username }}</span>
+                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill">{{ user.get_role_display }}</span>
                     </button>
-                    <ul class="dropdown-menu dropdown-menu-end shadow-sm">
-                        <li><span class="dropdown-header">Department: {{ user.department.name|default:"General" }}</span></li>
+                    <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3 mt-2">
+                        <li><span class="dropdown-header text-uppercase font-monospace small"><i class="bi bi-building me-1"></i> {{ user.department.name|default:"General Campus" }}</span></li>
                         <li><hr class="dropdown-divider"></li>
                         <li>
-                            <a class="dropdown-item d-flex align-items-center gap-2" href="{% url 'accounts:profile' %}">
+                            <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="{% url 'accounts:profile' %}">
                                 <i class="bi bi-person-vcard text-primary"></i> My Profile
                             </a>
                         </li>
                         <li>
-                            <a class="dropdown-item d-flex align-items-center gap-2" href="{% url 'accounts:password_change' %}">
+                            <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="{% url 'accounts:password_change' %}">
                                 <i class="bi bi-shield-lock text-secondary"></i> Change Password
                             </a>
                         </li>
@@ -27,15 +29,15 @@
                         <li>
                             <form method="post" action="{% url 'accounts:logout' %}">
                                 {% csrf_token %}
-                                <button type="submit" class="dropdown-item text-danger d-flex align-items-center gap-2">
-                                    <i class="bi bi-box-arrow-right"></i> Logout
+                                <button type="submit" class="dropdown-item text-danger d-flex align-items-center gap-2 py-2">
+                                    <i class="bi bi-box-arrow-right"></i> Sign Out
                                 </button>
                             </form>
                         </li>
                     </ul>
                 </div>
             {% else %}
-                <a href="{% url 'accounts:login' %}" class="btn btn-primary btn-sm">Login</a>
+                <a href="{% url 'accounts:login' %}" class="btn btn-primary btn-sm px-3 fw-bold">Sign In</a>
             {% endif %}
         </div>
     </div>

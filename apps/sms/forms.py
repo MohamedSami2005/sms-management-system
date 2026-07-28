@@ -3,25 +3,33 @@ from django.utils.translation import gettext_lazy as _
 from apps.common.models import phone_validator
 from apps.dlt_templates.models import DLTTemplate
 from apps.users.models import Department
+from apps.accounts.models import CustomUser
 
 
 class SingleSMSForm(forms.Form):
     """
-    Form for single SMS dispatch.
+    Form for single SMS dispatch supporting Staff Lookup and dynamic template parameters.
     """
+    staff = forms.ModelChoiceField(
+        queryset=CustomUser.objects.filter(is_active=True),
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-select', 'id': 'staffSelect'}),
+        label=_("Select Recipient Staff")
+    )
     mobile_number = forms.CharField(
         max_length=15,
         validators=[phone_validator],
         widget=forms.TextInput(attrs={
-            'class': 'form-control form-control-lg font-monospace',
-            'placeholder': '10-digit Indian Mobile Number (e.g. 9876543210)'
+            'class': 'form-control font-monospace',
+            'id': 'mobileNumberInput',
+            'placeholder': 'Auto-populated from selected staff'
         }),
         label=_("Recipient Mobile Number")
     )
     department = forms.ModelChoiceField(
         queryset=Department.objects.filter(is_active=True),
         required=False,
-        widget=forms.Select(attrs={'class': 'form-select'}),
+        widget=forms.Select(attrs={'class': 'form-select', 'id': 'departmentSelect'}),
         label=_("Department Scope")
     )
     template = forms.ModelChoiceField(

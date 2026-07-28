@@ -6,7 +6,7 @@ from django.shortcuts import redirect, get_object_or_404
 from django.db.models import Q
 
 from apps.common.mixins import RoleRequiredMixin
-from apps.accounts.models import CustomUser, RoleChoices
+from apps.accounts.models import CustomUser, RoleChoices, ScopeChoices
 from .models import Department
 from .forms import DepartmentForm, UserCreateForm, UserUpdateForm, AdminResetPasswordForm
 from .services import DepartmentService, UserService
@@ -84,20 +84,25 @@ class DepartmentDeleteView(LoginRequiredMixin, RoleRequiredMixin, View):
         return redirect('users:department_list')
 
 
-# --- User Management Views ---
+# --- Web-Based User Administration Views ---
 
 class UserListView(LoginRequiredMixin, RoleRequiredMixin, ListView):
+    """
+    Administrator User Directory displaying personnel details, system roles, scope,
+    last login, failed attempts, and administrative actions.
+    """
     model = CustomUser
     template_name = 'users/user_list.html'
     context_object_name = 'users'
     allowed_roles = ['ADMIN']
-    paginate_by = 10
+    paginate_by = 12
 
     def get_queryset(self):
-        queryset = super().get_queryset().select_related('department')
+        queryset = super().get_queryset().filter(is_deleted=False).select_related('department', 'created_by', 'role_obj').order_by('-date_joined')
         query = self.request.GET.get('q')
         role_filter = self.request.GET.get('role')
         dept_filter = self.request.GET.get('department')
+        scope_filter = self.request.GET.get('scope')
         status_filter = self.request.GET.get('status')
 
         if query:
@@ -110,11 +115,15 @@ class UserListView(LoginRequiredMixin, RoleRequiredMixin, ListView):
             queryset = queryset.filter(role=role_filter)
         if dept_filter:
             queryset = queryset.filter(department_id=dept_filter)
+        if scope_filter:
+            queryset = queryset.filter(scope_type=scope_filter)
         if status_filter:
             if status_filter == 'active':
-                queryset = queryset.filter(is_active=True)
+                queryset = queryset.filter(is_active=True, is_locked=False)
             elif status_filter == 'inactive':
                 queryset = queryset.filter(is_active=False)
+            elif status_filter == 'locked':
+                queryset = queryset.filter(is_locked=True)
 
         return queryset
 
@@ -123,13 +132,18 @@ class UserListView(LoginRequiredMixin, RoleRequiredMixin, ListView):
         context['search_query'] = self.request.GET.get('q', '')
         context['selected_role'] = self.request.GET.get('role', '')
         context['selected_dept'] = self.request.GET.get('department', '')
+        context['selected_scope'] = self.request.GET.get('scope', '')
         context['selected_status'] = self.request.GET.get('status', '')
         context['roles'] = RoleChoices.choices
+        context['scopes'] = ScopeChoices.choices
         context['departments'] = Department.objects.filter(is_active=True)
         return context
 
 
 class UserCreateView(LoginRequiredMixin, RoleRequiredMixin, CreateView):
+    """
+    Web-based User Creation form for Administrators.
+    """
     model = CustomUser
     form_class = UserCreateForm
     template_name = 'users/user_form.html'
@@ -137,12 +151,15 @@ class UserCreateView(LoginRequiredMixin, RoleRequiredMixin, CreateView):
     allowed_roles = ['ADMIN']
 
     def form_valid(self, form):
-        UserService.create_user(form, created_by=self.request.user)
-        messages.success(self.request, f"Staff account for '{form.instance.username}' created successfully.")
+        user = UserService.create_user(form, created_by=self.request.user)
+        messages.success(self.request, f"User account for '{user.get_full_name() or user.username}' ({user.get_role_display()}) created successfully.")
         return redirect(self.success_url)
 
 
 class UserUpdateView(LoginRequiredMixin, RoleRequiredMixin, UpdateView):
+    """
+    Web-based User Profile & Role Update form for Administrators.
+    """
     model = CustomUser
     form_class = UserUpdateForm
     template_name = 'users/user_form.html'
@@ -150,40 +167,79 @@ class UserUpdateView(LoginRequiredMixin, RoleRequiredMixin, UpdateView):
     allowed_roles = ['ADMIN']
 
     def form_valid(self, form):
-        messages.success(self.request, f"Staff user '{form.instance.username}' updated successfully.")
-        return super().form_valid(form)
+        user = UserService.update_user(self.object, form, updated_by=self.request.user)
+        messages.success(self.request, f"User account '{user.username}' updated successfully.")
+        return redirect(self.success_url)
 
 
 class UserToggleStatusView(LoginRequiredMixin, RoleRequiredMixin, View):
+    """
+    Activates or Deactivates a user account.
+    """
     allowed_roles = ['ADMIN']
 
     def post(self, request, pk):
-        user = get_object_or_404(CustomUser, pk=pk)
+        user = get_object_or_404(CustomUser, pk=pk, is_deleted=False)
         if user == request.user:
-            messages.error(request, "You cannot deactivate or lock your own account.")
+            messages.error(request, "You cannot deactivate your own Administrator account.")
             return redirect('users:user_list')
 
-        new_status = UserService.toggle_user_status(user)
-        status_str = "activated" if new_status else "deactivated/locked"
+        new_status = UserService.toggle_user_status(user, toggled_by=request.user)
+        status_str = "activated" if new_status else "deactivated"
         messages.success(request, f"User account '{user.username}' has been {status_str}.")
         return redirect('users:user_list')
 
 
-class UserAdminResetPasswordView(LoginRequiredMixin, RoleRequiredMixin, View):
+class UserToggleLockView(LoginRequiredMixin, RoleRequiredMixin, View):
+    """
+    Locks or Unlocks a user account.
+    """
     allowed_roles = ['ADMIN']
 
-    def get(self, request, pk):
-        user = get_object_or_404(CustomUser, pk=pk)
-        form = AdminResetPasswordForm()
+    def post(self, request, pk):
+        user = get_object_or_404(CustomUser, pk=pk, is_deleted=False)
+        if user == request.user:
+            messages.error(request, "You cannot lock your own Administrator account.")
+            return redirect('users:user_list')
+
+        is_locked = UserService.toggle_user_lock(user, locked_by=request.user)
+        lock_str = "locked" if is_locked else "unlocked"
+        messages.success(request, f"User account '{user.username}' has been {lock_str}.")
         return redirect('users:user_list')
 
+
+class UserDeleteView(LoginRequiredMixin, RoleRequiredMixin, View):
+    """
+    Soft-deletes a user account.
+    """
+    allowed_roles = ['ADMIN']
+
     def post(self, request, pk):
-        user = get_object_or_404(CustomUser, pk=pk)
+        user = get_object_or_404(CustomUser, pk=pk, is_deleted=False)
+        if user == request.user:
+            messages.error(request, "You cannot delete your own Administrator account.")
+            return redirect('users:user_list')
+
+        username = user.username
+        UserService.soft_delete_user(user, deleted_by=request.user)
+        messages.info(request, f"User account '{username}' has been soft deleted.")
+        return redirect('users:user_list')
+
+
+class UserAdminResetPasswordView(LoginRequiredMixin, RoleRequiredMixin, View):
+    """
+    Web-based Password Reset endpoint allowing Administrators to set a user's password directly.
+    """
+    allowed_roles = ['ADMIN']
+
+    def post(self, request, pk):
+        user = get_object_or_404(CustomUser, pk=pk, is_deleted=False)
         form = AdminResetPasswordForm(request.POST)
         if form.is_valid():
             new_password = form.cleaned_data.get('new_password')
-            UserService.reset_password(user, new_password)
-            messages.success(request, f"Password for user '{user.username}' reset successfully.")
+            must_change = form.cleaned_data.get('must_change_password', True)
+            UserService.reset_password(user, new_password, reset_by=request.user, must_change_password=must_change)
+            messages.success(request, f"Password for '{user.username}' reset successfully.")
         else:
             messages.error(request, "Password reset failed. Please ensure both passwords match.")
         return redirect('users:user_list')

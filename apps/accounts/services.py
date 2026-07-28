@@ -1,7 +1,8 @@
 import logging
-from typing import Optional
+from typing import Optional, Tuple
 from django.contrib.auth import authenticate, login, logout
 from django.http import HttpRequest
+from django.utils import timezone
 from .models import CustomUser
 
 logger = logging.getLogger('django')
@@ -9,16 +10,30 @@ logger = logging.getLogger('django')
 
 class AuthService:
     """
-    Service layer providing clean business logic for authentication, security logging, and session control.
+    Service layer providing clean business logic for authentication, security logging,
+    account locking, failed attempt counters, and session control.
     """
 
     @staticmethod
-    def login_user(request: HttpRequest, username: str, password: str, remember_me: bool = True) -> Optional[CustomUser]:
+    def login_user(request: HttpRequest, username: str, password: str, remember_me: bool = True) -> Tuple[Optional[CustomUser], str]:
         """
-        Authenticates user, creates session, configures 'Remember Me' duration, and logs outcome.
+        Authenticates user, checks lock status, manages failed attempts, sets 'Remember Me' session expiry,
+        and returns (user_instance, error_message).
         """
+        user_qs = CustomUser.objects.filter(username__iexact=username, is_deleted=False)
+        target_user = user_qs.first()
+
+        if target_user and target_user.is_locked:
+            logger.warning(f"AUTH_LOCKED_ATTEMPT | Locked account attempt for username: '{username}'")
+            return None, "Account is locked due to security policy. Please contact an Administrator."
+
         user = authenticate(request, username=username, password=password)
-        if user and user.is_active:
+        if user and user.is_active and not user.is_deleted:
+            # Reset failed login counter on success
+            if user.failed_login_attempts > 0:
+                user.failed_login_attempts = 0
+                user.save(update_fields=['failed_login_attempts'])
+
             login(request, user)
             
             # Remember Me session expiry setup: 2 weeks (1,209,600 seconds) vs Browser Close (0)
@@ -28,10 +43,17 @@ class AuthService:
                 request.session.set_expiry(0)
 
             logger.info(f"AUTH_SUCCESS | Username: '{username}' | Role: '{user.role}' | IP: {request.META.get('REMOTE_ADDR')}")
-            return user
+            return user, ""
         else:
+            if target_user:
+                target_user.failed_login_attempts += 1
+                if target_user.failed_login_attempts >= 5:
+                    target_user.is_locked = True
+                    logger.warning(f"AUTH_AUTO_LOCK | Account '{username}' locked after 5 failed login attempts.")
+                target_user.save(update_fields=['failed_login_attempts', 'is_locked'])
+
             logger.warning(f"AUTH_FAILURE | Failed login attempt for username: '{username}' | IP: {request.META.get('REMOTE_ADDR')}")
-            return None
+            return None, "Invalid username or password. Please check your credentials."
 
     @staticmethod
     def logout_user(request: HttpRequest) -> None:

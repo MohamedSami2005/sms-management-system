@@ -1,5 +1,6 @@
 import logging
 from typing import Tuple
+from django.utils import timezone
 from apps.users.models import Department
 from apps.accounts.models import CustomUser
 
@@ -16,7 +17,7 @@ class DepartmentService:
         """
         Deletes department if no users are associated; soft-deactivates if users are assigned.
         """
-        user_count = department.users.count()
+        user_count = department.users.filter(is_deleted=False).count()
         if user_count > 0:
             department.is_active = False
             department.save(update_fields=['is_active'])
@@ -38,7 +39,8 @@ class DepartmentService:
 
 class UserService:
     """
-    Business service layer managing staff accounts, roles, and password resets.
+    Business service layer managing staff accounts, roles, scope-based permissions,
+    account locking, password resets, and soft deletion.
     """
 
     @staticmethod
@@ -46,21 +48,47 @@ class UserService:
         user = form.save(commit=False)
         password = form.cleaned_data.get('password')
         user.set_password(password)
+        user.created_by = created_by
         user.save()
         form.save_m2m()
-        logger.info(f"USER_CREATE | New user '{user.username}' ({user.role}) created by '{created_by.username}'.")
+        logger.info(f"USER_CREATE | New user '{user.username}' (Role: {user.role}, Scope: {user.scope_type}) created by '{created_by.username}'.")
         return user
 
     @staticmethod
-    def toggle_user_status(user: CustomUser) -> bool:
+    def update_user(user: CustomUser, form: any, updated_by: CustomUser) -> CustomUser:
+        updated_user = form.save()
+        logger.info(f"USER_UPDATE | Account '{updated_user.username}' updated by Administrator '{updated_by.username}'.")
+        return updated_user
+
+    @staticmethod
+    def toggle_user_status(user: CustomUser, toggled_by: CustomUser) -> bool:
         user.is_active = not user.is_active
         user.save(update_fields=['is_active'])
-        action = "activated" if user.is_active else "deactivated/locked"
-        logger.info(f"USER_STATUS_TOGGLE | User '{user.username}' was {action}.")
+        action = "activated" if user.is_active else "deactivated"
+        logger.info(f"USER_STATUS_TOGGLE | User '{user.username}' was {action} by '{toggled_by.username}'.")
         return user.is_active
 
     @staticmethod
-    def reset_password(user: CustomUser, new_password: str) -> None:
+    def toggle_user_lock(user: CustomUser, locked_by: CustomUser) -> bool:
+        user.is_locked = not user.is_locked
+        if user.is_locked:
+            user.failed_login_attempts = 0
+        user.save(update_fields=['is_locked', 'failed_login_attempts'])
+        action = "locked" if user.is_locked else "unlocked"
+        logger.info(f"USER_LOCK_TOGGLE | User account '{user.username}' was {action} by '{locked_by.username}'.")
+        return user.is_locked
+
+    @staticmethod
+    def soft_delete_user(user: CustomUser, deleted_by: CustomUser) -> None:
+        user.is_deleted = True
+        user.is_active = False
+        user.save(update_fields=['is_deleted', 'is_active'])
+        logger.info(f"USER_SOFT_DELETE | Account '{user.username}' soft-deleted by '{deleted_by.username}'.")
+
+    @staticmethod
+    def reset_password(user: CustomUser, new_password: str, reset_by: CustomUser, must_change_password: bool = True) -> None:
         user.set_password(new_password)
-        user.save(update_fields=['password'])
-        logger.info(f"ADMIN_PASSWORD_RESET | Password reset for user '{user.username}'.")
+        user.must_change_password = must_change_password
+        user.password_changed_at = timezone.now()
+        user.save(update_fields=['password', 'must_change_password', 'password_changed_at'])
+        logger.info(f"ADMIN_PASSWORD_RESET | Password for user '{user.username}' reset by Administrator '{reset_by.username}'.")

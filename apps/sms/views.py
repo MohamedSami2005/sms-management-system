@@ -302,3 +302,53 @@ class SMSQueueListView(LoginRequiredMixin, RoleRequiredMixin, ListView):
     context_object_name = 'queue_items'
     allowed_roles = ALLOWED_SMS_ROLES
     paginate_by = 15
+
+
+class StaffSearchAjaxView(LoginRequiredMixin, RoleRequiredMixin, View):
+    """
+    AJAX endpoint for searching active staff personnel by Name, Employee ID, Username, Email,
+    or Mobile Number. Returns formatted JSON for auto-complete dropdowns.
+    """
+    allowed_roles = ALLOWED_SMS_ROLES
+
+    def get(self, request):
+        query = request.GET.get('q', '').strip()
+        qs = CustomUser.objects.filter(is_active=True).select_related('department', 'role_obj')
+
+        if query:
+            qs = qs.filter(
+                Q(first_name__icontains=query) |
+                Q(last_name__icontains=query) |
+                Q(username__icontains=query) |
+                Q(employee_id__icontains=query) |
+                Q(email__icontains=query) |
+                Q(phone_number__icontains=query)
+            )
+
+        qs = qs[:20]
+
+        results = []
+        for staff in qs:
+            full_name = staff.get_full_name() or staff.username
+            emp_id = staff.employee_id or 'N/A'
+            dept_name = staff.department.name if staff.department else 'General'
+            mobile = staff.phone_number or ''
+            has_mobile = bool(mobile)
+
+            display_label = f"{emp_id} • {full_name} • {dept_name} • {mobile or 'No Phone'}"
+
+            results.append({
+                'id': staff.id,
+                'name': full_name,
+                'username': staff.username,
+                'employee_id': emp_id,
+                'department': dept_name,
+                'department_id': staff.department_id if staff.department else None,
+                'role': staff.get_role_display(),
+                'mobile': mobile,
+                'email': staff.email or 'N/A',
+                'has_mobile': has_mobile,
+                'display_label': display_label
+            })
+
+        return JsonResponse({'results': results})

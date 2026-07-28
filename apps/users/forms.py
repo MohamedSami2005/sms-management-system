@@ -1,7 +1,7 @@
 from django import forms
 from django.utils.translation import gettext_lazy as _
 from apps.users.models import Department
-from apps.accounts.models import CustomUser, RoleChoices
+from apps.accounts.models import CustomUser, RoleChoices, ScopeChoices
 
 
 class DepartmentForm(forms.ModelForm):
@@ -51,22 +51,29 @@ class DepartmentForm(forms.ModelForm):
 
 class UserCreateForm(forms.ModelForm):
     """
-    Form for Administrator to create a new staff account with assigned role and department.
+    Form for Administrator to create a new user account with assigned role, scope, and department.
     """
     password = forms.CharField(
         widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Initial Password'}),
-        label=_("Password")
+        label=_("Initial Password")
     )
     confirm_password = forms.CharField(
         widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Confirm Password'}),
         label=_("Confirm Password")
     )
+    must_change_password = forms.BooleanField(
+        required=False,
+        initial=True,
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        label=_("Force Password Change on First Login")
+    )
 
     class Meta:
         model = CustomUser
         fields = [
-            'username', 'email', 'first_name', 'last_name',
-            'role', 'department', 'employee_id', 'phone_number', 'is_active'
+            'employee_id', 'username', 'first_name', 'last_name', 'email',
+            'phone_number', 'department', 'designation', 'role', 'scope_type',
+            'is_active', 'must_change_password'
         ]
         widgets = {
             'username': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'johndoe'}),
@@ -74,7 +81,9 @@ class UserCreateForm(forms.ModelForm):
             'first_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'John'}),
             'last_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Doe'}),
             'role': forms.Select(attrs={'class': 'form-select'}),
+            'scope_type': forms.Select(attrs={'class': 'form-select'}),
             'department': forms.Select(attrs={'class': 'form-select'}),
+            'designation': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g. Professor / Accountant'}),
             'employee_id': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'EMP-1001'}),
             'phone_number': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '9876543210'}),
             'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
@@ -115,13 +124,14 @@ class UserCreateForm(forms.ModelForm):
 
 class UserUpdateForm(forms.ModelForm):
     """
-    Form for Administrator to edit an existing user account.
+    Form for Administrator to edit an existing user account profile, role, scope, and lock status.
     """
     class Meta:
         model = CustomUser
         fields = [
-            'username', 'email', 'first_name', 'last_name',
-            'role', 'department', 'employee_id', 'phone_number', 'is_active'
+            'employee_id', 'username', 'first_name', 'last_name', 'email',
+            'phone_number', 'department', 'designation', 'role', 'scope_type',
+            'is_active', 'is_locked', 'must_change_password'
         ]
         widgets = {
             'username': forms.TextInput(attrs={'class': 'form-control'}),
@@ -129,10 +139,14 @@ class UserUpdateForm(forms.ModelForm):
             'first_name': forms.TextInput(attrs={'class': 'form-control'}),
             'last_name': forms.TextInput(attrs={'class': 'form-control'}),
             'role': forms.Select(attrs={'class': 'form-select'}),
+            'scope_type': forms.Select(attrs={'class': 'form-select'}),
             'department': forms.Select(attrs={'class': 'form-select'}),
+            'designation': forms.TextInput(attrs={'class': 'form-control'}),
             'employee_id': forms.TextInput(attrs={'class': 'form-control'}),
             'phone_number': forms.TextInput(attrs={'class': 'form-control'}),
             'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'is_locked': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'must_change_password': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
 
     def clean_username(self):
@@ -162,7 +176,7 @@ class UserUpdateForm(forms.ModelForm):
 
 class AdminResetPasswordForm(forms.Form):
     """
-    Form for Administrator to reset another staff member's password.
+    Form for Administrator to reset another user's password directly from Web UI.
     """
     new_password = forms.CharField(
         widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'New Password'}),
@@ -171,6 +185,12 @@ class AdminResetPasswordForm(forms.Form):
     confirm_password = forms.CharField(
         widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Confirm Password'}),
         label=_("Confirm Password")
+    )
+    must_change_password = forms.BooleanField(
+        required=False,
+        initial=True,
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        label=_("Require user to change password on next login")
     )
 
     def clean(self):

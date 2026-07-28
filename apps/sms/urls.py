@@ -2,13 +2,14 @@ from django.urls import path
 from .views import (
     SingleSMSView, BulkSMSStaffSelectionView, BulkSMSComposeView,
     PersonalizedPreviewAjaxView, BulkSMSSummaryView, BulkSMSProgressAjaxView,
-    SMSQueueListView
+    SMSQueueListView, StaffSearchAjaxView
 )
 
 app_name = 'sms'
 
 urlpatterns = [
     path('single/', SingleSMSView.as_view(), name='single'),
+    path('staff-search-ajax/', StaffSearchAjaxView.as_view(), name='staff_search_ajax'),
     
     # Bulk Staff SMS Workflow
     path('bulk/select/', BulkSMSStaffSelectionView.as_view(), name='bulk_select'),

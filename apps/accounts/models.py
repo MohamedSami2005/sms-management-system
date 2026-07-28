@@ -10,7 +10,15 @@ class RoleChoices(models.TextChoices):
     ADMISSION = 'ADMISSION', _('Admission Department')
     ACCOUNTS = 'ACCOUNTS', _('Accounts Department')
     PLACEMENT = 'PLACEMENT', _('Placement Department')
+    LIBRARY = 'LIBRARY', _('Library Department')
+    HOD = 'HOD', _('Head of Department')
     STAFF = 'STAFF', _('College Staff')
+
+
+class ScopeChoices(models.TextChoices):
+    GLOBAL = 'GLOBAL', _('Global (All Departments)')
+    DEPARTMENT = 'DEPARTMENT', _('Department Only')
+    MULTI_DEPARTMENT = 'MULTI_DEPARTMENT', _('Multiple Departments')
 
 
 class Role(TimeStampedModel):
@@ -57,7 +65,8 @@ class Role(TimeStampedModel):
 
 class CustomUser(AbstractUser):
     """
-    Custom User Model supporting role-based access control, college department mapping, and staff metadata.
+    Custom User Model supporting role-based access control, scope-based permissions,
+    college department mapping, password change enforcement, and soft deletion.
     """
     role = models.CharField(
         max_length=20,
@@ -84,6 +93,19 @@ class CustomUser(AbstractUser):
         verbose_name=_("Department"),
         help_text=_("Associated college department.")
     )
+    scope_type = models.CharField(
+        max_length=30,
+        choices=ScopeChoices.choices,
+        default=ScopeChoices.GLOBAL,
+        verbose_name=_("Data Access Scope"),
+        help_text=_("Controls data access boundaries across departments.")
+    )
+    designation = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name=_("Designation / Title"),
+        help_text=_("Staff job designation (e.g. Professor, HOD, Accountant).")
+    )
     phone_number = models.CharField(
         max_length=15,
         validators=[phone_validator],
@@ -100,6 +122,38 @@ class CustomUser(AbstractUser):
         db_index=True,
         verbose_name=_("Employee / Staff ID"),
         help_text=_("Unique College Employee Identification Number.")
+    )
+    must_change_password = models.BooleanField(
+        default=False,
+        verbose_name=_("Force Password Change"),
+        help_text=_("Requires user to change password on next login.")
+    )
+    is_locked = models.BooleanField(
+        default=False,
+        verbose_name=_("Account Locked"),
+        help_text=_("Prevents user from logging in when locked.")
+    )
+    failed_login_attempts = models.PositiveIntegerField(
+        default=0,
+        verbose_name=_("Failed Login Attempts")
+    )
+    password_changed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name=_("Password Changed Date")
+    )
+    created_by = models.ForeignKey(
+        'self',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='created_users',
+        verbose_name=_("Created By Administrator")
+    )
+    is_deleted = models.BooleanField(
+        default=False,
+        verbose_name=_("Soft Deleted"),
+        help_text=_("Designates whether this user record is soft deleted.")
     )
 
     class Meta:
