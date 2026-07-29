@@ -7,9 +7,93 @@ from django.db.models import Q
 
 from apps.common.mixins import RoleRequiredMixin
 from apps.accounts.models import CustomUser, RoleChoices, ScopeChoices
-from .models import Department
-from .forms import DepartmentForm, UserCreateForm, UserUpdateForm, AdminResetPasswordForm
+from .models import Department, Staff
+from .forms import DepartmentForm, StaffForm, UserCreateForm, UserUpdateForm, AdminResetPasswordForm
 from .services import DepartmentService, UserService
+
+ALLOWED_STAFF_MANAGEMENT_ROLES = ['ADMIN', 'COE', 'ADMISSION', 'ACCOUNTS', 'PLACEMENT']
+
+
+# --- Staff Directory (SMS Recipient Master) Views ---
+
+class StaffListView(LoginRequiredMixin, RoleRequiredMixin, ListView):
+    """
+    Staff Directory Master displaying recipient staff members.
+    Clean recipient table with auto-generated S.No based on pagination.
+    """
+    model = Staff
+    template_name = 'users/staff_list.html'
+    context_object_name = 'staff_members'
+    allowed_roles = ALLOWED_STAFF_MANAGEMENT_ROLES
+    paginate_by = 15
+
+    def get_queryset(self):
+        queryset = super().get_queryset().filter(is_active=True).select_related('department').order_by('name')
+        query = self.request.GET.get('q', '').strip()
+        dept_filter = self.request.GET.get('department', '').strip()
+
+        if query:
+            queryset = queryset.filter(
+                Q(name__icontains=query) | Q(mobile_number__icontains=query)
+            )
+        if dept_filter and dept_filter.isdigit():
+            queryset = queryset.filter(department_id=dept_filter)
+
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['search_query'] = self.request.GET.get('q', '')
+        context['selected_dept'] = self.request.GET.get('department', '')
+        context['departments'] = Department.objects.filter(is_active=True)
+        return context
+
+
+class StaffCreateView(LoginRequiredMixin, RoleRequiredMixin, CreateView):
+    """
+    Creates a new recipient staff member in the Staff Directory.
+    """
+    model = Staff
+    form_class = StaffForm
+    template_name = 'users/staff_form.html'
+    success_url = reverse_lazy('users:staff_list')
+    allowed_roles = ALLOWED_STAFF_MANAGEMENT_ROLES
+
+    def form_valid(self, form):
+        form.instance.created_by = self.request.user
+        form.instance.updated_by = self.request.user
+        messages.success(self.request, f"Staff recipient '{form.instance.name}' added to directory successfully.")
+        return super().form_valid(form)
+
+
+class StaffUpdateView(LoginRequiredMixin, RoleRequiredMixin, UpdateView):
+    """
+    Updates recipient staff member details.
+    """
+    model = Staff
+    form_class = StaffForm
+    template_name = 'users/staff_form.html'
+    success_url = reverse_lazy('users:staff_list')
+    allowed_roles = ALLOWED_STAFF_MANAGEMENT_ROLES
+
+    def form_valid(self, form):
+        form.instance.updated_by = self.request.user
+        messages.success(self.request, f"Staff recipient '{form.instance.name}' updated successfully.")
+        return super().form_valid(form)
+
+
+class StaffDeleteView(LoginRequiredMixin, RoleRequiredMixin, View):
+    """
+    Deletes or deactivates a recipient staff record.
+    """
+    allowed_roles = ALLOWED_STAFF_MANAGEMENT_ROLES
+
+    def post(self, request, pk):
+        staff = get_object_or_404(Staff, pk=pk)
+        name = staff.name
+        staff.delete()
+        messages.success(request, f"Staff member '{name}' removed from directory.")
+        return redirect('users:staff_list')
 
 
 # --- Department Views ---
@@ -84,15 +168,15 @@ class DepartmentDeleteView(LoginRequiredMixin, RoleRequiredMixin, View):
         return redirect('users:department_list')
 
 
-# --- Web-Based User Administration Views ---
+# --- System Users (Application Login Accounts) Views ---
 
-class UserListView(LoginRequiredMixin, RoleRequiredMixin, ListView):
+class SystemUserListView(LoginRequiredMixin, RoleRequiredMixin, ListView):
     """
-    Administrator User Directory displaying personnel details, system roles, scope,
-    last login, failed attempts, and administrative actions.
+    Administrator System User Directory displaying application login accounts.
+    Only accessible by System Administrators.
     """
     model = CustomUser
-    template_name = 'users/user_list.html'
+    template_name = 'users/system_user_list.html'
     context_object_name = 'users'
     allowed_roles = ['ADMIN']
     paginate_by = 12
@@ -102,7 +186,6 @@ class UserListView(LoginRequiredMixin, RoleRequiredMixin, ListView):
         query = self.request.GET.get('q')
         role_filter = self.request.GET.get('role')
         dept_filter = self.request.GET.get('department')
-        scope_filter = self.request.GET.get('scope')
         status_filter = self.request.GET.get('status')
 
         if query:
@@ -115,8 +198,6 @@ class UserListView(LoginRequiredMixin, RoleRequiredMixin, ListView):
             queryset = queryset.filter(role=role_filter)
         if dept_filter:
             queryset = queryset.filter(department_id=dept_filter)
-        if scope_filter:
-            queryset = queryset.filter(scope_type=scope_filter)
         if status_filter:
             if status_filter == 'active':
                 queryset = queryset.filter(is_active=True, is_locked=False)
@@ -132,104 +213,90 @@ class UserListView(LoginRequiredMixin, RoleRequiredMixin, ListView):
         context['search_query'] = self.request.GET.get('q', '')
         context['selected_role'] = self.request.GET.get('role', '')
         context['selected_dept'] = self.request.GET.get('department', '')
-        context['selected_scope'] = self.request.GET.get('scope', '')
         context['selected_status'] = self.request.GET.get('status', '')
         context['roles'] = RoleChoices.choices
-        context['scopes'] = ScopeChoices.choices
         context['departments'] = Department.objects.filter(is_active=True)
         return context
 
 
-class UserCreateView(LoginRequiredMixin, RoleRequiredMixin, CreateView):
+class SystemUserCreateView(LoginRequiredMixin, RoleRequiredMixin, CreateView):
     """
-    Web-based User Creation form for Administrators.
+    Creates a new login user account.
     """
     model = CustomUser
     form_class = UserCreateForm
-    template_name = 'users/user_form.html'
-    success_url = reverse_lazy('users:user_list')
+    template_name = 'users/system_user_form.html'
+    success_url = reverse_lazy('users:system_user_list')
     allowed_roles = ['ADMIN']
 
     def form_valid(self, form):
         user = UserService.create_user(form, created_by=self.request.user)
-        messages.success(self.request, f"User account for '{user.get_full_name() or user.username}' ({user.get_role_display()}) created successfully.")
+        messages.success(self.request, f"System User account for '{user.get_full_name() or user.username}' ({user.get_role_display()}) created successfully.")
         return redirect(self.success_url)
 
 
-class UserUpdateView(LoginRequiredMixin, RoleRequiredMixin, UpdateView):
+class SystemUserUpdateView(LoginRequiredMixin, RoleRequiredMixin, UpdateView):
     """
-    Web-based User Profile & Role Update form for Administrators.
+    Updates an existing system login account.
     """
     model = CustomUser
     form_class = UserUpdateForm
-    template_name = 'users/user_form.html'
-    success_url = reverse_lazy('users:user_list')
+    template_name = 'users/system_user_form.html'
+    success_url = reverse_lazy('users:system_user_list')
     allowed_roles = ['ADMIN']
 
     def form_valid(self, form):
         user = UserService.update_user(self.object, form, updated_by=self.request.user)
-        messages.success(self.request, f"User account '{user.username}' updated successfully.")
+        messages.success(self.request, f"System User account '{user.username}' updated successfully.")
         return redirect(self.success_url)
 
 
-class UserToggleStatusView(LoginRequiredMixin, RoleRequiredMixin, View):
-    """
-    Activates or Deactivates a user account.
-    """
+class SystemUserToggleStatusView(LoginRequiredMixin, RoleRequiredMixin, View):
     allowed_roles = ['ADMIN']
 
     def post(self, request, pk):
         user = get_object_or_404(CustomUser, pk=pk, is_deleted=False)
         if user == request.user:
             messages.error(request, "You cannot deactivate your own Administrator account.")
-            return redirect('users:user_list')
+            return redirect('users:system_user_list')
 
         new_status = UserService.toggle_user_status(user, toggled_by=request.user)
         status_str = "activated" if new_status else "deactivated"
         messages.success(request, f"User account '{user.username}' has been {status_str}.")
-        return redirect('users:user_list')
+        return redirect('users:system_user_list')
 
 
-class UserToggleLockView(LoginRequiredMixin, RoleRequiredMixin, View):
-    """
-    Locks or Unlocks a user account.
-    """
+class SystemUserToggleLockView(LoginRequiredMixin, RoleRequiredMixin, View):
     allowed_roles = ['ADMIN']
 
     def post(self, request, pk):
         user = get_object_or_404(CustomUser, pk=pk, is_deleted=False)
         if user == request.user:
             messages.error(request, "You cannot lock your own Administrator account.")
-            return redirect('users:user_list')
+            return redirect('users:system_user_list')
 
         is_locked = UserService.toggle_user_lock(user, locked_by=request.user)
         lock_str = "locked" if is_locked else "unlocked"
         messages.success(request, f"User account '{user.username}' has been {lock_str}.")
-        return redirect('users:user_list')
+        return redirect('users:system_user_list')
 
 
-class UserDeleteView(LoginRequiredMixin, RoleRequiredMixin, View):
-    """
-    Soft-deletes a user account.
-    """
+class SystemUserDeleteView(LoginRequiredMixin, RoleRequiredMixin, View):
     allowed_roles = ['ADMIN']
 
     def post(self, request, pk):
         user = get_object_or_404(CustomUser, pk=pk, is_deleted=False)
         if user == request.user:
             messages.error(request, "You cannot delete your own Administrator account.")
-            return redirect('users:user_list')
+            return redirect('users:system_user_list')
 
         username = user.username
         UserService.soft_delete_user(user, deleted_by=request.user)
         messages.info(request, f"User account '{username}' has been soft deleted.")
-        return redirect('users:user_list')
+        return redirect('users:system_user_list')
 
 
-class UserAdminResetPasswordView(LoginRequiredMixin, RoleRequiredMixin, View):
-    """
-    Web-based Password Reset endpoint allowing Administrators to set a user's password directly.
-    """
+class SystemUserResetPasswordView(LoginRequiredMixin, RoleRequiredMixin, View):
     allowed_roles = ['ADMIN']
 
     def post(self, request, pk):
@@ -242,4 +309,4 @@ class UserAdminResetPasswordView(LoginRequiredMixin, RoleRequiredMixin, View):
             messages.success(request, f"Password for '{user.username}' reset successfully.")
         else:
             messages.error(request, "Password reset failed. Please ensure both passwords match.")
-        return redirect('users:user_list')
+        return redirect('users:system_user_list')

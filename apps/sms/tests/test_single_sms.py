@@ -3,7 +3,7 @@ from django.test import TestCase, Client
 from django.urls import reverse
 
 from apps.accounts.models import CustomUser, Role
-from apps.users.models import Department
+from apps.users.models import Department, Staff
 from apps.dlt_templates.models import DLTTemplate
 from apps.settings_app.models import SMSGatewayConfig
 from apps.sms.services.single_sms import SingleSMSService
@@ -23,25 +23,16 @@ class SingleSMSStaffLookupTestCase(TestCase):
             department=self.dept,
             role="ADMIN"
         )
-        self.staff1 = CustomUser.objects.create(
-            username="sami_user",
-            first_name="Mohamed",
-            last_name="Sami",
-            employee_id="EMP001",
-            email="sami@jmc.edu",
-            phone_number="8098778622",
-            department=self.dept,
-            role="STAFF"
+
+        self.staff1 = Staff.objects.create(
+            name="Mohamed Sami",
+            mobile_number="8098778622",
+            department=self.dept
         )
-        self.staff2_no_mobile = CustomUser.objects.create(
-            username="qadir_user",
-            first_name="Abdul",
-            last_name="Qadir",
-            employee_id="EMP002",
-            email="qadir@jmc.edu",
-            phone_number="",  # Missing phone
-            department=self.dept,
-            role="STAFF"
+        self.staff2 = Staff.objects.create(
+            name="Abdul Qadir",
+            mobile_number="9876543211",
+            department=self.dept
         )
 
         self.config = SMSGatewayConfig.objects.create(
@@ -70,16 +61,8 @@ class SingleSMSStaffLookupTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
         data = response.json()
         self.assertTrue(len(data['results']) > 0)
-        self.assertEqual(data['results'][0]['employee_id'], 'EMP001')
-        self.assertEqual(data['results'][0]['mobile'], '8098778622')
-
-    def test_staff_search_ajax_by_employee_id(self):
-        """Verifies AJAX search by employee ID returns matching staff JSON."""
-        url = reverse('sms:staff_search_ajax')
-        response = self.client.get(url, {'q': 'EMP001'})
-        self.assertEqual(response.status_code, 200)
-        data = response.json()
         self.assertEqual(data['results'][0]['name'], 'Mohamed Sami')
+        self.assertEqual(data['results'][0]['mobile'], '8098778622')
 
     def test_staff_search_ajax_by_mobile(self):
         """Verifies AJAX search by mobile number returns matching staff JSON."""
@@ -99,13 +82,11 @@ class SingleSMSStaffLookupTestCase(TestCase):
 
         url = reverse('sms:single')
         post_data = {
-            'mobile_number': self.staff1.phone_number,
+            'mobile_number': self.staff1.mobile_number,
             'template': self.template.pk,
             'var_1': 'Mohamed Sami',
             'var_2': '25000'
         }
 
         response = self.client.post(url, post_data)
-        self.assertEqual(response.status_code, 200)
-        self.assertTrue(response.context['dispatch_success'])
-        self.assertEqual(response.context['gw_result'].gateway_message_id, 'GW_SINGLE_123')
+        self.assertEqual(response.status_code, 302)

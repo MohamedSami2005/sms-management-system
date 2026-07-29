@@ -1,6 +1,6 @@
 from django import forms
 from django.utils.translation import gettext_lazy as _
-from apps.users.models import Department
+from apps.users.models import Department, Staff
 from apps.accounts.models import CustomUser, RoleChoices, ScopeChoices
 
 
@@ -49,9 +49,44 @@ class DepartmentForm(forms.ModelForm):
         return name
 
 
+class StaffForm(forms.ModelForm):
+    """
+    Form for creating and editing Staff Recipient Master records.
+    Contains ONLY Staff Name, Mobile Number, and Department.
+    """
+    name = forms.CharField(
+        max_length=100,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Full Staff Name (e.g. Mohamed Sami)'}),
+        label=_("Staff Name")
+    )
+    mobile_number = forms.CharField(
+        max_length=15,
+        widget=forms.TextInput(attrs={'class': 'form-control font-monospace', 'placeholder': '10-digit Indian Mobile Number'}),
+        label=_("Mobile Number")
+    )
+    department = forms.ModelChoiceField(
+        queryset=Department.objects.filter(is_active=True),
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-select'}),
+        label=_("Department")
+    )
+
+    class Meta:
+        model = Staff
+        fields = ['name', 'mobile_number', 'department']
+
+    def clean_mobile_number(self):
+        mobile = self.cleaned_data.get('mobile_number', '').strip()
+        if mobile.startswith('+91'):
+            mobile = mobile[3:]
+        elif mobile.startswith('91') and len(mobile) == 12:
+            mobile = mobile[2:]
+        return mobile
+
+
 class UserCreateForm(forms.ModelForm):
     """
-    Form for Administrator to create a new user account with assigned role, scope, and department.
+    Form for Administrator to create a new user account with assigned role and department.
     """
     password = forms.CharField(
         widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Initial Password'}),
@@ -72,7 +107,7 @@ class UserCreateForm(forms.ModelForm):
         model = CustomUser
         fields = [
             'employee_id', 'username', 'first_name', 'last_name', 'email',
-            'phone_number', 'department', 'designation', 'role', 'scope_type',
+            'phone_number', 'department', 'designation', 'role',
             'is_active', 'must_change_password'
         ]
         widgets = {
@@ -81,7 +116,6 @@ class UserCreateForm(forms.ModelForm):
             'first_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'John'}),
             'last_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Doe'}),
             'role': forms.Select(attrs={'class': 'form-select'}),
-            'scope_type': forms.Select(attrs={'class': 'form-select'}),
             'department': forms.Select(attrs={'class': 'form-select'}),
             'designation': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g. Professor / Accountant'}),
             'employee_id': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'EMP-1001'}),
@@ -124,13 +158,13 @@ class UserCreateForm(forms.ModelForm):
 
 class UserUpdateForm(forms.ModelForm):
     """
-    Form for Administrator to edit an existing user account profile, role, scope, and lock status.
+    Form for Administrator to edit an existing user account profile, role, and lock status.
     """
     class Meta:
         model = CustomUser
         fields = [
             'employee_id', 'username', 'first_name', 'last_name', 'email',
-            'phone_number', 'department', 'designation', 'role', 'scope_type',
+            'phone_number', 'department', 'designation', 'role',
             'is_active', 'is_locked', 'must_change_password'
         ]
         widgets = {
@@ -139,7 +173,6 @@ class UserUpdateForm(forms.ModelForm):
             'first_name': forms.TextInput(attrs={'class': 'form-control'}),
             'last_name': forms.TextInput(attrs={'class': 'form-control'}),
             'role': forms.Select(attrs={'class': 'form-select'}),
-            'scope_type': forms.Select(attrs={'class': 'form-select'}),
             'department': forms.Select(attrs={'class': 'form-select'}),
             'designation': forms.TextInput(attrs={'class': 'form-control'}),
             'employee_id': forms.TextInput(attrs={'class': 'form-control'}),

@@ -17,7 +17,7 @@
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
         <div>
             <h3 class="fw-bold mb-1"><i class="bi bi-people text-primary me-2"></i>Personalized Bulk Staff SMS Engine</h3>
-            <p class="text-muted mb-0">Select staff members from the directory to dispatch personalized DLT-approved SMS notifications.</p>
+            <p class="text-muted mb-0">Select staff recipients from the directory to dispatch personalized DLT-approved SMS notifications.</p>
         </div>
         <div class="d-flex gap-2 align-items-center">
             <span class="badge bg-primary-subtle text-primary border border-primary-subtle fs-6 px-3 py-2 rounded-pill" id="selectedCountBadge">
@@ -30,18 +30,18 @@
     </div>
 </form>
 
-<!-- Search & Multi-Filter Controls Toolbar -->
+<!-- Search & Department Filter Toolbar -->
 <div class="card border-0 shadow-sm rounded-4 mb-4">
     <div class="card-body p-3">
         <form method="get" class="row g-2 align-items-center">
-            <div class="col-md-4">
+            <div class="col-md-6">
                 <div class="input-group">
                     <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
-                    <input type="text" name="q" class="form-control border-start-0" placeholder="Search name, Emp ID, email, phone..." value="{{ search_query }}">
+                    <input type="text" name="q" class="form-control border-start-0" placeholder="Search staff name or mobile number..." value="{{ search_query }}">
                 </div>
             </div>
 
-            <div class="col-md-3">
+            <div class="col-md-4">
                 <select name="department" class="form-select">
                     <option value="">-- Filter Department --</option>
                     {% for dept in departments %}
@@ -50,32 +50,15 @@
                 </select>
             </div>
 
-            <div class="col-md-2">
-                <select name="role" class="form-select">
-                    <option value="">-- Filter Role --</option>
-                    {% for role in roles %}
-                        <option value="{{ role.pk }}" {% if selected_role == role.pk|stringformat:"s" %}selected{% endif %}>{{ role.name }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <div class="col-md-2">
-                <select name="status" class="form-select">
-                    <option value="">-- Status --</option>
-                    <option value="active" {% if selected_status == 'active' %}selected{% endif %}>Active Only</option>
-                    <option value="inactive" {% if selected_status == 'inactive' %}selected{% endif %}>Inactive</option>
-                </select>
-            </div>
-
-            <div class="col-md-1 d-flex gap-1">
-                <button type="submit" class="btn btn-primary w-100" title="Apply Filters"><i class="bi bi-funnel"></i></button>
+            <div class="col-md-2 d-flex gap-1">
+                <button type="submit" class="btn btn-primary w-100" title="Apply Filters"><i class="bi bi-funnel me-1"></i> Filter</button>
                 <a href="{% url 'sms:bulk_select' %}" class="btn btn-outline-secondary" title="Reset Filters"><i class="bi bi-arrow-clockwise"></i></a>
             </div>
         </form>
     </div>
 </div>
 
-<!-- Staff Directory Table -->
+<!-- Staff Recipient Directory Table -->
 <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
     <div class="card-body p-0">
         <div class="table-responsive">
@@ -85,12 +68,10 @@
                         <th width="45" class="text-center ps-3">
                             <input type="checkbox" class="form-check-input" id="selectAllCheckbox" title="Select All Visible Staff">
                         </th>
-                        <th>Employee ID</th>
-                        <th>Staff Member</th>
-                        <th>Department</th>
-                        <th>Role</th>
+                        <th style="width: 80px;">S.No</th>
+                        <th>Staff Name</th>
                         <th>Mobile Number</th>
-                        <th class="pe-4">Status</th>
+                        <th>Department</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -99,41 +80,28 @@
                         <td class="text-center ps-3">
                             <input type="checkbox" form="staffSelectionForm" name="selected_staff_ids" value="{{ staff.id }}" class="form-check-input staff-checkbox">
                         </td>
-                        <td><code>{{ staff.employee_id|default:"-" }}</code></td>
+                        <td class="font-monospace text-muted">{{ forloop.counter0|add:page_obj.start_index }}</td>
+                        <td><span class="fw-bold text-dark fs-6">{{ staff.name }}</span></td>
                         <td>
-                            <div class="fw-bold text-dark">{{ staff.get_full_name|default:staff.username }}</div>
-                            <small class="text-muted">{{ staff.email }}</small>
+                            {% if staff.mobile_number %}
+                                <span class="font-monospace fw-semibold text-dark">{{ staff.mobile_number }}</span>
+                            {% else %}
+                                <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle"><i class="bi bi-exclamation-triangle-fill me-1"></i> No Phone</span>
+                            {% endif %}
                         </td>
                         <td>
                             {% if staff.department %}
                                 <span class="badge bg-light text-dark border">{{ staff.department.name }}</span>
                             {% else %}
-                                <span class="text-muted small">-</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            <span class="badge bg-purple-soft text-purple">{{ staff.get_role_display|default:"Staff" }}</span>
-                        </td>
-                        <td>
-                            {% if staff.phone_number %}
-                                <span class="font-monospace fw-semibold text-dark">{{ staff.phone_number }}</span>
-                            {% else %}
-                                <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle"><i class="bi bi-exclamation-triangle-fill me-1"></i> No Phone</span>
-                            {% endif %}
-                        </td>
-                        <td class="pe-4">
-                            {% if staff.is_active %}
-                                <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3"><i class="bi bi-check-circle-fill me-1"></i> Active</span>
-                            {% else %}
-                                <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill px-3"><i class="bi bi-x-circle-fill me-1"></i> Inactive</span>
+                                <span class="text-muted small">General</span>
                             {% endif %}
                         </td>
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="7" class="text-center py-5 text-muted">
+                        <td colspan="5" class="text-center py-5 text-muted">
                             <i class="bi bi-person-x display-5 d-block mb-3 opacity-50"></i>
-                            No staff members found matching your search criteria.
+                            No staff recipient members found matching your search criteria.
                         </td>
                     </tr>
                     {% endfor %}
@@ -149,11 +117,11 @@
     <nav>
         <ul class="pagination pagination-sm shadow-sm">
             {% if page_obj.has_previous %}
-                <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ search_query }}&department={{ selected_dept }}&role={{ selected_role }}">&laquo; Previous</a></li>
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ search_query }}&department={{ selected_dept }}">&laquo; Previous</a></li>
             {% endif %}
             <li class="page-item active"><span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span></li>
             {% if page_obj.has_next %}
-                <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ search_query }}&department={{ selected_dept }}&role={{ selected_role }}">Next &raquo;</a></li>
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ search_query }}&department={{ selected_dept }}">Next &raquo;</a></li>
             {% endif %}
         </ul>
     </nav>

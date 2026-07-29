@@ -1,5 +1,6 @@
 import logging
-from typing import Dict, Any, List, Tuple
+from typing import Dict, Any, List, Tuple, Union
+from apps.users.models import Staff
 from apps.accounts.models import CustomUser
 
 logger = logging.getLogger('apps.sms')
@@ -7,79 +8,75 @@ logger = logging.getLogger('apps.sms')
 
 class StaffFieldMapper:
     """
-    Extensible utility for resolving dynamic staff database fields and static values
+    Extensible utility for resolving dynamic staff recipient database fields and static values
     for personalized SMS template interpolation.
     """
 
-    # Registry of supported staff database fields: (field_key, display_label)
+    # Registry of supported staff recipient fields: (field_key, display_label)
     SUPPORTED_FIELDS: List[Tuple[str, str]] = [
-        ('full_name', 'Staff Name'),
-        ('employee_id', 'Employee ID'),
-        ('department', 'Department'),
-        ('designation', 'Designation / Role'),
-        ('email', 'Email'),
+        ('name', 'Staff Name'),
         ('mobile', 'Mobile Number'),
-        ('username', 'Username'),
+        ('department', 'Department'),
     ]
 
     @classmethod
     def get_supported_fields(cls) -> List[Dict[str, str]]:
-        """Returns list of supported staff database fields for UI dropdowns."""
+        """Returns list of supported staff recipient fields for UI dropdowns."""
         return [{'key': key, 'label': label} for key, label in cls.SUPPORTED_FIELDS]
 
     @classmethod
-    def resolve_field_value(cls, user: CustomUser, field_key: str) -> str:
+    def resolve_field_value(cls, recipient: Union[Staff, CustomUser], field_key: str) -> str:
         """
-        Extracts specific field value from a CustomUser staff instance.
+        Extracts specific field value from a Staff recipient or CustomUser instance.
         """
-        if not user or not field_key:
+        if not recipient or not field_key:
             return ""
 
-        if field_key == 'full_name':
-            return user.get_full_name() or user.username
-        elif field_key == 'employee_id':
-            return user.employee_id or ""
-        elif field_key == 'department':
-            return user.department.name if user.department else ""
-        elif field_key == 'designation':
-            return user.get_role_display()
-        elif field_key == 'email':
-            return user.email or ""
-        elif field_key == 'mobile':
-            return user.phone_number or ""
-        elif field_key == 'username':
-            return user.username
+        if isinstance(recipient, Staff):
+            if field_key in ('name', 'full_name'):
+                return recipient.name
+            elif field_key in ('mobile', 'phone_number'):
+                return recipient.mobile_number
+            elif field_key == 'department':
+                return recipient.department.name if recipient.department else ""
+            return str(getattr(recipient, field_key, ''))
         
-        # Attribute lookup fallback
-        return str(getattr(user, field_key, ''))
+        # Fallback for CustomUser
+        if field_key in ('name', 'full_name'):
+            return recipient.get_full_name() or recipient.username
+        elif field_key in ('mobile', 'phone_number'):
+            return recipient.phone_number or ""
+        elif field_key == 'department':
+            return recipient.department.name if recipient.department else ""
+        elif field_key == 'employee_id':
+            return getattr(recipient, 'employee_id', '') or ""
+        elif field_key == 'email':
+            return getattr(recipient, 'email', '') or ""
+        
+        return str(getattr(recipient, field_key, ''))
 
     @classmethod
-    def resolve_variable(cls, user: CustomUser, source_type: str, source_value: str) -> str:
+    def resolve_variable(cls, recipient: Union[Staff, CustomUser], source_type: str, source_value: str) -> str:
         """
-        Resolves a single template variable value for a given user.
+        Resolves a single template variable value for a given staff recipient.
         source_type: 'static' or 'field'
         """
         if source_type == 'field':
-            return cls.resolve_field_value(user, source_value)
+            return cls.resolve_field_value(recipient, source_value)
         return str(source_value or '')
 
     @classmethod
     def resolve_all_variables(
         cls,
-        user: CustomUser,
+        recipient: Union[Staff, CustomUser],
         mapping_config: Dict[str, Dict[str, str]]
     ) -> Dict[str, str]:
         """
-        Resolves all template variables for a given user based on mapping config.
-        mapping_config format:
-        {
-            "var_1": {"type": "field", "value": "full_name"},
-            "var_2": {"type": "static", "value": "10000"}
-        }
+        Resolves all template variables for a given recipient based on mapping config.
         """
         resolved = {}
         for var_key, config in mapping_config.items():
             stype = config.get('type', 'static')
             sval = config.get('value', '')
-            resolved[var_key] = cls.resolve_variable(user, stype, sval)
+            resolved[var_key] = cls.resolve_variable(recipient, stype, sval)
         return resolved

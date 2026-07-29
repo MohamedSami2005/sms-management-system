@@ -1,22 +1,22 @@
 from django.urls import path
 from .views import (
-    UserListView, UserCreateView, UserUpdateView, UserToggleStatusView,
-    UserToggleLockView, UserDeleteView, UserAdminResetPasswordView,
+    StaffListView, StaffCreateView, StaffUpdateView, StaffDeleteView,
     DepartmentListView, DepartmentCreateView, DepartmentUpdateView,
-    DepartmentToggleStatusView, DepartmentDeleteView
+    DepartmentToggleStatusView, DepartmentDeleteView,
+    SystemUserListView, SystemUserCreateView, SystemUserUpdateView,
+    SystemUserToggleStatusView, SystemUserToggleLockView, SystemUserDeleteView,
+    SystemUserResetPasswordView
 )
 
 app_name = 'users'
 
 urlpatterns = [
-    # Web-Based User Administration Endpoints
-    path('', UserListView.as_view(), name='user_list'),
-    path('create/', UserCreateView.as_view(), name='user_create'),
-    path('<int:pk>/edit/', UserUpdateView.as_view(), name='user_edit'),
-    path('<int:pk>/toggle-status/', UserToggleStatusView.as_view(), name='user_toggle_status'),
-    path('<int:pk>/toggle-lock/', UserToggleLockView.as_view(), name='user_toggle_lock'),
-    path('<int:pk>/reset-password/', UserAdminResetPasswordView.as_view(), name='user_reset_password'),
-    path('<int:pk>/delete/', UserDeleteView.as_view(), name='user_delete'),
+    # Staff Directory (SMS Recipient Master) Endpoints
+    path('', StaffListView.as_view(), name='staff_list'),
+    path('staff/', StaffListView.as_view(), name='staff_list'),
+    path('staff/create/', StaffCreateView.as_view(), name='staff_create'),
+    path('staff/<int:pk>/edit/', StaffUpdateView.as_view(), name='staff_edit'),
+    path('staff/<int:pk>/delete/', StaffDeleteView.as_view(), name='staff_delete'),
 
     # Department Management Endpoints
     path('departments/', DepartmentListView.as_view(), name='department_list'),
@@ -24,4 +24,13 @@ urlpatterns = [
     path('departments/<int:pk>/edit/', DepartmentUpdateView.as_view(), name='department_edit'),
     path('departments/<int:pk>/toggle-status/', DepartmentToggleStatusView.as_view(), name='department_toggle_status'),
     path('departments/<int:pk>/delete/', DepartmentDeleteView.as_view(), name='department_delete'),
+
+    # System Users (Application Authentication Accounts) Endpoints
+    path('system-users/', SystemUserListView.as_view(), name='system_user_list'),
+    path('system-users/create/', SystemUserCreateView.as_view(), name='system_user_create'),
+    path('system-users/<int:pk>/edit/', SystemUserUpdateView.as_view(), name='system_user_edit'),
+    path('system-users/<int:pk>/toggle-status/', SystemUserToggleStatusView.as_view(), name='system_user_toggle_status'),
+    path('system-users/<int:pk>/toggle-lock/', SystemUserToggleLockView.as_view(), name='system_user_toggle_lock'),
+    path('system-users/<int:pk>/reset-password/', SystemUserResetPasswordView.as_view(), name='system_user_reset_password'),
+    path('system-users/<int:pk>/delete/', SystemUserDeleteView.as_view(), name='system_user_delete'),
 ]

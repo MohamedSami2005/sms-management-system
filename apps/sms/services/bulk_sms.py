@@ -4,8 +4,8 @@ from typing import List, Dict, Any, Tuple
 
 from django.utils import timezone
 from apps.accounts.models import CustomUser
+from apps.users.models import Department, Staff
 from apps.dlt_templates.models import DLTTemplate
-from apps.users.models import Department
 from apps.sms.models import SMSBatch, SMSStatusChoices
 from apps.logs.models import SMSLog
 from .single_sms import SingleSMSService
@@ -37,8 +37,11 @@ class BulkSMSService:
         start_time = time.time()
         dept = department or user.department
 
-        # Fetch staff records efficiently with select_related
-        staff_members = CustomUser.objects.filter(id__in=staff_user_ids).select_related('department', 'role_obj')
+        # Fetch staff recipient records efficiently with select_related
+        staff_members = list(Staff.objects.filter(id__in=staff_user_ids).select_related('department'))
+        if not staff_members:
+            staff_members = list(CustomUser.objects.filter(id__in=staff_user_ids).select_related('department'))
+
         total_count = len(staff_members)
 
         # 1. Create SMSBatch tracking record
@@ -62,14 +65,19 @@ class BulkSMSService:
 
         # 2. Personalized Sequential Loop over Staff Members
         for staff in staff_members:
-            mobile = getattr(staff, 'phone_number', '').strip()
-            
+            if isinstance(staff, Staff):
+                mobile = (staff.mobile_number or '').strip()
+                staff_name = staff.name
+            else:
+                mobile = (getattr(staff, 'phone_number', '') or '').strip()
+                staff_name = staff.get_full_name() or staff.username
+
             if not mobile:
                 batch.failed_count += 1
                 batch.processed_records += 1
                 batch.save(update_fields=['failed_count', 'processed_records'])
-                failure_reasons.append(f"{staff.get_full_name() or staff.username} (Emp ID: {staff.employee_id or 'N/A'}): Missing mobile number")
-                logger.warning(f"PERSONALIZED_SMS_SKIP | Staff '{staff.username}' missing phone number.")
+                failure_reasons.append(f"{staff_name}: Missing mobile number")
+                logger.warning(f"PERSONALIZED_SMS_SKIP | Staff '{staff_name}' missing phone number.")
                 continue
 
             try:
@@ -96,11 +104,11 @@ class BulkSMSService:
                 else:
                     batch.failed_count += 1
                     err_msg = gw_result.error_message or "Gateway response failed"
-                    failure_reasons.append(f"{staff.get_full_name() or staff.username} ({mobile}): {err_msg}")
+                    failure_reasons.append(f"{staff_name} ({mobile}): {err_msg}")
 
             except Exception as e:
                 batch.failed_count += 1
-                failure_reasons.append(f"{staff.get_full_name() or staff.username} ({mobile}): Exception - {str(e)}")
+                failure_reasons.append(f"{staff_name} ({mobile}): Exception - {str(e)}")
                 logger.error(f"PERSONALIZED_SMS_ERR | Exception sending to '{mobile}': {str(e)}")
 
             batch.processed_records += 1

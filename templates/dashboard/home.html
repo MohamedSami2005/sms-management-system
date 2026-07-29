@@ -30,7 +30,8 @@
             <a href="{% url 'logs:list' %}" class="btn btn-sm btn-light border"><i class="bi bi-journal-text text-secondary me-1"></i> SMS Logs</a>
             <a href="{% url 'reports:overview' %}" class="btn btn-sm btn-light border"><i class="bi bi-bar-chart text-purple me-1"></i> Reports</a>
             {% if user.is_admin %}
-                <a href="{% url 'users:user_list' %}" class="btn btn-sm btn-light border"><i class="bi bi-person-badge text-danger me-1"></i> Staff Users</a>
+                <a href="{% url 'users:staff_list' %}" class="btn btn-sm btn-light border"><i class="bi bi-person-badge text-danger me-1"></i> Staff Directory</a>
+                <a href="{% url 'users:system_user_list' %}" class="btn btn-sm btn-light border"><i class="bi bi-shield-lock text-info me-1"></i> System Users</a>
                 <a href="{% url 'settings_app:index' %}" class="btn btn-sm btn-light border"><i class="bi bi-gear text-dark me-1"></i> Gateway Settings</a>
             {% endif %}
         </div>

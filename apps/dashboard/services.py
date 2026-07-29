@@ -7,7 +7,7 @@ from django.utils import timezone
 from django.db.models import Count, Sum, Q, Max
 
 from apps.accounts.models import CustomUser
-from apps.users.models import Department
+from apps.users.models import Department, Staff
 from apps.dlt_templates.models import DLTTemplate
 from apps.sms.models import SMSBatch, SMSQueue, SMSStatusChoices
 from apps.logs.models import SMSLog
@@ -30,7 +30,9 @@ class DashboardService:
         today = now.date()
 
         # 1. System & Recipient Summary Counters
-        total_staff = CustomUser.objects.filter(is_active=True).count()
+        total_staff = Staff.objects.filter(is_active=True).count()
+        if total_staff == 0:
+            total_staff = CustomUser.objects.filter(is_active=True).count()
         total_departments = Department.objects.filter(is_active=True).count()
         active_templates = DLTTemplate.objects.filter(is_active=True).count()
         

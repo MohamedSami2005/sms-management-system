@@ -2,7 +2,7 @@ from unittest.mock import patch, MagicMock
 from django.test import TestCase
 
 from apps.accounts.models import CustomUser, Role
-from apps.users.models import Department
+from apps.users.models import Department, Staff
 from apps.dlt_templates.models import DLTTemplate
 from apps.settings_app.models import SMSGatewayConfig
 from apps.sms.services.bulk_sms import BulkSMSService
@@ -13,34 +13,29 @@ from apps.logs.models import SMSLog
 class PersonalizedBulkSMSGatewayTestCase(TestCase):
     def setUp(self):
         self.dept = Department.objects.create(name="Computer Science", code="CSE")
-        self.role = Role.objects.create(name="STAFF", code="STAFF")
         
-        self.user1 = CustomUser.objects.create(
-            username="sami_user",
-            first_name="Mohamed",
-            last_name="Sami",
-            employee_id="EMP001",
-            phone_number="9876543210",
-            department=self.dept,
-            role=self.role
+        self.user1 = CustomUser.objects.create_superuser(
+            username="admin_user",
+            first_name="System",
+            last_name="Admin",
+            phone_number="9999999999",
+            department=self.dept
         )
-        self.user2 = CustomUser.objects.create(
-            username="qadir_user",
-            first_name="Abdul",
-            last_name="Qadir",
-            employee_id="EMP002",
-            phone_number="9876543211",
-            department=self.dept,
-            role=self.role
+
+        self.staff1 = Staff.objects.create(
+            name="Mohamed Sami",
+            mobile_number="9876543210",
+            department=self.dept
         )
-        self.user3_no_phone = CustomUser.objects.create(
-            username="jaffer_user",
-            first_name="Prof",
-            last_name="Jaffer",
-            employee_id="EMP003",
-            phone_number="",  # Missing phone number
-            department=self.dept,
-            role=self.role
+        self.staff2 = Staff.objects.create(
+            name="Abdul Qadir",
+            mobile_number="9876543211",
+            department=self.dept
+        )
+        self.staff3_no_phone = Staff.objects.create(
+            name="Prof Jaffer",
+            mobile_number="",  # Missing phone number
+            department=self.dept
         )
 
         self.config = SMSGatewayConfig.objects.create(
@@ -61,16 +56,16 @@ class PersonalizedBulkSMSGatewayTestCase(TestCase):
         )
 
     def test_staff_field_mapper_resolution(self):
-        """Verifies StaffFieldMapper resolves user attributes and static values accurately."""
+        """Verifies StaffFieldMapper resolves Staff recipient attributes and static values accurately."""
         mapping = {
-            "var_1": {"type": "field", "value": "full_name"},
+            "var_1": {"type": "field", "value": "name"},
             "var_2": {"type": "static", "value": "10000"}
         }
-        res1 = StaffFieldMapper.resolve_all_variables(self.user1, mapping)
+        res1 = StaffFieldMapper.resolve_all_variables(self.staff1, mapping)
         self.assertEqual(res1["var_1"], "Mohamed Sami")
         self.assertEqual(res1["var_2"], "10000")
 
-        res2 = StaffFieldMapper.resolve_all_variables(self.user2, mapping)
+        res2 = StaffFieldMapper.resolve_all_variables(self.staff2, mapping)
         self.assertEqual(res2["var_1"], "Abdul Qadir")
         self.assertEqual(res2["var_2"], "10000")
 
@@ -82,9 +77,9 @@ class PersonalizedBulkSMSGatewayTestCase(TestCase):
         mock_resp.text = '{"status":"Success","code":"011","messageid":"GW_BATCH_123"}'
         mock_post.return_value = mock_resp
 
-        staff_ids = [self.user1.id, self.user2.id]
+        staff_ids = [self.staff1.id, self.staff2.id]
         mapping_config = {
-            "var_1": {"type": "field", "value": "full_name"},
+            "var_1": {"type": "field", "value": "name"},
             "var_2": {"type": "static", "value": "10000"}
         }
 
@@ -116,9 +111,9 @@ class PersonalizedBulkSMSGatewayTestCase(TestCase):
         mock_resp.text = '{"status":"Success","code":"011","messageid":"GW_BATCH_999"}'
         mock_post.return_value = mock_resp
 
-        staff_ids = [self.user1.id, self.user3_no_phone.id, self.user2.id]
+        staff_ids = [self.staff1.id, self.staff3_no_phone.id, self.staff2.id]
         mapping_config = {
-            "var_1": {"type": "field", "value": "full_name"},
+            "var_1": {"type": "field", "value": "name"},
             "var_2": {"type": "static", "value": "15000"}
         }
 

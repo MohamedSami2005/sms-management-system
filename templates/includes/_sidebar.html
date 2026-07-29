@@ -55,21 +55,23 @@
         <div class="sidebar-divider"></div>
         {% endif %}
 
-        <!-- Recipient Management (Admin only) -->
-        {% if user.is_admin %}
+        <!-- Recipient Management -->
+        {% if user.is_admin or user.role == 'COE' or user.role == 'ADMISSION' or user.role == 'ACCOUNTS' or user.role == 'PLACEMENT' %}
         <div class="sidebar-section-heading">
             <span class="bullet-dot">&bull;</span> RECIPIENT MANAGEMENT
         </div>
-        <a href="{% url 'users:user_list' %}" class="nav-link {% if request.resolver_match.url_name == 'user_list' %}active{% endif %}">
+        <a href="{% url 'users:staff_list' %}" class="nav-link {% if request.resolver_match.url_name == 'staff_list' %}active{% endif %}">
             <i class="bi bi-person-badge text-primary fs-5"></i>
             <span>Staff Directory</span>
             <i class="bi bi-chevron-right ms-auto small text-muted"></i>
         </a>
+        {% if user.is_admin %}
         <a href="{% url 'users:department_list' %}" class="nav-link {% if request.resolver_match.url_name == 'department_list' %}active{% endif %}">
             <i class="bi bi-building text-purple fs-5"></i>
             <span>Departments</span>
             <i class="bi bi-chevron-right ms-auto small text-muted"></i>
         </a>
+        {% endif %}
         <div class="sidebar-divider"></div>
         {% endif %}
 
@@ -98,6 +100,11 @@
         <div class="sidebar-section-heading">
             <span class="bullet-dot">&bull;</span> ADMINISTRATION
         </div>
+        <a href="{% url 'users:system_user_list' %}" class="nav-link {% if request.resolver_match.url_name == 'system_user_list' %}active{% endif %}">
+            <i class="bi bi-shield-lock text-info fs-5"></i>
+            <span>System Users</span>
+            <i class="bi bi-chevron-right ms-auto small text-muted"></i>
+        </a>
         <a href="{% url 'settings_app:index' %}" class="nav-link {% if request.resolver_match.app_name == 'settings_app' %}active{% endif %}">
             <i class="bi bi-gear text-white fs-5"></i>
             <span>System Settings</span>

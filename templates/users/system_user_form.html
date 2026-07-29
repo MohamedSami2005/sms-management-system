@@ -1,0 +1,134 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}{% if object %}Edit System User: {{ object.username }}{% else %}Create System User Account{% endif %} - Campus Communication Management System{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'dashboard:home' %}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'users:system_user_list' %}">System Users</a></li>
+        <li class="breadcrumb-item active" aria-current="page">{% if object %}Edit Account{% else %}Create Account{% endif %}</li>
+    </ol>
+</nav>
+
+<div class="row justify-content-center">
+    <div class="col-md-10 col-lg-8">
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-header bg-white py-3 border-0">
+                <h4 class="fw-bold mb-0">
+                    <i class="bi bi-shield-lock text-primary me-2"></i>
+                    {% if object %}Edit System Login User: {{ object.username }}{% else %}Create New System Login User{% endif %}
+                </h4>
+            </div>
+            <div class="card-body p-4">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Employee / Staff ID</label>
+                            {{ form.employee_id }}
+                            {% if form.employee_id.errors %}<div class="text-danger small mt-1">{{ form.employee_id.errors }}</div>{% endif %}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Username *</label>
+                            {{ form.username }}
+                            {% if form.username.errors %}<div class="text-danger small mt-1">{{ form.username.errors }}</div>{% endif %}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">First Name *</label>
+                            {{ form.first_name }}
+                            {% if form.first_name.errors %}<div class="text-danger small mt-1">{{ form.first_name.errors }}</div>{% endif %}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Last Name *</label>
+                            {{ form.last_name }}
+                            {% if form.last_name.errors %}<div class="text-danger small mt-1">{{ form.last_name.errors }}</div>{% endif %}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Email Address *</label>
+                            {{ form.email }}
+                            {% if form.email.errors %}<div class="text-danger small mt-1">{{ form.email.errors }}</div>{% endif %}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Mobile Phone Number</label>
+                            {{ form.phone_number }}
+                            {% if form.phone_number.errors %}<div class="text-danger small mt-1">{{ form.phone_number.errors }}</div>{% endif %}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">System Role *</label>
+                            {{ form.role }}
+                            {% if form.role.errors %}<div class="text-danger small mt-1">{{ form.role.errors }}</div>{% endif %}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">College Department</label>
+                            {{ form.department }}
+                            {% if form.department.errors %}<div class="text-danger small mt-1">{{ form.department.errors }}</div>{% endif %}
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Designation / Title</label>
+                            {{ form.designation }}
+                            {% if form.designation.errors %}<div class="text-danger small mt-1">{{ form.designation.errors }}</div>{% endif %}
+                        </div>
+
+                        {% if not object %}
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Initial Password *</label>
+                            {{ form.password }}
+                            {% if form.password.errors %}<div class="text-danger small mt-1">{{ form.password.errors }}</div>{% endif %}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Confirm Password *</label>
+                            {{ form.confirm_password }}
+                            {% if form.confirm_password.errors %}<div class="text-danger small mt-1">{{ form.confirm_password.errors }}</div>{% endif %}
+                        </div>
+                        {% endif %}
+
+                        <div class="col-12 mt-3">
+                            <div class="form-check mb-2">
+                                {{ form.is_active }}
+                                <label class="form-check-label fw-semibold" for="{{ form.is_active.id_for_label }}">
+                                    Account Active & Login Enabled
+                                </label>
+                            </div>
+
+                            {% if object and form.is_locked %}
+                            <div class="form-check mb-2">
+                                {{ form.is_locked }}
+                                <label class="form-check-label fw-semibold text-danger" for="{{ form.is_locked.id_for_label }}">
+                                    Lock Account (Prevents login)
+                                </label>
+                            </div>
+                            {% endif %}
+
+                            <div class="form-check mb-2">
+                                {{ form.must_change_password }}
+                                <label class="form-check-label fw-semibold text-dark" for="{{ form.must_change_password.id_for_label }}">
+                                    Force Password Change on First Login
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 d-flex justify-content-between">
+                        <a href="{% url 'users:system_user_list' %}" class="btn btn-outline-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary fw-bold px-4">
+                            {% if object %}Save User Changes{% else %}Create System Account{% endif %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

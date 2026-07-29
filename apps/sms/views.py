@@ -1,126 +1,141 @@
 import json
+import logging
+from typing import Dict, Any
+
 from django.views.generic import FormView, ListView, TemplateView, View
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse_lazy
 from django.contrib import messages
-from django.shortcuts import render, redirect, get_object_or_404
-from django.http import JsonResponse, HttpResponseForbidden
+from django.shortcuts import redirect, get_object_or_404
+from django.http import JsonResponse
 from django.db.models import Q
 
 from apps.common.mixins import RoleRequiredMixin
 from apps.accounts.models import CustomUser, Role
-from apps.users.models import Department
+from apps.users.models import Department, Staff
 from apps.dlt_templates.models import DLTTemplate
+from apps.sms.models import SMSBatch, SMSStatusChoices
 from apps.logs.models import SMSLog
-from .models import SMSQueue, SMSBatch, SMSStatusChoices
-from .forms import SingleSMSForm
-from .services.single_sms import SingleSMSService
-from .services.bulk_sms import BulkSMSService
-from .services.field_mapper import StaffFieldMapper
 
-ALLOWED_SMS_ROLES = ['ADMIN', 'COE', 'ADMISSION', 'ACCOUNTS', 'PLACEMENT', 'STAFF']
+from .forms import SingleSMSForm
+from .services import SingleSMSService, BulkSMSService, StaffFieldMapper
+
+logger = logging.getLogger('apps.sms')
+
+ALLOWED_SMS_ROLES = ['ADMIN', 'COE', 'ADMISSION', 'ACCOUNTS', 'PLACEMENT']
 
 
 class SingleSMSView(LoginRequiredMixin, RoleRequiredMixin, FormView):
     """
-    Handles single SMS dispatch workflow.
+    Single SMS Dispatch View.
+    Supports staff selection auto-complete or manual recipient mobile input.
     """
     template_name = 'sms/single_sms.html'
     form_class = SingleSMSForm
     success_url = reverse_lazy('sms:single')
     allowed_roles = ALLOWED_SMS_ROLES
 
-    def get_initial(self):
-        initial = super().get_initial()
-        if hasattr(self.request.user, 'department') and self.request.user.department:
-            initial['department'] = self.request.user.department
-        return initial
-
     def form_valid(self, form):
         mobile_number = form.cleaned_data['mobile_number']
         template = form.cleaned_data['template']
-        department = form.cleaned_data.get('department') or self.request.user.department
-
-        var_dict = {}
-        for idx in range(1, template.variable_count + 1):
-            key = f"var_{idx}"
-            var_dict[key] = self.request.POST.get(key, '').strip()
+        variable_values = form.cleaned_data.get('variable_values', {})
 
         success, log_entry, gw_result = SingleSMSService.process_and_send(
             user=self.request.user,
             mobile_number=mobile_number,
             template=template,
-            variable_values=var_dict,
-            department=department
+            variable_values=variable_values,
+            department=self.request.user.department
         )
 
-        context = self.get_context_data(form=form)
-        context['dispatch_attempted'] = True
-        context['dispatch_success'] = success
-        context['log_entry'] = log_entry
-        context['gw_result'] = gw_result
-
         if success:
-            messages.success(self.request, f"SMS dispatched successfully to {mobile_number}. Gateway Msg ID: {gw_result.gateway_message_id}")
+            messages.success(
+                self.request,
+                f"SMS successfully dispatched to {mobile_number}! (Gateway Msg ID: {log_entry.gateway_message_id})"
+            )
         else:
-            messages.error(self.request, f"SMS dispatch failed. Reason: {gw_result.error_message}")
+            messages.error(
+                self.request,
+                f"SMS dispatch failed to {mobile_number}: {gw_result.error_message}"
+            )
 
-        return self.render_to_response(context)
+        return super().form_valid(form)
+
+
+class StaffSearchAjaxView(LoginRequiredMixin, RoleRequiredMixin, View):
+    """
+    AJAX endpoint for searching active staff recipients by Name or Mobile Number.
+    Queries the Staff recipient master model. Returns formatted JSON for auto-complete dropdowns.
+    """
+    allowed_roles = ALLOWED_SMS_ROLES
+
+    def get(self, request):
+        query = request.GET.get('q', '').strip()
+        qs = Staff.objects.filter(is_active=True).select_related('department')
+
+        if query:
+            qs = qs.filter(
+                Q(name__icontains=query) |
+                Q(mobile_number__icontains=query)
+            )
+
+        qs = qs[:20]
+
+        results = []
+        for staff in qs:
+            full_name = staff.name
+            dept_name = staff.department.name if staff.department else 'General'
+            mobile = staff.mobile_number or ''
+            has_mobile = bool(mobile)
+
+            display_label = f"{full_name} • {dept_name} • {mobile or 'No Phone'}"
+
+            results.append({
+                'id': staff.id,
+                'name': full_name,
+                'department': dept_name,
+                'department_id': staff.department_id if staff.department else None,
+                'mobile': mobile,
+                'has_mobile': has_mobile,
+                'display_label': display_label
+            })
+
+        return JsonResponse({'results': results})
 
 
 class BulkSMSStaffSelectionView(LoginRequiredMixin, RoleRequiredMixin, ListView):
     """
     Step 1: Staff Selection Screen.
-    Displays paginated table of staff members with search, filters, and multi-selection checkboxes.
+    Displays paginated table of recipient staff members with search, department filter, and multi-selection checkboxes.
     """
-    model = CustomUser
+    model = Staff
     template_name = 'sms/bulk_staff_select.html'
     context_object_name = 'staff_list'
     allowed_roles = ALLOWED_SMS_ROLES
     paginate_by = 15
 
     def get_queryset(self):
-        qs = CustomUser.objects.all().select_related('department', 'role_obj').order_by('-date_joined')
+        qs = Staff.objects.filter(is_active=True).select_related('department').order_by('name')
         
         search_query = self.request.GET.get('q', '').strip()
         dept_id = self.request.GET.get('department', '').strip()
-        role_id = self.request.GET.get('role', '').strip()
-        status_val = self.request.GET.get('status', '').strip()
 
         if search_query:
             qs = qs.filter(
-                Q(first_name__icontains=search_query) |
-                Q(last_name__icontains=search_query) |
-                Q(username__icontains=search_query) |
-                Q(employee_id__icontains=search_query) |
-                Q(email__icontains=search_query) |
-                Q(phone_number__icontains=search_query)
+                Q(name__icontains=search_query) |
+                Q(mobile_number__icontains=search_query)
             )
 
         if dept_id and dept_id.isdigit():
             qs = qs.filter(department_id=dept_id)
-
-        if role_id:
-            if role_id.isdigit():
-                qs = qs.filter(role_obj_id=role_id)
-            else:
-                qs = qs.filter(role=role_id)
-
-        if status_val == 'active':
-            qs = qs.filter(is_active=True)
-        elif status_val == 'inactive':
-            qs = qs.filter(is_active=False)
 
         return qs
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['departments'] = Department.objects.filter(is_active=True)
-        context['roles'] = Role.objects.all()
         context['search_query'] = self.request.GET.get('q', '')
         context['selected_dept'] = self.request.GET.get('department', '')
-        context['selected_role'] = self.request.GET.get('role', '')
-        context['selected_status'] = self.request.GET.get('status', '')
         return context
 
     def post(self, request, *args, **kwargs):
@@ -149,7 +164,10 @@ class BulkSMSComposeView(LoginRequiredMixin, RoleRequiredMixin, TemplateView):
             messages.warning(request, "No staff members selected. Please select recipients first.")
             return redirect('sms:bulk_select')
 
-        staff_members = CustomUser.objects.filter(id__in=staff_ids).select_related('department', 'role_obj')
+        staff_members = Staff.objects.filter(id__in=staff_ids, is_active=True).select_related('department')
+        if not staff_members.exists():
+            staff_members = CustomUser.objects.filter(id__in=staff_ids).select_related('department')
+
         dlt_templates = DLTTemplate.objects.filter(is_active=True)
         db_fields = StaffFieldMapper.get_supported_fields()
 
@@ -223,7 +241,13 @@ class PersonalizedPreviewAjaxView(LoginRequiredMixin, RoleRequiredMixin, View):
         if not staff_id or not template_id:
             return JsonResponse({'success': False, 'error': 'Missing staff_id or template_id'}, status=400)
 
-        staff = get_object_or_404(CustomUser, pk=staff_id)
+        try:
+            staff = Staff.objects.get(pk=staff_id)
+            staff_name = staff.name
+        except Staff.DoesNotExist:
+            staff = get_object_or_404(CustomUser, pk=staff_id)
+            staff_name = staff.get_full_name() or staff.username
+
         template = get_object_or_404(DLTTemplate, pk=template_id)
 
         # Resolve personalized variable values for this staff recipient
@@ -236,8 +260,7 @@ class PersonalizedPreviewAjaxView(LoginRequiredMixin, RoleRequiredMixin, View):
         return JsonResponse({
             'success': True,
             'staff_id': staff.id,
-            'staff_name': staff.get_full_name() or staff.username,
-            'employee_id': staff.employee_id or 'N/A',
+            'staff_name': staff_name,
             'rendered_text': rendered_text,
             'char_count': char_count,
             'single_credits': single_credits
@@ -255,31 +278,18 @@ class BulkSMSSummaryView(LoginRequiredMixin, RoleRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         batch_id = self.kwargs.get('pk')
-        batch = get_object_or_404(SMSBatch.objects.select_related('user', 'template', 'department'), pk=batch_id)
-        
-        logs = SMSLog.objects.filter(batch=batch).order_by('-created_at')
-        failed_logs = logs.filter(status=SMSStatusChoices.FAILED)
-        
-        total = batch.total_records
-        success_pct = round((batch.successful_count / total * 100), 1) if total > 0 else 0.0
-        total_credits = sum(log.credit_units for log in logs)
-        
-        exec_time = 0.0
-        if batch.started_at and batch.completed_at:
-            exec_time = round((batch.completed_at - batch.started_at).total_seconds(), 2)
+        batch = get_object_or_404(SMSBatch, pk=batch_id)
+        summary = self.request.session.get('last_bulk_summary', {})
 
         context['batch'] = batch
-        context['logs'] = logs
-        context['failed_logs'] = failed_logs
-        context['success_percentage'] = success_pct
-        context['total_credits'] = total_credits
-        context['execution_time'] = exec_time
+        context['summary'] = summary
+        context['logs'] = SMSLog.objects.filter(batch=batch).select_related('department')
         return context
 
 
 class BulkSMSProgressAjaxView(LoginRequiredMixin, RoleRequiredMixin, View):
     """
-    AJAX Endpoint returning real-time progress JSON of an SMSBatch job.
+    AJAX endpoint for checking real-time batch progress.
     """
     allowed_roles = ALLOWED_SMS_ROLES
 
@@ -287,68 +297,36 @@ class BulkSMSProgressAjaxView(LoginRequiredMixin, RoleRequiredMixin, View):
         batch = get_object_or_404(SMSBatch, pk=pk)
         return JsonResponse({
             'batch_id': batch.id,
-            'status': batch.status,
             'total_records': batch.total_records,
             'processed_records': batch.processed_records,
             'successful_count': batch.successful_count,
             'failed_count': batch.failed_count,
-            'progress_percentage': batch.progress_percentage
+            'status': batch.status,
+            'is_completed': batch.status in [SMSStatusChoices.SENT, SMSStatusChoices.DELIVERED, SMSStatusChoices.FAILED]
         })
 
 
-class SMSQueueListView(LoginRequiredMixin, RoleRequiredMixin, ListView):
-    model = SMSQueue
-    template_name = 'sms/queue_list.html'
-    context_object_name = 'queue_items'
-    allowed_roles = ALLOWED_SMS_ROLES
-    paginate_by = 15
-
-
-class StaffSearchAjaxView(LoginRequiredMixin, RoleRequiredMixin, View):
+class SMSQueueView(LoginRequiredMixin, RoleRequiredMixin, ListView):
     """
-    AJAX endpoint for searching active staff personnel by Name, Employee ID, Username, Email,
-    or Mobile Number. Returns formatted JSON for auto-complete dropdowns.
+    SMS Processing Queue & Active Batches view.
+    Displays current active SMSBatches and status counters.
     """
+    model = SMSBatch
+    template_name = 'sms/queue.html'
+    context_object_name = 'batches'
     allowed_roles = ALLOWED_SMS_ROLES
+    paginate_by = 10
 
-    def get(self, request):
-        query = request.GET.get('q', '').strip()
-        qs = CustomUser.objects.filter(is_active=True).select_related('department', 'role_obj')
+    def get_queryset(self):
+        return SMSBatch.objects.all().select_related('user', 'department', 'template').order_by('-created_at')
 
-        if query:
-            qs = qs.filter(
-                Q(first_name__icontains=query) |
-                Q(last_name__icontains=query) |
-                Q(username__icontains=query) |
-                Q(employee_id__icontains=query) |
-                Q(email__icontains=query) |
-                Q(phone_number__icontains=query)
-            )
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['processing_count'] = SMSBatch.objects.filter(status=SMSStatusChoices.PROCESSING).count()
+        context['pending_count'] = SMSBatch.objects.filter(status=SMSStatusChoices.PENDING).count()
+        context['completed_count'] = SMSBatch.objects.filter(status__in=[SMSStatusChoices.SENT, SMSStatusChoices.DELIVERED]).count()
+        return context
 
-        qs = qs[:20]
 
-        results = []
-        for staff in qs:
-            full_name = staff.get_full_name() or staff.username
-            emp_id = staff.employee_id or 'N/A'
-            dept_name = staff.department.name if staff.department else 'General'
-            mobile = staff.phone_number or ''
-            has_mobile = bool(mobile)
-
-            display_label = f"{emp_id} • {full_name} • {dept_name} • {mobile or 'No Phone'}"
-
-            results.append({
-                'id': staff.id,
-                'name': full_name,
-                'username': staff.username,
-                'employee_id': emp_id,
-                'department': dept_name,
-                'department_id': staff.department_id if staff.department else None,
-                'role': staff.get_role_display(),
-                'mobile': mobile,
-                'email': staff.email or 'N/A',
-                'has_mobile': has_mobile,
-                'display_label': display_label
-            })
-
-        return JsonResponse({'results': results})
+# Alias for URL routing compatibility
+SMSQueueListView = SMSQueueView
