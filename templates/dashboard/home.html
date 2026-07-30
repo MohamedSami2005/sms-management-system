@@ -24,16 +24,12 @@
     <div class="card-body p-3">
         <div class="d-flex flex-wrap gap-2 align-items-center">
             <span class="text-muted small font-monospace fw-bold text-uppercase me-2"><i class="bi bi-lightning-charge-fill text-warning me-1"></i>Quick Actions:</span>
-            <a href="{% url 'sms:single' %}" class="btn btn-sm btn-light border"><i class="bi bi-send text-primary me-1"></i> Single SMS</a>
-            <a href="{% url 'sms:bulk_select' %}" class="btn btn-sm btn-light border"><i class="bi bi-people text-info me-1"></i> Bulk SMS</a>
-            <a href="{% url 'dlt_templates:list' %}" class="btn btn-sm btn-light border"><i class="bi bi-file-earmark-text text-success me-1"></i> Templates</a>
-            <a href="{% url 'logs:list' %}" class="btn btn-sm btn-light border"><i class="bi bi-journal-text text-secondary me-1"></i> SMS Logs</a>
-            <a href="{% url 'reports:overview' %}" class="btn btn-sm btn-light border"><i class="bi bi-bar-chart text-purple me-1"></i> Reports</a>
-            {% if user.is_admin %}
-                <a href="{% url 'users:staff_list' %}" class="btn btn-sm btn-light border"><i class="bi bi-person-badge text-danger me-1"></i> Staff Directory</a>
-                <a href="{% url 'users:system_user_list' %}" class="btn btn-sm btn-light border"><i class="bi bi-shield-lock text-info me-1"></i> System Users</a>
-                <a href="{% url 'settings_app:index' %}" class="btn btn-sm btn-light border"><i class="bi bi-gear text-dark me-1"></i> Gateway Settings</a>
-            {% endif %}
+            <a href="{% url 'sms:single' %}" class="btn btn-sm btn-light border"><i class="bi bi-send text-primary me-1"></i> Send Single SMS</a>
+            <a href="{% url 'sms:bulk_select' %}" class="btn btn-sm btn-light border"><i class="bi bi-people text-info me-1"></i> Send Bulk SMS</a>
+            <a href="{% url 'users:staff_list' %}" class="btn btn-sm btn-light border"><i class="bi bi-person-badge text-primary me-1"></i> Manage Recipients</a>
+            <a href="{% url 'dlt_templates:list' %}" class="btn btn-sm btn-light border"><i class="bi bi-file-earmark-text text-success me-1"></i> SMS Templates</a>
+            <a href="{% url 'logs:list' %}" class="btn btn-sm btn-light border"><i class="bi bi-journal-text text-danger me-1"></i> View SMS Logs</a>
+            <a href="{% url 'reports:overview' %}" class="btn btn-sm btn-light border"><i class="bi bi-bar-chart-line text-purple me-1"></i> Reports & Analytics</a>
         </div>
     </div>
 </div>

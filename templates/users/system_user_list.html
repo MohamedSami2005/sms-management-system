@@ -1,23 +1,23 @@
 {% extends 'base.html' %}
 
-{% block title %}System Users - Campus Communication Management System{% endblock %}
+{% block title %}Users & Roles - Campus Communication Management System{% endblock %}
 
 {% block content %}
 <nav aria-label="breadcrumb" class="mb-3">
     <ol class="breadcrumb">
         <li class="breadcrumb-item"><a href="{% url 'dashboard:home' %}">Dashboard</a></li>
-        <li class="breadcrumb-item active" aria-current="page">System Users</li>
+        <li class="breadcrumb-item active" aria-current="page">Users & Roles</li>
     </ol>
 </nav>
 
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
     <div>
-        <h3 class="fw-bold mb-1"><i class="bi bi-shield-lock text-primary me-2"></i>System Login Users</h3>
-        <p class="text-muted mb-0">Manage application authentication login accounts, system roles, and security credentials.</p>
+        <h3 class="fw-bold mb-1"><i class="bi bi-shield-lock text-primary me-2"></i>Users & Roles</h3>
+        <p class="text-muted mb-0">Manage application login accounts, system access roles, and operator credentials.</p>
     </div>
     <div class="d-flex gap-2">
-        <a href="{% url 'users:system_user_create' %}" class="btn btn-primary fw-bold shadow-sm">
-            <i class="bi bi-plus-circle me-1"></i> Add System User
+        <a href="{% url 'users:system_user_create' %}" class="btn btn-primary fw-bold shadow-sm px-3">
+            <i class="bi bi-plus-circle me-1"></i> New User
         </a>
     </div>
 </div>
@@ -26,23 +26,23 @@
 <div class="card border-0 shadow-sm rounded-4 mb-4">
     <div class="card-body p-3">
         <form method="get" class="row g-2 align-items-center">
-            <div class="col-md-4">
+            <div class="col-md-5">
                 <div class="input-group">
                     <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
-                    <input type="text" name="q" class="form-control border-start-0" placeholder="Search username, email, Emp ID..." value="{{ search_query }}">
+                    <input type="text" name="q" class="form-control border-start-0" placeholder="Search name, username, email, Emp ID..." value="{{ search_query }}">
                 </div>
             </div>
             
             <div class="col-md-3">
                 <select name="role" class="form-select">
-                    <option value="">-- System Role --</option>
+                    <option value="">-- Role --</option>
                     {% for code, label in roles %}
                         <option value="{{ code }}" {% if selected_role == code %}selected{% endif %}>{{ label }}</option>
                     {% endfor %}
                 </select>
             </div>
 
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <select name="department" class="form-select">
                     <option value="">-- Department --</option>
                     {% for dept in departments %}
@@ -60,64 +60,85 @@
                 </select>
             </div>
 
-            <div class="col-12 text-end">
-                <button type="submit" class="btn btn-primary px-4"><i class="bi bi-funnel me-1"></i> Filter</button>
-                <a href="{% url 'users:system_user_list' %}" class="btn btn-outline-secondary"><i class="bi bi-arrow-clockwise me-1"></i> Reset</a>
+            <div class="col-12 text-end mt-2">
+                <button type="submit" class="btn btn-primary px-3"><i class="bi bi-funnel me-1"></i> Filter</button>
+                <a href="{% url 'users:system_user_list' %}" class="btn btn-outline-secondary px-3"><i class="bi bi-arrow-clockwise me-1"></i> Reset</a>
             </div>
         </form>
     </div>
 </div>
 
-<!-- User Data Table -->
+<!-- Clean Professional User List Table -->
 <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
     <div class="card-body p-0">
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
                 <thead class="table-light text-uppercase small font-monospace text-muted">
                     <tr>
-                        <th class="ps-4">Username / User Name</th>
-                        <th>System Role</th>
+                        <th class="ps-4" style="width: 70px;">S.No</th>
+                        <th>Name</th>
+                        <th>Employee ID</th>
+                        <th>Username</th>
+                        <th>Role</th>
                         <th>Department</th>
-                        <th>Login Activity</th>
-                        <th>Account Status</th>
+                        <th>Status</th>
                         <th class="text-end pe-4">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for user_obj in users %}
                     <tr>
-                        <td class="ps-4">
+                        <!-- 1. S.No -->
+                        <td class="ps-4 fw-semibold text-muted font-monospace">
+                            {% if is_paginated %}
+                                {{ forloop.counter0|add:page_obj.start_index }}
+                            {% else %}
+                                {{ forloop.counter }}
+                            {% endif %}
+                        </td>
+
+                        <!-- 2. Name -->
+                        <td>
                             <div class="d-flex align-items-center gap-2">
                                 <div class="avatar-sm bg-primary-soft text-primary rounded-circle d-flex align-items-center justify-content-center fw-bold small" style="width:36px; height:36px;">
-                                    {{ user_obj.username|slice:":2"|upper }}
+                                    {{ user_obj.first_name|default:user_obj.username|slice:":2"|upper }}
                                 </div>
                                 <div>
                                     <div class="fw-bold text-dark mb-0">{{ user_obj.get_full_name|default:user_obj.username }}</div>
-                                    <small class="text-muted"><span class="font-monospace text-primary fw-semibold">{{ user_obj.username }}</span> &bull; {{ user_obj.email }}</small>
+                                    <small class="text-muted">{{ user_obj.email }}</small>
                                 </div>
                             </div>
                         </td>
+
+                        <!-- 3. Employee ID -->
+                        <td>
+                            {% if user_obj.employee_id %}
+                                <code class="text-primary font-monospace fw-bold">{{ user_obj.employee_id }}</code>
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+
+                        <!-- 4. Username -->
+                        <td>
+                            <span class="font-monospace text-dark fw-semibold">{{ user_obj.username }}</span>
+                        </td>
+
+                        <!-- 5. Role -->
                         <td>
                             <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3 py-1">{{ user_obj.get_role_display }}</span>
                         </td>
+
+                        <!-- 6. Department -->
                         <td>
                             {% if user_obj.department %}
-                                <span class="badge bg-light text-dark border">{{ user_obj.department.name }}</span>
-                                {% if user_obj.designation %}<small class="d-block text-muted">{{ user_obj.designation }}</small>{% endif %}
+                                <span class="badge bg-light text-dark border px-2 py-1">{{ user_obj.department.name }}</span>
                             {% else %}
                                 <span class="text-muted small">Global</span>
                             {% endif %}
                         </td>
-                        <td>
-                            {% if user_obj.last_login %}
-                                <small class="text-dark d-block"><i class="bi bi-clock-history me-1 text-primary"></i>{{ user_obj.last_login|date:"M d, Y H:i" }}</small>
-                            {% else %}
-                                <small class="text-muted d-block">Never logged in</small>
-                            {% endif %}
-                            {% if user_obj.created_by %}
-                                <small class="text-muted font-monospace">By: {{ user_obj.created_by.username }}</small>
-                            {% endif %}
-                        </td>
+
+                        <!-- 7. Status -->
                         <td>
                             {% if user_obj.is_locked %}
                                 <span class="badge bg-danger text-white rounded-pill px-3 py-1"><i class="bi bi-lock-fill me-1"></i> Locked</span>
@@ -126,54 +147,44 @@
                             {% else %}
                                 <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill px-3 py-1"><i class="bi bi-pause-circle-fill me-1"></i> Inactive</span>
                             {% endif %}
-                            {% if user_obj.must_change_password %}
-                                <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle rounded-pill mt-1 d-block"><i class="bi bi-exclamation-triangle me-1"></i> Must Change Pass</span>
-                            {% endif %}
                         </td>
+
+                        <!-- 8. Actions -->
                         <td class="text-end pe-4">
-                            <div class="table-actions justify-content-end">
+                            <div class="table-actions justify-content-end gap-1">
+                                <!-- Edit -->
                                 <a href="{% url 'users:system_user_edit' user_obj.pk %}" class="btn btn-sm btn-outline-primary" title="Edit User">
-                                    <i class="bi bi-pencil-square"></i> Edit
+                                    <i class="bi bi-pencil-square me-1"></i>Edit
                                 </a>
 
+                                <!-- Reset Password Modal Trigger -->
                                 <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#resetPassModal{{ user_obj.pk }}" title="Reset Password">
-                                    <i class="bi bi-shield-lock"></i> Reset Pass
+                                    <i class="bi bi-key"></i>
                                 </button>
 
                                 {% if user_obj != request.user %}
-                                    <form method="post" action="{% url 'users:system_user_toggle_lock' user_obj.pk %}" class="d-inline">
-                                        {% csrf_token %}
-                                        {% if user_obj.is_locked %}
-                                            <button type="submit" class="btn btn-sm btn-outline-success" title="Unlock Account">
-                                                <i class="bi bi-unlock"></i> Unlock
-                                            </button>
-                                        {% else %}
-                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Lock Account">
-                                                <i class="bi bi-lock"></i> Lock
-                                            </button>
-                                        {% endif %}
-                                    </form>
-
+                                    <!-- Activate / Deactivate -->
                                     <form method="post" action="{% url 'users:system_user_toggle_status' user_obj.pk %}" class="d-inline">
                                         {% csrf_token %}
                                         {% if user_obj.is_active %}
-                                            <button type="submit" class="btn btn-sm btn-outline-warning" title="Deactivate Account">
-                                                <i class="bi bi-pause-circle"></i> Deactivate
+                                            <button type="submit" class="btn btn-sm btn-outline-warning" title="Deactivate User">
+                                                <i class="bi bi-pause-circle me-1"></i>Deactivate
                                             </button>
                                         {% else %}
-                                            <button type="submit" class="btn btn-sm btn-outline-success" title="Activate Account">
-                                                <i class="bi bi-play-circle"></i> Activate
+                                            <button type="submit" class="btn btn-sm btn-outline-success" title="Activate User">
+                                                <i class="bi bi-play-circle me-1"></i>Activate
                                             </button>
                                         {% endif %}
                                     </form>
 
-                                    <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ user_obj.pk }}" title="Soft Delete">
+                                    <!-- Delete Modal Trigger -->
+                                    <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ user_obj.pk }}" title="Delete User">
                                         <i class="bi bi-trash"></i>
                                     </button>
                                 {% endif %}
                             </div>
 
-                            <!-- Admin Password Reset Modal -->
+                            <!-- Password Reset Modal -->
                             <div class="modal fade text-start" id="resetPassModal{{ user_obj.pk }}" tabindex="-1" aria-hidden="true">
                                 <div class="modal-dialog modal-dialog-centered">
                                     <div class="modal-content">
@@ -208,17 +219,17 @@
                                 </div>
                             </div>
 
-                            <!-- Soft Delete Modal -->
+                            <!-- Delete Modal -->
                             {% if user_obj != request.user %}
                             <div class="modal fade text-start" id="deleteModal{{ user_obj.pk }}" tabindex="-1" aria-hidden="true">
                                 <div class="modal-dialog modal-dialog-centered">
                                     <div class="modal-content">
                                         <div class="modal-header">
-                                            <h5 class="modal-title fw-bold"><i class="bi bi-trash text-danger me-2"></i>Delete User Account</h5>
+                                            <h5 class="modal-title fw-bold"><i class="bi bi-trash text-danger me-2"></i>Delete User</h5>
                                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                         </div>
                                         <div class="modal-body">
-                                            Are you sure you want to soft-delete system user account <strong>{{ user_obj.username }}</strong> ({{ user_obj.get_full_name|default:user_obj.email }})?
+                                            Are you sure you want to delete user account <strong>{{ user_obj.get_full_name|default:user_obj.username }}</strong> ({{ user_obj.username }})?
                                         </div>
                                         <div class="modal-footer">
                                             <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
@@ -235,9 +246,9 @@
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="6" class="text-center py-5 text-muted">
+                        <td colspan="8" class="text-center py-5 text-muted">
                             <i class="bi bi-person-x display-5 d-block mb-3 opacity-50"></i>
-                            No system login accounts found matching your query.
+                            No users found matching your criteria.
                         </td>
                     </tr>
                     {% endfor %}

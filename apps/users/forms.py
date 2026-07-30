@@ -1,7 +1,7 @@
 from django import forms
 from django.utils.translation import gettext_lazy as _
 from apps.users.models import Department, Staff
-from apps.accounts.models import CustomUser, RoleChoices, ScopeChoices
+from apps.accounts.models import CustomUser, RoleChoices
 
 
 class DepartmentForm(forms.ModelForm):
@@ -86,15 +86,52 @@ class StaffForm(forms.ModelForm):
 
 class UserCreateForm(forms.ModelForm):
     """
-    Form for Administrator to create a new user account with assigned role and department.
+    Form for Administrator to create a new CCMS login user account with assigned role and department.
     """
+    name = forms.CharField(
+        max_length=150,
+        required=True,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Full Display Name (e.g. Mohamed Sami)'}),
+        label=_("Name"),
+        help_text=_("User's display name.")
+    )
+    employee_id = forms.CharField(
+        max_length=50,
+        required=True,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'EMP-1001'}),
+        label=_("Employee ID"),
+        help_text=_("Unique identifier.")
+    )
+    email = forms.EmailField(
+        required=True,
+        widget=forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'john@college.edu'}),
+        label=_("Email Address"),
+        help_text=_("Used for password reset and notifications.")
+    )
+    phone_number = forms.CharField(
+        max_length=15,
+        required=False,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': '9876543210 (Optional)'}),
+        label=_("Mobile Number"),
+        help_text=_("Useful for OTP/alerts.")
+    )
+    department = forms.ModelChoiceField(
+        queryset=Department.objects.filter(is_active=True),
+        required=True,
+        widget=forms.Select(attrs={'class': 'form-select'}),
+        label=_("Department")
+    )
     password = forms.CharField(
+        required=True,
         widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Initial Password'}),
-        label=_("Initial Password")
+        label=_("Password"),
+        help_text=_("Initial password.")
     )
     confirm_password = forms.CharField(
+        required=True,
         widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Confirm Password'}),
-        label=_("Confirm Password")
+        label=_("Confirm Password"),
+        help_text=_("Must match Password.")
     )
     must_change_password = forms.BooleanField(
         required=False,
@@ -106,20 +143,13 @@ class UserCreateForm(forms.ModelForm):
     class Meta:
         model = CustomUser
         fields = [
-            'employee_id', 'username', 'first_name', 'last_name', 'email',
-            'phone_number', 'department', 'designation', 'role',
+            'employee_id', 'username', 'email',
+            'phone_number', 'department', 'role',
             'is_active', 'must_change_password'
         ]
         widgets = {
             'username': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'johndoe'}),
-            'email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'john@college.edu'}),
-            'first_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'John'}),
-            'last_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Doe'}),
             'role': forms.Select(attrs={'class': 'form-select'}),
-            'department': forms.Select(attrs={'class': 'form-select'}),
-            'designation': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g. Professor / Accountant'}),
-            'employee_id': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'EMP-1001'}),
-            'phone_number': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '9876543210'}),
             'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
 
@@ -137,7 +167,9 @@ class UserCreateForm(forms.ModelForm):
 
     def clean_employee_id(self):
         employee_id = self.cleaned_data.get('employee_id', '').strip().upper()
-        if employee_id and CustomUser.objects.filter(employee_id=employee_id).exists():
+        if not employee_id:
+            raise forms.ValidationError(_("Employee ID is required."))
+        if CustomUser.objects.filter(employee_id=employee_id).exists():
             raise forms.ValidationError(_("This Employee ID is already assigned to another staff member."))
         return employee_id
 
@@ -155,32 +187,76 @@ class UserCreateForm(forms.ModelForm):
             self.add_error('confirm_password', _("Passwords do not match."))
         return cleaned_data
 
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        raw_name = self.cleaned_data.get('name', '').strip()
+        if raw_name:
+            parts = raw_name.split(' ', 1)
+            user.first_name = parts[0]
+            user.last_name = parts[1] if len(parts) > 1 else ''
+        if commit:
+            user.save()
+        return user
+
 
 class UserUpdateForm(forms.ModelForm):
     """
-    Form for Administrator to edit an existing user account profile, role, and lock status.
+    Form for Administrator to edit an existing CCMS user account profile, role, and status.
     """
+    name = forms.CharField(
+        max_length=150,
+        required=True,
+        widget=forms.TextInput(attrs={'class': 'form-control'}),
+        label=_("Name"),
+        help_text=_("User's display name.")
+    )
+    employee_id = forms.CharField(
+        max_length=50,
+        required=True,
+        widget=forms.TextInput(attrs={'class': 'form-control'}),
+        label=_("Employee ID"),
+        help_text=_("Unique identifier.")
+    )
+    email = forms.EmailField(
+        required=True,
+        widget=forms.EmailInput(attrs={'class': 'form-control'}),
+        label=_("Email Address"),
+        help_text=_("Used for password reset and notifications.")
+    )
+    phone_number = forms.CharField(
+        max_length=15,
+        required=False,
+        widget=forms.TextInput(attrs={'class': 'form-control'}),
+        label=_("Mobile Number"),
+        help_text=_("Useful for OTP/alerts.")
+    )
+    department = forms.ModelChoiceField(
+        queryset=Department.objects.filter(is_active=True),
+        required=True,
+        widget=forms.Select(attrs={'class': 'form-select'}),
+        label=_("Department")
+    )
+
     class Meta:
         model = CustomUser
         fields = [
-            'employee_id', 'username', 'first_name', 'last_name', 'email',
-            'phone_number', 'department', 'designation', 'role',
+            'employee_id', 'username', 'email',
+            'phone_number', 'department', 'role',
             'is_active', 'is_locked', 'must_change_password'
         ]
         widgets = {
             'username': forms.TextInput(attrs={'class': 'form-control'}),
-            'email': forms.EmailInput(attrs={'class': 'form-control'}),
-            'first_name': forms.TextInput(attrs={'class': 'form-control'}),
-            'last_name': forms.TextInput(attrs={'class': 'form-control'}),
             'role': forms.Select(attrs={'class': 'form-select'}),
-            'department': forms.Select(attrs={'class': 'form-select'}),
-            'designation': forms.TextInput(attrs={'class': 'form-control'}),
-            'employee_id': forms.TextInput(attrs={'class': 'form-control'}),
-            'phone_number': forms.TextInput(attrs={'class': 'form-control'}),
             'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
             'is_locked': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
             'must_change_password': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance and self.instance.pk:
+            display_name = self.instance.get_full_name() or self.instance.username
+            self.fields['name'].initial = display_name
 
     def clean_username(self):
         username = self.cleaned_data.get('username', '').strip()
@@ -196,7 +272,9 @@ class UserUpdateForm(forms.ModelForm):
 
     def clean_employee_id(self):
         employee_id = self.cleaned_data.get('employee_id', '').strip().upper()
-        if employee_id and CustomUser.objects.filter(employee_id=employee_id).exclude(pk=self.instance.pk).exists():
+        if not employee_id:
+            raise forms.ValidationError(_("Employee ID is required."))
+        if CustomUser.objects.filter(employee_id=employee_id).exclude(pk=self.instance.pk).exists():
             raise forms.ValidationError(_("This Employee ID is already assigned to another staff member."))
         return employee_id
 
@@ -205,6 +283,17 @@ class UserUpdateForm(forms.ModelForm):
         if phone and CustomUser.objects.filter(phone_number=phone).exclude(pk=self.instance.pk).exists():
             raise forms.ValidationError(_("This phone number is already registered to another account."))
         return phone
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        raw_name = self.cleaned_data.get('name', '').strip()
+        if raw_name:
+            parts = raw_name.split(' ', 1)
+            user.first_name = parts[0]
+            user.last_name = parts[1] if len(parts) > 1 else ''
+        if commit:
+            user.save()
+        return user
 
 
 class AdminResetPasswordForm(forms.Form):

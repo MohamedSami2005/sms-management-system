@@ -51,7 +51,7 @@ class UserService:
         user.created_by = created_by
         user.save()
         form.save_m2m()
-        logger.info(f"USER_CREATE | New user '{user.username}' (Role: {user.role}, Scope: {user.scope_type}) created by '{created_by.username}'.")
+        logger.info(f"USER_CREATE | New user '{user.username}' (Role: {user.role}) created by '{created_by.username}'.")
         return user
 
     @staticmethod

@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+
+{% block title %}Communication Audit Logs - Campus Communication Management System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="fw-bold mb-1"><i class="bi bi-journal-text text-primary me-2"></i>Communication Audit Logs</h3>
+        <p class="text-muted mb-0">Complete historical dispatch, delivery report, and gateway transaction log records.</p>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light text-uppercase small font-monospace text-muted">
+                    <tr>
+                        <th class="ps-4">Recipient Mobile</th>
+                        <th>DLT Template</th>
+                        <th>Delivery Status</th>
+                        <th>Gateway Msg ID</th>
+                        <th>Dispatched By</th>
+                        <th class="pe-4">Timestamp</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in logs %}
+                    <tr>
+                        <td class="ps-4"><span class="font-monospace fw-semibold text-dark">{{ log.mobile_number }}</span></td>
+                        <td><span class="fw-medium text-dark">{{ log.template.name|default:"-" }}</span></td>
+                        <td>
+                            {% if log.status == 'SENT' or log.status == 'DELIVRD' or log.status == 'Success' %}
+                                <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-1">
+                                    <i class="bi bi-check-circle-fill me-1"></i> Delivered
+                                </span>
+                            {% elif log.status == 'FAILED' or log.status == 'REJECTD' or log.status == 'UNDELIV' or log.status == 'Failure' %}
+                                <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-3 py-1">
+                                    <i class="bi bi-x-circle-fill me-1"></i> Failed
+                                </span>
+                            {% else %}
+                                <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle rounded-pill px-3 py-1">
+                                    <i class="bi bi-clock-history me-1"></i> Pending
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td><code>{{ log.gateway_message_id|default:"-" }}</code></td>
+                        <td><span class="badge bg-light text-dark border">{{ log.user.username|default:"System" }}</span></td>
+                        <td class="pe-4 text-muted small"><i class="bi bi-calendar3 me-1"></i>{{ log.created_at|date:"M d, Y H:i:s" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-5 text-muted">
+                            <i class="bi bi-journal-x display-5 d-block mb-3 opacity-50"></i>
+                            No communication audit log records found.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

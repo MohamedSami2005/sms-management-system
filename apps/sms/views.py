@@ -14,7 +14,7 @@ from apps.common.mixins import RoleRequiredMixin
 from apps.accounts.models import CustomUser, Role
 from apps.users.models import Department, Staff
 from apps.dlt_templates.models import DLTTemplate
-from apps.sms.models import SMSBatch, SMSStatusChoices
+from apps.sms.models import SMSBatch, SMSQueue, SMSStatusChoices
 from apps.logs.models import SMSLog
 
 from .forms import SingleSMSForm
@@ -309,22 +309,22 @@ class BulkSMSProgressAjaxView(LoginRequiredMixin, RoleRequiredMixin, View):
 class SMSQueueView(LoginRequiredMixin, RoleRequiredMixin, ListView):
     """
     SMS Processing Queue & Active Batches view.
-    Displays current active SMSBatches and status counters.
+    Displays real-time pending, processing, and batch dispatch queues.
     """
-    model = SMSBatch
-    template_name = 'sms/queue.html'
-    context_object_name = 'batches'
+    model = SMSQueue
+    template_name = 'sms/queue_list.html'
+    context_object_name = 'queue_items'
     allowed_roles = ALLOWED_SMS_ROLES
-    paginate_by = 10
+    paginate_by = 15
 
     def get_queryset(self):
-        return SMSBatch.objects.all().select_related('user', 'department', 'template').order_by('-created_at')
+        return SMSQueue.objects.all().select_related('user', 'department', 'template').order_by('-created_at')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['processing_count'] = SMSBatch.objects.filter(status=SMSStatusChoices.PROCESSING).count()
-        context['pending_count'] = SMSBatch.objects.filter(status=SMSStatusChoices.PENDING).count()
-        context['completed_count'] = SMSBatch.objects.filter(status__in=[SMSStatusChoices.SENT, SMSStatusChoices.DELIVERED]).count()
+        context['processing_count'] = SMSQueue.objects.filter(status=SMSStatusChoices.PROCESSING).count()
+        context['pending_count'] = SMSQueue.objects.filter(status=SMSStatusChoices.PENDING).count()
+        context['completed_count'] = SMSQueue.objects.filter(status__in=[SMSStatusChoices.SENT, SMSStatusChoices.DELIVERED]).count()
         return context
 
 
