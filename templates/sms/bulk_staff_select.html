@@ -3,72 +3,63 @@
 {% block title %}Personalized Bulk Staff SMS - Select Recipients{% endblock %}
 
 {% block content %}
-<nav aria-label="breadcrumb" class="mb-3">
-    <ol class="breadcrumb">
-        <li class="breadcrumb-item"><a href="{% url 'dashboard:home' %}">Dashboard</a></li>
-        <li class="breadcrumb-item"><a href="{% url 'sms:single' %}">Communication</a></li>
-        <li class="breadcrumb-item active" aria-current="page">Personalized Bulk Staff SMS</li>
-    </ol>
-</nav>
 
 <form method="post" id="staffSelectionForm">
     {% csrf_token %}
     
-    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div class="page-header mb-4">
         <div>
-            <h3 class="fw-bold mb-1"><i class="bi bi-people text-primary me-2"></i>Personalized Bulk Staff SMS Engine</h3>
-            <p class="text-muted mb-0">Select staff recipients from the directory to dispatch personalized DLT-approved SMS notifications.</p>
+            <h4 class="page-header-title"><i class="bi bi-people text-primary"></i> Personalized Bulk Staff SMS</h4>
+            <p class="page-header-sub">Select staff recipients to dispatch personalized DLT-approved SMS notifications.</p>
         </div>
         <div class="d-flex gap-2 align-items-center">
-            <span class="badge bg-primary-subtle text-primary border border-primary-subtle fs-6 px-3 py-2 rounded-pill" id="selectedCountBadge">
+            <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3 py-2" id="selectedCountBadge" style="font-size: 0.82rem;">
                 <i class="bi bi-person-check me-1"></i> <span id="selectedCount">0</span> Selected
             </span>
-            <button type="submit" class="btn btn-primary fw-bold px-4 shadow-sm" id="nextButton" disabled>
+            <button type="submit" class="btn btn-primary fw-semibold" id="nextButton" disabled>
                 Next: Configure Variables <i class="bi bi-arrow-right ms-1"></i>
             </button>
         </div>
     </div>
 </form>
 
-<!-- Search & Department Filter Toolbar -->
-<div class="card border-0 shadow-sm rounded-4 mb-4">
-    <div class="card-body p-3">
-        <form method="get" class="row g-2 align-items-center">
-            <div class="col-md-6">
-                <div class="input-group">
-                    <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
-                    <input type="text" name="q" class="form-control border-start-0" placeholder="Search staff name or mobile number..." value="{{ search_query }}">
-                </div>
+<!-- Filter Toolbar -->
+<div class="filter-toolbar">
+    <form method="get" class="row g-2 align-items-end">
+        <div class="col-md-6">
+            <label class="form-label">Search</label>
+            <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                <input type="text" name="q" class="form-control border-start-0" placeholder="Search staff name or mobile number..." value="{{ search_query }}">
             </div>
-
-            <div class="col-md-4">
-                <select name="department" class="form-select">
-                    <option value="">-- Filter Department --</option>
-                    {% for dept in departments %}
-                        <option value="{{ dept.pk }}" {% if selected_dept == dept.pk|stringformat:"s" %}selected{% endif %}>{{ dept.name }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <div class="col-md-2 d-flex gap-1">
-                <button type="submit" class="btn btn-primary w-100" title="Apply Filters"><i class="bi bi-funnel me-1"></i> Filter</button>
-                <a href="{% url 'sms:bulk_select' %}" class="btn btn-outline-secondary" title="Reset Filters"><i class="bi bi-arrow-clockwise"></i></a>
-            </div>
-        </form>
-    </div>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">Department</label>
+            <select name="department" class="form-select">
+                <option value="">All Departments</option>
+                {% for dept in departments %}
+                    <option value="{{ dept.pk }}" {% if selected_dept == dept.pk|stringformat:"s" %}selected{% endif %}>{{ dept.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2 d-flex gap-1">
+            <button type="submit" class="btn btn-primary w-100"><i class="bi bi-funnel"></i> Filter</button>
+            <a href="{% url 'sms:bulk_select' %}" class="btn btn-outline-secondary" title="Clear"><i class="bi bi-x-lg"></i></a>
+        </div>
+    </form>
 </div>
 
-<!-- Staff Recipient Directory Table -->
-<div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+<!-- Staff Directory Table -->
+<div class="card overflow-hidden">
     <div class="card-body p-0">
         <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="table-light text-uppercase small font-monospace text-muted">
+            <table class="table table-hover">
+                <thead>
                     <tr>
-                        <th width="45" class="text-center ps-3">
-                            <input type="checkbox" class="form-check-input" id="selectAllCheckbox" title="Select All Visible Staff">
+                        <th style="width:45px;" class="text-center">
+                            <input type="checkbox" class="form-check-input" id="selectAllCheckbox" title="Select All Visible">
                         </th>
-                        <th style="width: 80px;">S.No</th>
+                        <th style="width:60px;">#</th>
                         <th>Staff Name</th>
                         <th>Mobile Number</th>
                         <th>Department</th>
@@ -77,31 +68,36 @@
                 <tbody>
                     {% for staff in staff_list %}
                     <tr>
-                        <td class="text-center ps-3">
+                        <td class="text-center">
                             <input type="checkbox" form="staffSelectionForm" name="selected_staff_ids" value="{{ staff.id }}" class="form-check-input staff-checkbox">
                         </td>
-                        <td class="font-monospace text-muted">{{ forloop.counter0|add:page_obj.start_index }}</td>
-                        <td><span class="fw-bold text-dark fs-6">{{ staff.name }}</span></td>
+                        <td class="font-monospace text-muted" style="font-size:0.78rem;">{{ forloop.counter0|add:page_obj.start_index }}</td>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="table-avatar">{{ staff.name|slice:":2"|upper }}</div>
+                                <span class="fw-semibold">{{ staff.name }}</span>
+                            </div>
+                        </td>
                         <td>
                             {% if staff.mobile_number %}
-                                <span class="font-monospace fw-semibold text-dark">{{ staff.mobile_number }}</span>
+                                <span class="font-monospace fw-semibold">{{ staff.mobile_number }}</span>
                             {% else %}
-                                <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle"><i class="bi bi-exclamation-triangle-fill me-1"></i> No Phone</span>
+                                <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle"><i class="bi bi-exclamation-triangle-fill me-1"></i>No Phone</span>
                             {% endif %}
                         </td>
                         <td>
                             {% if staff.department %}
                                 <span class="badge bg-light text-dark border">{{ staff.department.name }}</span>
                             {% else %}
-                                <span class="text-muted small">General</span>
+                                <span class="text-muted" style="font-size:0.8rem;">General</span>
                             {% endif %}
                         </td>
                     </tr>
                     {% empty %}
-                    <tr>
-                        <td colspan="5" class="text-center py-5 text-muted">
-                            <i class="bi bi-person-x display-5 d-block mb-3 opacity-50"></i>
-                            No staff recipient members found matching your search criteria.
+                    <tr class="table-empty">
+                        <td colspan="5">
+                            <i class="bi bi-person-x d-block fs-1 mb-2 opacity-25"></i>
+                            No staff recipients found matching your criteria.
                         </td>
                     </tr>
                     {% endfor %}
@@ -111,13 +107,13 @@
     </div>
 </div>
 
-<!-- Pagination Controls -->
+<!-- Pagination -->
 {% if is_paginated %}
 <div class="mt-4 d-flex justify-content-center">
     <nav>
-        <ul class="pagination pagination-sm shadow-sm">
+        <ul class="pagination">
             {% if page_obj.has_previous %}
-                <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ search_query }}&department={{ selected_dept }}">&laquo; Previous</a></li>
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ search_query }}&department={{ selected_dept }}">&laquo; Prev</a></li>
             {% endif %}
             <li class="page-item active"><span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span></li>
             {% if page_obj.has_next %}

@@ -3,190 +3,536 @@
 
 {% block title %}Send Single SMS - Campus Communication Management System{% endblock %}
 
+{% block extra_css %}
+<style>
+    /* ================================================================
+       CCMS Enterprise UI Standard — Single SMS Page
+       All layout tokens are defined here for consistency.
+    ================================================================ */
+    :root {
+        --std-card-bg:            #ffffff;
+        --std-card-shadow:        0 2px 16px rgba(0, 0, 0, 0.05);
+        --std-card-radius:        14px;
+        --std-input-bg:           #f8fafc;
+        --std-input-border:       #e2e8f0;
+        --std-input-height:       38px;
+        --std-input-focus-border: #3b82f6;
+        --std-input-focus-ring:   rgba(59, 130, 246, 0.12);
+        --std-label-color:        #64748b;
+        --chat-bubble-bg:         #e9eef5;
+        --chat-bubble-color:      #1e293b;
+    }
+
+    /* ---- Card ---- */
+    .std-card {
+        background-color: var(--std-card-bg);
+        border: 1px solid #f0f4f8 !important;
+        border-radius: var(--std-card-radius) !important;
+        box-shadow: var(--std-card-shadow) !important;
+    }
+    .std-card-header {
+        background-color: transparent !important;
+        border-bottom: 1px solid #f1f5f9 !important;
+        padding: 0.875rem 1.25rem !important;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .std-card-title {
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+    .std-card-body {
+        padding: 1.125rem !important;
+    }
+
+    /* ---- Labels ---- */
+    .std-label {
+        display: block;
+        font-size: 0.7rem !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.6px !important;
+        font-weight: 700 !important;
+        color: var(--std-label-color) !important;
+        margin-bottom: 0.3rem !important;
+    }
+
+    /* ---- Inputs — All Django-rendered + custom ---- */
+    #singleSmsForm input[type="text"],
+    #singleSmsForm input[type="number"],
+    #singleSmsForm select,
+    .var-dynamic-input {
+        background-color: var(--std-input-bg) !important;
+        border: 1px solid var(--std-input-border) !important;
+        border-radius: 8px !important;
+        padding: 0.45rem 0.75rem !important;
+        font-size: 0.875rem !important;
+        height: var(--std-input-height);
+        color: #334155 !important;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+        box-shadow: none !important;
+        width: 100%;
+        display: block;
+        line-height: 1.4;
+    }
+    #singleSmsForm input[type="text"]:focus,
+    #singleSmsForm input[type="number"]:focus,
+    #singleSmsForm select:focus,
+    .var-dynamic-input:focus {
+        background-color: #ffffff !important;
+        border-color: var(--std-input-focus-border) !important;
+        box-shadow: 0 0 0 3px var(--std-input-focus-ring) !important;
+        outline: none;
+    }
+
+    /* ---- Input Group (Staff Search) ---- */
+    .std-search-group {
+        display: flex;
+        border: 1px solid var(--std-input-border);
+        border-radius: 8px;
+        overflow: hidden;
+        background: var(--std-input-bg);
+        height: var(--std-input-height);
+        transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    .std-search-group:focus-within {
+        border-color: var(--std-input-focus-border);
+        box-shadow: 0 0 0 3px var(--std-input-focus-ring);
+        background: #ffffff;
+    }
+    .std-search-group .search-icon {
+        display: flex;
+        align-items: center;
+        padding: 0 0.625rem;
+        color: #94a3b8;
+        font-size: 0.8rem;
+        pointer-events: none;
+    }
+    .std-search-group input {
+        flex: 1;
+        border: none !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        height: 100% !important;
+        border-radius: 0 !important;
+        padding: 0 0.5rem 0 0 !important;
+        font-size: 0.875rem !important;
+        color: #334155 !important;
+    }
+    .std-search-group input:focus {
+        outline: none;
+        border: none !important;
+        box-shadow: none !important;
+        background: transparent !important;
+    }
+    .std-search-group .clear-btn {
+        display: flex;
+        align-items: center;
+        padding: 0 0.625rem;
+        background: transparent;
+        border: none;
+        border-left: 1px solid var(--std-input-border);
+        color: #94a3b8;
+        cursor: pointer;
+        font-size: 0.7rem;
+        transition: color 0.15s ease;
+    }
+    .std-search-group .clear-btn:hover { color: #334155; }
+
+    /* ---- Submit Button ---- */
+    .std-btn-primary {
+        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+        border: none !important;
+        color: #ffffff !important;
+        font-weight: 600 !important;
+        font-size: 0.875rem !important;
+        padding: 0.55rem 1.25rem !important;
+        border-radius: 8px !important;
+        box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25) !important;
+        transition: all 0.2s ease !important;
+        width: 100%;
+    }
+    .std-btn-primary:hover {
+        box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35) !important;
+        transform: translateY(-1px);
+    }
+    .std-btn-primary:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+        transform: none !important;
+    }
+
+    /* ---- Profile / Staff Summary Card ---- */
+    .profile-card {
+        background-color: #f8fafc;
+        border: 1px solid var(--std-input-border);
+        border-radius: 10px;
+        padding: 0.75rem 1rem;
+    }
+    .profile-meta {
+        font-size: 0.75rem;
+        color: #64748b;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.2rem 1rem;
+        margin-top: 0.35rem;
+    }
+    .profile-meta span strong { color: #334155; }
+    .avatar-modern {
+        width: 36px;
+        height: 36px;
+        min-width: 36px;
+        border-radius: 8px;
+        background: linear-gradient(135deg, #dbeafe, #eff6ff);
+        color: #1d4ed8;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 0.85rem;
+    }
+
+    /* ---- Form Field Groups ---- */
+    .field-group {
+        margin-bottom: 0.75rem;
+    }
+    .field-group:last-of-type {
+        margin-bottom: 0;
+    }
+
+    /* ---- Variables Section ---- */
+    .vars-section {
+        background: #f8fafc;
+        border: 1px dashed #cbd5e1;
+        border-radius: 10px;
+        padding: 0.75rem;
+        margin-bottom: 0.75rem;
+    }
+    .vars-section-title {
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        color: #3b82f6;
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+    }
+
+    /* ---- Preview Column ---- */
+    .preview-card-body {
+        padding: 0 !important;
+        background: #f8fafc;
+        border-bottom-left-radius: var(--std-card-radius);
+        border-bottom-right-radius: var(--std-card-radius);
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        flex: 1;
+    }
+    .no-template-notice {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 2rem 1.5rem;
+        flex: 1;
+    }
+    .no-template-notice .notice-icon-wrap {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: #ffffff;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 0.75rem;
+        font-size: 1.4rem;
+        color: #3b82f6;
+    }
+    .no-template-notice p {
+        font-size: 0.82rem;
+        color: #64748b;
+        max-width: 220px;
+        margin: 0;
+        line-height: 1.5;
+    }
+    .chat-viewport {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        padding: 1rem;
+    }
+    .chat-meta-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.625rem;
+        font-size: 0.72rem;
+        color: #94a3b8;
+    }
+    .chat-sender-tag {
+        font-size: 0.68rem;
+        font-weight: 800;
+        letter-spacing: 0.8px;
+        text-transform: uppercase;
+        background: #e2e8f0;
+        color: #475569;
+        padding: 0.15rem 0.5rem;
+        border-radius: 4px;
+    }
+    .chat-bubble {
+        background: var(--chat-bubble-bg);
+        color: var(--chat-bubble-color);
+        padding: 0.75rem 0.875rem;
+        border-radius: 14px;
+        border-bottom-left-radius: 3px;
+        font-family: 'SFMono-Regular', 'Menlo', monospace;
+        font-size: 0.82rem;
+        line-height: 1.55;
+        max-width: 88%;
+        word-break: break-word;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+    .chat-stats {
+        display: flex;
+        gap: 0.5rem;
+        justify-content: flex-end;
+        margin-top: auto;
+        padding-top: 0.75rem;
+    }
+    .stat-pill {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        padding: 0.25rem 0.625rem;
+        font-size: 0.72rem;
+        font-weight: 600;
+        color: #475569;
+    }
+
+    /* ---- Dispatch Outcome Banner ---- */
+    .outcome-banner {
+        border-radius: 10px;
+        border-left: 4px solid;
+        margin-bottom: 1rem;
+        padding: 0.875rem 1.125rem;
+        background: #ffffff;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+    }
+    .outcome-banner.success { border-left-color: #22c55e; }
+    .outcome-banner.failure { border-left-color: #ef4444; }
+    .outcome-meta {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.5rem;
+        margin-top: 0.625rem;
+    }
+    .outcome-meta-item small { font-size: 0.7rem; color: #94a3b8; }
+    .outcome-meta-item strong { font-size: 0.85rem; display: block; }
+</style>
+{% endblock %}
+
 {% block content %}
-<nav aria-label="breadcrumb" class="mb-3">
+{% comment %} <nav aria-label="breadcrumb" class="mb-3">
     <ol class="breadcrumb">
         <li class="breadcrumb-item"><a href="{% url 'dashboard:home' %}">Dashboard</a></li>
         <li class="breadcrumb-item active" aria-current="page">Send Single SMS</li>
     </ol>
-</nav>
+</nav> {% endcomment %}
 
-<div class="d-flex justify-content-between align-items-center mb-4">
+{% comment %} <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
         <h3 class="fw-bold mb-1"><i class="bi bi-chat-dots text-primary me-2"></i>Send Single SMS</h3>
         <p class="text-muted mb-0">Search staff recipient, load approved DLT templates, and dispatch notifications securely.</p>
     </div>
-</div>
+</div> {% endcomment %}
 
-<!-- Dispatch Outcome Card (If Form Submitted) -->
+<!-- Dispatch Outcome Banner (If Form Submitted) -->
 {% if dispatch_attempted %}
-<div class="card border-0 shadow-sm rounded-4 mb-4 {% if dispatch_success %}border-start border-success border-4{% else %}border-start border-danger border-4{% endif %}">
-    <div class="card-body p-4">
-        <div class="d-flex align-items-center justify-content-between mb-3">
-            <h5 class="fw-bold mb-0">
-                {% if dispatch_success %}
-                    <i class="bi bi-check-circle-fill text-success me-2"></i> SMS Dispatched Successfully
-                {% else %}
-                    <i class="bi bi-x-circle-fill text-danger me-2"></i> SMS Dispatch Failed
-                {% endif %}
-            </h5>
-            <span class="badge {% if dispatch_success %}bg-success-subtle text-success border border-success-subtle{% else %}bg-danger-subtle text-danger border border-danger-subtle{% endif %} font-monospace px-3 py-1">
-                HTTP {{ gw_result.status_code|default:"ERR" }}
-            </span>
-        </div>
-
-        <div class="row g-3 text-start">
-            <div class="col-md-4">
-                <small class="text-muted d-block">Gateway Message ID</small>
-                <code class="fw-bold">{{ gw_result.gateway_message_id|default:"N/A" }}</code>
-            </div>
-            <div class="col-md-4">
-                <small class="text-muted d-block">Recipient Mobile</small>
-                <span class="fw-semibold font-monospace">{{ log_entry.mobile_number }}</span>
-            </div>
-            <div class="col-md-4">
-                <small class="text-muted d-block">Execution Timing</small>
-                <span class="badge bg-secondary font-monospace">{{ gw_result.execution_time_ms }} ms</span>
-            </div>
-            <div class="col-12">
-                <small class="text-muted d-block mb-1">Dispatched Message Content</small>
-                <div class="p-3 bg-light rounded-3 font-monospace border small">{{ log_entry.message_content }}</div>
-            </div>
-            {% if gw_result.error_message %}
-                <div class="col-12">
-                    <small class="text-danger d-block mb-1">Gateway Error Reason</small>
-                    <div class="p-2 bg-danger-soft text-danger rounded small font-monospace">{{ gw_result.error_message }}</div>
-                </div>
+<div class="outcome-banner {% if dispatch_success %}success{% else %}failure{% endif %} mb-3">
+    <div class="d-flex align-items-center justify-content-between">
+        <span class="fw-bold" style="font-size: 0.875rem;">
+            {% if dispatch_success %}
+                <i class="bi bi-check-circle-fill text-success me-2"></i>SMS Dispatched Successfully
+            {% else %}
+                <i class="bi bi-x-circle-fill text-danger me-2"></i>SMS Dispatch Failed
             {% endif %}
+        </span>
+        <span class="badge {% if dispatch_success %}bg-success-subtle text-success border border-success-subtle{% else %}bg-danger-subtle text-danger border border-danger-subtle{% endif %} font-monospace px-2 py-1" style="font-size: 0.7rem;">
+            HTTP {{ gw_result.status_code|default:"ERR" }}
+        </span>
+    </div>
+    <div class="outcome-meta mt-2">
+        <div class="outcome-meta-item">
+            <small>Gateway Message ID</small>
+            <strong class="font-monospace">{{ gw_result.gateway_message_id|default:"N/A" }}</strong>
         </div>
+        <div class="outcome-meta-item">
+            <small>Recipient Mobile</small>
+            <strong class="font-monospace">{{ log_entry.mobile_number }}</strong>
+        </div>
+        <div class="outcome-meta-item">
+            <small>Execution Time</small>
+            <strong>{{ gw_result.execution_time_ms }} ms</strong>
+        </div>
+    </div>
+    {% if gw_result.error_message %}
+    <div class="mt-2 px-2 py-1 rounded-2 bg-danger-subtle text-danger font-monospace" style="font-size: 0.78rem;">{{ gw_result.error_message }}</div>
+    {% endif %}
+    <div class="mt-2">
+        <small class="text-muted d-block" style="font-size: 0.7rem;">Dispatched Content</small>
+        <div class="p-2 bg-light rounded-2 font-monospace border mt-1" style="font-size: 0.78rem;">{{ log_entry.message_content }}</div>
     </div>
 </div>
 {% endif %}
 
-<div class="row g-4">
-    <!-- Form Inputs Column -->
-    <div class="col-lg-7">
-        <div class="card border-0 shadow-sm rounded-4">
-            <div class="card-header bg-white py-3 border-0">
-                <h5 class="fw-bold mb-0"><i class="bi bi-person-search text-primary me-2"></i>Staff Recipient Lookup & Form</h5>
+<!-- Two-Column Layout -->
+<div class="row g-3" style="min-height: 0;">
+
+    <!-- LEFT: Form Column -->
+    <div class="col-lg-7 d-flex flex-column" style="min-height: 0;">
+        <div class="std-card d-flex flex-column" style="min-height: 0; flex: 1;">
+
+            <div class="std-card-header">
+                <span class="std-card-title">
+                    <i class="bi bi-person-badge text-primary"></i>
+                    Staff Lookup &amp; Dispatch Details
+                </span>
             </div>
-            <div class="card-body p-4">
-                <form method="post" id="singleSmsForm">
+
+            <div class="std-card-body d-flex flex-column" style="min-height: 0; flex: 1;">
+                <form method="post" id="singleSmsForm" class="d-flex flex-column" style="flex: 1; min-height: 0; gap: 0;">
                     {% csrf_token %}
 
-                    <!-- Searchable Staff Lookup Component -->
-                    <div class="mb-4 position-relative" id="staffSearchWrapper">
-                        <label class="form-label fw-semibold">Select Recipient Staff *</label>
-                        <div class="input-group">
-                            <span class="input-group-text bg-white"><i class="bi bi-search text-primary"></i></span>
-                            <input type="text" id="staffSearchInput" class="form-control form-control-lg" placeholder="Type Name, Emp ID, Mobile, Email..." autocomplete="off">
-                            <button type="button" class="btn btn-outline-secondary" id="clearStaffBtn" title="Clear Selection"><i class="bi bi-x-lg"></i></button>
+                    <!-- Row 1: Staff Search -->
+                    <div class="field-group position-relative" id="staffSearchWrapper">
+                        <label class="std-label">Select Recipient Staff *</label>
+                        <div class="std-search-group">
+                            <span class="search-icon"><i class="bi bi-search"></i></span>
+                            <input type="text" id="staffSearchInput" placeholder="Type Name, Emp ID, Mobile, Email..." autocomplete="off">
+                            <button type="button" class="clear-btn" id="clearStaffBtn" title="Clear"><i class="bi bi-x-lg"></i></button>
                         </div>
-                        <small class="form-text text-muted">Search active staff by Name, Employee ID, Username, Email, or Mobile Number (e.g. 989415).</small>
+                        <div style="font-size: 0.7rem; color: #94a3b8; margin-top: 0.25rem;">Search by Name, Emp ID, Username, Email, or Mobile.</div>
 
                         <!-- Suggestions Dropdown Menu with absolute positioning & explicit display logic -->
-                        <div id="staffDropdownMenu" class="dropdown-menu w-100 shadow-lg border border-primary-subtle rounded-3 mt-1 p-0 overflow-hidden" style="display: none; position: absolute; top: 100%; left: 0; max-height: 320px; overflow-y: auto; z-index: 1060;">
+                        <div id="staffDropdownMenu" class="dropdown-menu w-100 shadow-lg border-0 rounded-3 mt-1 p-0 overflow-hidden" style="display: none; position: absolute; top: 100%; left: 0; max-height: 280px; overflow-y: auto; z-index: 1060;">
                             <!-- Injected dynamically via JS -->
                         </div>
                     </div>
 
                     <!-- Selected Staff Summary Card -->
-                    <div id="staffSummaryCard" class="card bg-light border-primary border-opacity-25 rounded-4 p-3 mb-4 d-none">
-                        <div class="d-flex align-items-center gap-3">
-                            <div class="avatar-icon bg-primary text-white rounded-circle d-flex align-items-center justify-content-center fw-bold fs-4" style="width: 52px; height: 52px; flex-shrink: 0;" id="staffAvatar">
-                                JS
-                            </div>
+                    <div id="staffSummaryCard" class="profile-card field-group d-none">
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="avatar-modern" id="staffAvatar">JS</div>
                             <div class="flex-grow-1 min-w-0">
-                                <div class="d-flex justify-content-between align-items-center mb-1">
-                                    <h6 class="fw-bold text-dark mb-0" id="cardStaffName">Mohamed Sami</h6>
-                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill" id="cardStaffRole">Staff</span>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="fw-bold text-dark" style="font-size: 0.85rem;" id="cardStaffName">Mohamed Sami</span>
+                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2" style="font-size: 0.68rem;" id="cardStaffRole">Staff</span>
                                 </div>
-                                <div class="row g-1 small text-muted">
-                                    <div class="col-6">Emp ID: <strong class="text-dark font-monospace" id="cardEmpId">EMP001</strong></div>
-                                    <div class="col-6">Dept: <strong class="text-dark" id="cardDept">CSE</strong></div>
-                                    <div class="col-6">Mobile: <strong class="text-dark font-monospace" id="cardMobile">9876543210</strong></div>
-                                    <div class="col-6">Email: <strong class="text-dark text-truncate d-inline-block mw-100" id="cardEmail">sami@jmc.edu</strong></div>
+                                <div class="profile-meta">
+                                    <span><i class="bi bi-person-vcard me-1 opacity-50"></i> <strong id="cardEmpId">EMP001</strong></span>
+                                    <span><i class="bi bi-building me-1 opacity-50"></i> <strong id="cardDept">CSE</strong></span>
+                                    <span><i class="bi bi-telephone me-1 opacity-50"></i> <strong id="cardMobile">9876543210</strong></span>
+                                    <span><i class="bi bi-envelope me-1 opacity-50"></i> <strong class="text-truncate d-inline-block" style="max-width: 120px;" id="cardEmail">email@edu.in</strong></span>
                                 </div>
                             </div>
                         </div>
                         <!-- Validation Warning Notice for Missing Phone Number -->
-                        <div id="noMobileWarning" class="alert alert-warning border border-warning-subtle small mb-0 mt-3 d-none">
-                            <i class="bi bi-exclamation-triangle-fill me-1 text-warning"></i> <strong>This staff member does not have a registered mobile number.</strong>
+                        <div id="noMobileWarning" class="alert alert-warning border border-warning-subtle rounded-2 py-1 px-2 mb-0 mt-2 d-none" style="font-size: 0.78rem;">
+                            <i class="bi bi-exclamation-triangle-fill me-1 text-warning"></i> <strong>No registered mobile number for this staff member.</strong>
                         </div>
                     </div>
 
-                    <!-- Auto-Populated Mobile Input -->
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Auto-Populated Recipient Mobile Number</label>
-                        {{ form.mobile_number }}
-                        {% if form.mobile_number.errors %}<div class="text-danger small mt-1">{{ form.mobile_number.errors }}</div>{% endif %}
+                    <!-- Row 2: Mobile + Department side by side -->
+                    <div class="row g-2 field-group">
+                        <div class="col-6">
+                            <label class="std-label">Mobile Number</label>
+                            {{ form.mobile_number }}
+                            {% if form.mobile_number.errors %}<div class="text-danger mt-1" style="font-size:0.72rem;">{{ form.mobile_number.errors }}</div>{% endif %}
+                        </div>
+                        <div class="col-6">
+                            <label class="std-label">Department Scope</label>
+                            {{ form.department }}
+                            {% if form.department.errors %}<div class="text-danger mt-1" style="font-size:0.72rem;">{{ form.department.errors }}</div>{% endif %}
+                        </div>
                     </div>
 
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Department Scope</label>
-                        {{ form.department }}
-                        {% if form.department.errors %}<div class="text-danger small mt-1">{{ form.department.errors }}</div>{% endif %}
-                    </div>
-
-                    <div class="mb-4">
-                        <label class="form-label fw-semibold">Select Approved DLT Template *</label>
+                    <!-- Row 3: DLT Template -->
+                    <div class="field-group">
+                        <label class="std-label">DLT Template *</label>
                         {{ form.template }}
-                        {% if form.template.errors %}<div class="text-danger small mt-1">{{ form.template.errors }}</div>{% endif %}
+                        {% if form.template.errors %}<div class="text-danger mt-1" style="font-size:0.72rem;">{{ form.template.errors }}</div>{% endif %}
                     </div>
 
                     <!-- Dynamic Variables Container -->
-                    <div id="variablesCard" class="card bg-light border-0 rounded-3 p-3 mb-4 d-none">
-                        <h6 class="fw-bold text-primary mb-3"><i class="bi bi-sliders me-2"></i>Template Variable Parameters</h6>
-                        <div id="dynamicVariablesContainer" class="row g-3">
+                    <div id="variablesCard" class="vars-section d-none">
+                        <div class="vars-section-title"><i class="bi bi-sliders"></i> Template Variable Parameters</div>
+                        <div id="dynamicVariablesContainer" class="row g-2">
                             <!-- Dynamic inputs generated via JavaScript -->
                         </div>
                     </div>
 
-                    <div class="d-grid gap-2">
-                        <button type="submit" class="btn btn-primary btn-lg rounded-3 fw-bold shadow-sm" id="sendSmsBtn">
-                            <i class="bi bi-send me-1"></i> Send Single SMS Now
+                    <!-- Submit Button -->
+                    <div style="margin-top: auto; padding-top: 0.75rem;">
+                        <button type="submit" class="std-btn-primary" id="sendSmsBtn">
+                            <i class="bi bi-send-fill me-2"></i> Send Single SMS Now
                         </button>
                     </div>
+
                 </form>
             </div>
         </div>
     </div>
 
-    <!-- Live Preview Column -->
-    <div class="col-lg-5">
-        <div class="card border-0 shadow-sm rounded-4">
-            <div class="card-header bg-primary text-white py-3 border-0">
-                <h5 class="fw-bold mb-0"><i class="bi bi-eye-fill me-2"></i>Real-Time Message Preview</h5>
+    <!-- RIGHT: Preview Column -->
+    <div class="col-lg-5 d-flex flex-column" style="min-height: 0;">
+        <div class="std-card d-flex flex-column" style="min-height: 0; flex: 1;">
+
+            <div class="std-card-header">
+                <span class="std-card-title">
+                    <i class="bi bi-phone text-primary"></i>
+                    Message Preview
+                </span>
+                <span class="badge rounded-pill" style="background: #f0f7ff; color: #3b82f6; border: 1px solid #bfdbfe; font-size: 0.68rem; font-weight: 700; padding: 0.25rem 0.6rem;">
+                    <i class="bi bi-broadcast me-1"></i>LIVE
+                </span>
             </div>
-            <div class="card-body p-4">
-                <div id="noTemplateNotice" class="text-center py-5 text-muted">
-                    <i class="bi bi-chat-square-dots display-4 d-block mb-3 opacity-50"></i>
-                    Select staff recipient and an approved DLT template to load variable parameters and live message preview.
+
+            <div class="preview-card-body">
+
+                <div id="noTemplateNotice" class="no-template-notice">
+                    <div class="notice-icon-wrap"><i class="bi bi-chat-dots"></i></div>
+                    <p>Select a staff recipient and DLT template to preview the message as it will appear on the recipient's device.</p>
                 </div>
 
-                <div id="previewContainer" class="d-none">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <small class="text-muted">Header: <strong id="headerSenderIdBadge" class="font-monospace text-dark">CLGEXM</strong></small>
-                        <small class="text-muted">DLT ID: <code id="dltIdBadge">1107...</code></small>
+                <div id="previewContainer" class="chat-viewport d-none">
+                    <div class="chat-meta-bar">
+                        <span><i class="bi bi-shield-check text-success me-1" style="font-size: 0.75rem;"></i>DLT: <code id="dltIdBadge" class="fw-bold">—</code></span>
+                        <span class="chat-sender-tag" id="headerSenderIdBadge">SENDER</span>
                     </div>
 
-                    <!-- Live Render Box -->
-                    <div class="p-3 bg-light rounded-3 border text-dark font-monospace mb-3" id="renderedLiveText" style="min-height: 100px;">
-                        Select template...
-                    </div>
+                    <!-- Chat Bubble -->
+                    <div class="chat-bubble" id="renderedLiveText">Select template...</div>
 
-                    <div class="d-flex justify-content-between align-items-center">
-                        <span class="badge bg-primary-soft text-primary p-2">
-                            <i class="bi bi-fonts me-1"></i> <span id="charCount">0</span> Chars
-                        </span>
-                        <span class="badge bg-purple-soft text-purple p-2">
-                            <i class="bi bi-envelope-paper me-1"></i> <span id="creditCount">0</span> SMS Credit(s)
-                        </span>
+                    <div class="chat-stats">
+                        <span class="stat-pill"><i class="bi bi-fonts text-primary me-1"></i><span id="charCount">0</span> chars</span>
+                        <span class="stat-pill"><i class="bi bi-envelope-paper me-1" style="color:#c084fc;"></i><span id="creditCount">0</span> SMS</span>
                     </div>
                 </div>
+
             </div>
         </div>
     </div>
+
 </div>
 {% endblock %}
 
@@ -375,8 +721,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         const col = document.createElement('div');
                         col.className = 'col-md-6';
                         col.innerHTML = `
-                            <label class="form-label small fw-semibold">Var #${v.position}: ${v.name}</label>
-                            <input type="text" name="var_${v.position}" class="form-control var-dynamic-input" data-pos="${v.position}" value="${v.sample_value || ''}" placeholder="Enter ${v.name}">
+                            <label class="form-label std-label">Var #${v.position}: ${v.name}</label>
+                            <input type="text" name="var_${v.position}" class="form-control var-dynamic-input std-input" data-pos="${v.position}" value="${v.sample_value || ''}" placeholder="Enter ${v.name}">
                         `;
                         varsContainer.appendChild(col);
                     });
