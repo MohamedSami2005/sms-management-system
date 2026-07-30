@@ -7,6 +7,7 @@ from apps.users.models import Department, Staff
 from apps.dlt_templates.models import DLTTemplate
 from apps.settings_app.models import SMSGatewayConfig
 from apps.sms.services.single_sms import SingleSMSService
+from apps.logs.models import SMSLog
 
 
 class SingleSMSStaffLookupTestCase(TestCase):
@@ -90,3 +91,47 @@ class SingleSMSStaffLookupTestCase(TestCase):
 
         response = self.client.post(url, post_data)
         self.assertEqual(response.status_code, 302)
+
+    @patch('requests.post')
+    def test_single_sms_dynamic_variable_mapping(self, mock_post):
+        """Verifies Single SMS with Static Value and Database Field mapping cards."""
+        mock_resp = MagicMock()
+        mock_resp.status_code = 200
+        mock_resp.text = '{"status":"Success","code":"011","messageid":"GW_SINGLE_456"}'
+        mock_post.return_value = mock_resp
+
+        url = reverse('sms:single')
+        post_data = {
+            'staff_id': self.staff1.pk,
+            'mobile_number': self.staff1.mobile_number,
+            'template': self.template.pk,
+            'var_1_source_type': 'field',
+            'var_1_field_val': 'name',
+            'var_2_source_type': 'static',
+            'var_2_static_val': '10000'
+        }
+
+        response = self.client.post(url, post_data)
+        self.assertEqual(response.status_code, 302)
+
+        log = SMSLog.objects.filter(gateway_message_id="GW_SINGLE_456").first()
+        self.assertIsNotNone(log)
+        self.assertEqual(log.message_content, "Dear Mohamed Sami, fee of Rs.10000 received.")
+
+    def test_single_sms_live_preview_ajax(self):
+        """Verifies real-time live preview AJAX endpoint returns resolved text."""
+        url = reverse('sms:bulk_preview_personalized_ajax')
+        payload = {
+            'staff_id': self.staff1.pk,
+            'mobile_number': self.staff1.mobile_number,
+            'template_id': self.template.pk,
+            'mapping_config': {
+                'var_1': {'type': 'field', 'value': 'name'},
+                'var_2': {'type': 'static', 'value': '10000'}
+            }
+        }
+        response = self.client.post(url, payload, content_type='application/json')
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(data['success'])
+        self.assertEqual(data['rendered_text'], 'Dear Mohamed Sami, fee of Rs.10000 received.')

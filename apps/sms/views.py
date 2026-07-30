@@ -28,18 +28,53 @@ ALLOWED_SMS_ROLES = ['ADMIN', 'COE', 'ADMISSION', 'ACCOUNTS', 'PLACEMENT']
 class SingleSMSView(LoginRequiredMixin, RoleRequiredMixin, FormView):
     """
     Single SMS Dispatch View.
-    Supports staff selection auto-complete or manual recipient mobile input.
+    Supports staff selection auto-complete, dynamic variable mapping (Static vs Staff DB Field),
+    and live message preview sandbox. Reuses StaffFieldMapper and SingleSMSService.
     """
     template_name = 'sms/single_sms.html'
     form_class = SingleSMSForm
     success_url = reverse_lazy('sms:single')
     allowed_roles = ALLOWED_SMS_ROLES
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['db_fields'] = json.dumps(StaffFieldMapper.get_supported_fields())
+        return context
+
     def form_valid(self, form):
         mobile_number = form.cleaned_data['mobile_number']
         template = form.cleaned_data['template']
-        variable_values = form.cleaned_data.get('variable_values', {})
 
+        # 1. Resolve staff recipient instance if selected by ID or mobile
+        staff_id = self.request.POST.get('staff_id')
+        staff_recipient = None
+        if staff_id and str(staff_id).isdigit():
+            staff_recipient = Staff.objects.filter(id=int(staff_id), is_active=True).first()
+            if not staff_recipient:
+                staff_recipient = CustomUser.objects.filter(id=int(staff_id), is_active=True).first()
+
+        if not staff_recipient and mobile_number:
+            staff_recipient = Staff.objects.filter(mobile_number=mobile_number, is_active=True).first()
+
+        # 2. Extract variable mapping configuration from POST data
+        mapping_config = {}
+        for key, val in self.request.POST.items():
+            if key.startswith('var_') and key.endswith('_source_type'):
+                var_pos = key.replace('_source_type', '')  # e.g. 'var_1'
+                stype = val
+                if stype == 'static':
+                    sval = self.request.POST.get(f"{var_pos}_static_val", '')
+                else:
+                    sval = self.request.POST.get(f"{var_pos}_field_val", 'name')
+                mapping_config[var_pos] = {'type': stype, 'value': sval}
+            elif key.startswith('var_') and not any(sub in key for sub in ['_source_type', '_static_val', '_field_val']):
+                if key not in mapping_config:
+                    mapping_config[key] = {'type': 'static', 'value': val}
+
+        # 3. Resolve all template variables via StaffFieldMapper
+        variable_values = StaffFieldMapper.resolve_all_variables(staff_recipient, mapping_config)
+
+        # 4. Dispatch single SMS via SingleSMSService
         success, log_entry, gw_result = SingleSMSService.process_and_send(
             user=self.request.user,
             mobile_number=mobile_number,
@@ -233,20 +268,24 @@ class PersonalizedPreviewAjaxView(LoginRequiredMixin, RoleRequiredMixin, View):
         try:
             body = json.loads(request.body)
             staff_id = body.get('staff_id')
+            mobile_number = body.get('mobile_number')
             template_id = body.get('template_id')
             mapping_config = body.get('mapping_config', {})
         except Exception:
             return JsonResponse({'success': False, 'error': 'Invalid JSON body'}, status=400)
 
-        if not staff_id or not template_id:
-            return JsonResponse({'success': False, 'error': 'Missing staff_id or template_id'}, status=400)
+        if not template_id:
+            return JsonResponse({'success': False, 'error': 'Missing template_id'}, status=400)
 
-        try:
-            staff = Staff.objects.get(pk=staff_id)
-            staff_name = staff.name
-        except Staff.DoesNotExist:
-            staff = get_object_or_404(CustomUser, pk=staff_id)
-            staff_name = staff.get_full_name() or staff.username
+        staff = None
+        staff_name = ""
+        if staff_id:
+            staff = Staff.objects.filter(pk=staff_id).first() or CustomUser.objects.filter(pk=staff_id).first()
+        elif mobile_number:
+            staff = Staff.objects.filter(mobile_number=mobile_number).first()
+
+        if staff:
+            staff_name = staff.name if isinstance(staff, Staff) else (staff.get_full_name() or staff.username)
 
         template = get_object_or_404(DLTTemplate, pk=template_id)
 
@@ -259,7 +298,7 @@ class PersonalizedPreviewAjaxView(LoginRequiredMixin, RoleRequiredMixin, View):
 
         return JsonResponse({
             'success': True,
-            'staff_id': staff.id,
+            'staff_id': staff.id if staff else None,
             'staff_name': staff_name,
             'rendered_text': rendered_text,
             'char_count': char_count,

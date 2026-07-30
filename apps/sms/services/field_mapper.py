@@ -17,6 +17,8 @@ class StaffFieldMapper:
         ('name', 'Staff Name'),
         ('mobile', 'Mobile Number'),
         ('department', 'Department'),
+        ('email', 'Email'),
+        ('username', 'Username'),
     ]
 
     @classmethod
@@ -25,7 +27,7 @@ class StaffFieldMapper:
         return [{'key': key, 'label': label} for key, label in cls.SUPPORTED_FIELDS]
 
     @classmethod
-    def resolve_field_value(cls, recipient: Union[Staff, CustomUser], field_key: str) -> str:
+    def resolve_field_value(cls, recipient: Union[Staff, CustomUser, None], field_key: str) -> str:
         """
         Extracts specific field value from a Staff recipient or CustomUser instance.
         """
@@ -39,6 +41,10 @@ class StaffFieldMapper:
                 return recipient.mobile_number
             elif field_key == 'department':
                 return recipient.department.name if recipient.department else ""
+            elif field_key == 'username':
+                return recipient.name
+            elif field_key == 'email':
+                return getattr(recipient, 'email', '') or ""
             return str(getattr(recipient, field_key, ''))
         
         # Fallback for CustomUser
@@ -50,13 +56,15 @@ class StaffFieldMapper:
             return recipient.department.name if recipient.department else ""
         elif field_key == 'employee_id':
             return getattr(recipient, 'employee_id', '') or ""
+        elif field_key == 'username':
+            return recipient.username
         elif field_key == 'email':
             return getattr(recipient, 'email', '') or ""
         
         return str(getattr(recipient, field_key, ''))
 
     @classmethod
-    def resolve_variable(cls, recipient: Union[Staff, CustomUser], source_type: str, source_value: str) -> str:
+    def resolve_variable(cls, recipient: Union[Staff, CustomUser, None], source_type: str, source_value: str) -> str:
         """
         Resolves a single template variable value for a given staff recipient.
         source_type: 'static' or 'field'
@@ -68,7 +76,7 @@ class StaffFieldMapper:
     @classmethod
     def resolve_all_variables(
         cls,
-        recipient: Union[Staff, CustomUser],
+        recipient: Union[Staff, CustomUser, None],
         mapping_config: Dict[str, Dict[str, str]]
     ) -> Dict[str, str]:
         """

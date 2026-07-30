@@ -35,8 +35,8 @@
                 <div class="d-flex flex-wrap gap-1" style="max-height: 100px; overflow-y: auto;">
                     {% for staff in staff_members %}
                         <span class="badge bg-light text-dark border p-2">
-                            <i class="bi bi-person me-1 text-muted"></i> {{ staff.get_full_name|default:staff.username }}
-                            <small class="text-muted">({{ staff.phone_number|default:"No Phone" }})</small>
+                            <i class="bi bi-person me-1 text-muted"></i> {{ staff.name }}
+                            <small class="text-muted">({{ staff.mobile_number }})</small>
                         </span>
                     {% endfor %}
                 </div>
@@ -130,7 +130,7 @@
                         <select id="previewRecipientSelect" class="form-select border-primary fw-semibold">
                             {% for staff in staff_members %}
                                 <option value="{{ staff.id }}" {% if forloop.first %}selected{% endif %}>
-                                    {{ staff.get_full_name|default:staff.username }} ({{ staff.employee_id|default:"Staff" }})
+                                    {{ staff.name }} ({% if staff.department %}{{ staff.department.name }}{% else %}Staff{% endif %})
                                 </option>
                             {% endfor %}
                         </select>

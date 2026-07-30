@@ -111,3 +111,18 @@ class Staff(AuditModel):
     def __str__(self) -> str:
         dept_str = f" ({self.department.code})" if self.department else ""
         return f"{self.name}{dept_str} - {self.mobile_number}"
+
+    @property
+    def get_full_name(self) -> str:
+        """Compatibility property for template duck-typing."""
+        return self.name
+
+    @property
+    def phone_number(self) -> str:
+        """Compatibility property for template duck-typing."""
+        return self.mobile_number
+
+    @property
+    def username(self) -> str:
+        """Compatibility property for template duck-typing."""
+        return self.name

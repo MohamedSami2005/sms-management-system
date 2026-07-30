@@ -214,11 +214,11 @@
         margin-bottom: 0.75rem;
     }
     .vars-section-title {
-        font-size: 0.7rem;
+        font-size: 0.75rem;
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.6px;
-        color: #3b82f6;
+        color: #2563eb;
         margin-bottom: 0.5rem;
         display: flex;
         align-items: center;
@@ -342,20 +342,6 @@
 {% endblock %}
 
 {% block content %}
-{% comment %} <nav aria-label="breadcrumb" class="mb-3">
-    <ol class="breadcrumb">
-        <li class="breadcrumb-item"><a href="{% url 'dashboard:home' %}">Dashboard</a></li>
-        <li class="breadcrumb-item active" aria-current="page">Send Single SMS</li>
-    </ol>
-</nav> {% endcomment %}
-
-{% comment %} <div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <h3 class="fw-bold mb-1"><i class="bi bi-chat-dots text-primary me-2"></i>Send Single SMS</h3>
-        <p class="text-muted mb-0">Search staff recipient, load approved DLT templates, and dispatch notifications securely.</p>
-    </div>
-</div> {% endcomment %}
-
 <!-- Dispatch Outcome Banner (If Form Submitted) -->
 {% if dispatch_attempted %}
 <div class="outcome-banner {% if dispatch_success %}success{% else %}failure{% endif %} mb-3">
@@ -412,6 +398,7 @@
             <div class="std-card-body d-flex flex-column" style="min-height: 0; flex: 1;">
                 <form method="post" id="singleSmsForm" class="d-flex flex-column" style="flex: 1; min-height: 0; gap: 0;">
                     {% csrf_token %}
+                    <input type="hidden" name="staff_id" id="selectedStaffIdInput" value="">
 
                     <!-- Row 1: Staff Search -->
                     <div class="field-group position-relative" id="staffSearchWrapper">
@@ -423,7 +410,7 @@
                         </div>
                         <div style="font-size: 0.7rem; color: #94a3b8; margin-top: 0.25rem;">Search by Name, Emp ID, Username, Email, or Mobile.</div>
 
-                        <!-- Suggestions Dropdown Menu with absolute positioning & explicit display logic -->
+                        <!-- Suggestions Dropdown Menu -->
                         <div id="staffDropdownMenu" class="dropdown-menu w-100 shadow-lg border-0 rounded-3 mt-1 p-0 overflow-hidden" style="display: none; position: absolute; top: 100%; left: 0; max-height: 280px; overflow-y: auto; z-index: 1060;">
                             <!-- Injected dynamically via JS -->
                         </div>
@@ -432,17 +419,17 @@
                     <!-- Selected Staff Summary Card -->
                     <div id="staffSummaryCard" class="profile-card field-group d-none">
                         <div class="d-flex align-items-center gap-2">
-                            <div class="avatar-modern" id="staffAvatar">JS</div>
+                            <div class="avatar-modern" id="staffAvatar">ST</div>
                             <div class="flex-grow-1 min-w-0">
                                 <div class="d-flex justify-content-between align-items-center">
-                                    <span class="fw-bold text-dark" style="font-size: 0.85rem;" id="cardStaffName">Mohamed Sami</span>
+                                    <span class="fw-bold text-dark" style="font-size: 0.85rem;" id="cardStaffName">Staff Recipient</span>
                                     <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2" style="font-size: 0.68rem;" id="cardStaffRole">Staff</span>
                                 </div>
                                 <div class="profile-meta">
-                                    <span><i class="bi bi-person-vcard me-1 opacity-50"></i> <strong id="cardEmpId">EMP001</strong></span>
-                                    <span><i class="bi bi-building me-1 opacity-50"></i> <strong id="cardDept">CSE</strong></span>
-                                    <span><i class="bi bi-telephone me-1 opacity-50"></i> <strong id="cardMobile">9876543210</strong></span>
-                                    <span><i class="bi bi-envelope me-1 opacity-50"></i> <strong class="text-truncate d-inline-block" style="max-width: 120px;" id="cardEmail">email@edu.in</strong></span>
+                                    <span><i class="bi bi-person-vcard me-1 opacity-50"></i> <strong id="cardEmpId">-</strong></span>
+                                    <span><i class="bi bi-building me-1 opacity-50"></i> <strong id="cardDept">-</strong></span>
+                                    <span><i class="bi bi-telephone me-1 opacity-50"></i> <strong id="cardMobile">-</strong></span>
+                                    <span><i class="bi bi-envelope me-1 opacity-50"></i> <strong class="text-truncate d-inline-block" style="max-width: 120px;" id="cardEmail">-</strong></span>
                                 </div>
                             </div>
                         </div>
@@ -475,9 +462,9 @@
 
                     <!-- Dynamic Variables Container -->
                     <div id="variablesCard" class="vars-section d-none">
-                        <div class="vars-section-title"><i class="bi bi-sliders"></i> Template Variable Parameters</div>
+                        <div class="vars-section-title"><i class="bi bi-sliders me-1"></i> DLT Template Variable Mapping Engine</div>
                         <div id="dynamicVariablesContainer" class="row g-2">
-                            <!-- Dynamic inputs generated via JavaScript -->
+                            <!-- Dynamic mapping cards generated via JavaScript -->
                         </div>
                     </div>
 
@@ -542,6 +529,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const searchInput = document.getElementById('staffSearchInput');
     const dropdownMenu = document.getElementById('staffDropdownMenu');
     const clearStaffBtn = document.getElementById('clearStaffBtn');
+    const selectedStaffIdInput = document.getElementById('selectedStaffIdInput');
     
     const staffSummaryCard = document.getElementById('staffSummaryCard');
     const staffAvatar = document.getElementById('staffAvatar');
@@ -568,6 +556,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const headerSenderIdBadge = document.getElementById('headerSenderIdBadge');
     const dltIdBadge = document.getElementById('dltIdBadge');
 
+    const dbFields = {{ db_fields|safe }};
     let searchTimeout = null;
     let currentTemplate = null;
 
@@ -609,7 +598,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                     <div>
                                         <strong class="text-dark d-block mb-1">${staff.name}</strong>
                                         <small class="text-muted d-block">
-                                            <span class="font-monospace text-primary fw-semibold">${staff.employee_id}</span> &bull; ${staff.department} &bull; ${staff.email}
+                                            <span class="font-monospace text-primary fw-semibold">${staff.employee_id || 'STF'}</span> &bull; ${staff.department} &bull; ${staff.email || '-'}
                                         </small>
                                     </div>
                                     <span class="badge ${staff.has_mobile ? 'bg-primary-subtle text-primary border border-primary-subtle' : 'bg-warning-subtle text-warning-emphasis border border-warning-subtle'} font-monospace">
@@ -647,7 +636,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Close dropdown on outside click
     document.addEventListener('click', function(e) {
         const wrapper = document.getElementById('staffSearchWrapper');
         if (wrapper && !wrapper.contains(e.target)) {
@@ -655,9 +643,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // 2. Staff Selection Event Handler
+    // 2. Staff Selection Handler
     function selectStaffMember(staff) {
-        searchInput.value = `${staff.name} (${staff.employee_id})`;
+        if (selectedStaffIdInput) selectedStaffIdInput.value = staff.id;
+        searchInput.value = `${staff.name} (${staff.employee_id || 'STF'})`;
         hideDropdown();
 
         // Populate Form Fields
@@ -670,11 +659,11 @@ document.addEventListener('DOMContentLoaded', function() {
         const initials = staff.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
         staffAvatar.innerText = initials || 'ST';
         cardStaffName.innerText = staff.name;
-        cardStaffRole.innerText = staff.role;
-        cardEmpId.innerText = staff.employee_id;
-        cardDept.innerText = staff.department;
+        cardStaffRole.innerText = staff.role || 'Staff';
+        cardEmpId.innerText = staff.employee_id || 'STF';
+        cardDept.innerText = staff.department || 'General';
         cardMobile.innerText = staff.mobile || 'None';
-        cardEmail.innerText = staff.email;
+        cardEmail.innerText = staff.email || '-';
 
         staffSummaryCard.classList.remove('d-none');
 
@@ -686,16 +675,22 @@ document.addEventListener('DOMContentLoaded', function() {
             noMobileWarning.classList.add('d-none');
             sendSmsBtn.disabled = false;
         }
+
+        triggerLivePreview();
     }
 
     // 3. Clear Staff Selection
     clearStaffBtn.addEventListener('click', function() {
+        if (selectedStaffIdInput) selectedStaffIdInput.value = '';
         searchInput.value = '';
         mobileInput.value = '';
         staffSummaryCard.classList.add('d-none');
         hideDropdown();
         sendSmsBtn.disabled = false;
+        triggerLivePreview();
     });
+
+    mobileInput.addEventListener('input', triggerLivePreview);
 
     // 4. DLT Template Selection & Schema Loading
     templateSelect.addEventListener('change', function() {
@@ -719,57 +714,132 @@ document.addEventListener('DOMContentLoaded', function() {
                     variablesCard.classList.remove('d-none');
                     data.variables.forEach(v => {
                         const col = document.createElement('div');
-                        col.className = 'col-md-6';
+                        col.className = 'col-12';
+
+                        const lname = v.name.toLowerCase();
+                        let defaultField = 'name';
+                        if (lname.includes('mobile') || lname.includes('phone')) defaultField = 'mobile';
+                        else if (lname.includes('dept')) defaultField = 'department';
+                        else if (lname.includes('email')) defaultField = 'email';
+                        else if (lname.includes('user')) defaultField = 'username';
+
                         col.innerHTML = `
-                            <label class="form-label std-label">Var #${v.position}: ${v.name}</label>
-                            <input type="text" name="var_${v.position}" class="form-control var-dynamic-input std-input" data-pos="${v.position}" value="${v.sample_value || ''}" placeholder="Enter ${v.name}">
+                            <div class="card bg-white border p-3 rounded-3 mb-2">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <h6 class="fw-bold text-primary mb-0" style="font-size: 0.82rem;">
+                                        <i class="bi bi-tag me-1"></i>Variable #${v.position}: ${v.name}
+                                    </h6>
+                                    <span class="badge bg-light text-dark border">Pos #${v.position}</span>
+                                </div>
+                                <div class="row g-2 align-items-center">
+                                    <div class="col-md-5">
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input source-radio" type="radio" name="var_${v.position}_source_type" id="var_${v.position}_radio_static" value="static" data-pos="${v.position}">
+                                            <label class="form-check-label small fw-semibold" for="var_${v.position}_radio_static">Static Value</label>
+                                        </div>
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input source-radio" type="radio" name="var_${v.position}_source_type" id="var_${v.position}_radio_field" value="field" checked data-pos="${v.position}">
+                                            <label class="form-check-label small fw-semibold" for="var_${v.position}_radio_field">Staff Database Field</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-7" id="var_${v.position}_input_wrapper">
+                                        <select name="var_${v.position}_field_val" class="form-select form-select-sm var-mapping-control" data-pos="${v.position}">
+                                            ${dbFields.map(f => `<option value="${f.key}" ${f.key === defaultField ? 'selected' : ''}>${f.label}</option>`).join('')}
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
                         `;
                         varsContainer.appendChild(col);
                     });
 
-                    document.querySelectorAll('.var-dynamic-input').forEach(input => {
-                        input.addEventListener('input', updateLivePreview);
+                    // Radio toggle handlers
+                    document.querySelectorAll('.source-radio').forEach(radio => {
+                        radio.addEventListener('change', function() {
+                            const pos = this.dataset.pos;
+                            const wrapper = document.getElementById(`var_${pos}_input_wrapper`);
+                            if (this.value === 'static') {
+                                wrapper.innerHTML = `<input type="text" name="var_${pos}_static_val" class="form-control form-control-sm var-mapping-control" data-pos="${pos}" placeholder="Enter static value" value="">`;
+                            } else {
+                                wrapper.innerHTML = `<select name="var_${pos}_field_val" class="form-select form-select-sm var-mapping-control" data-pos="${pos}">${dbFields.map(f => `<option value="${f.key}">${f.label}</option>`).join('')}</select>`;
+                            }
+                            attachControlListeners();
+                            triggerLivePreview();
+                        });
                     });
+
+                    attachControlListeners();
                 } else {
                     variablesCard.classList.add('d-none');
                 }
 
                 noTemplateNotice.classList.add('d-none');
                 previewContainer.classList.remove('d-none');
-                updateLivePreview();
+                triggerLivePreview();
             });
     });
 
-    function updateLivePreview() {
+    function attachControlListeners() {
+        document.querySelectorAll('.var-mapping-control').forEach(ctrl => {
+            ctrl.removeEventListener('input', triggerLivePreview);
+            ctrl.removeEventListener('change', triggerLivePreview);
+            ctrl.addEventListener('input', triggerLivePreview);
+            ctrl.addEventListener('change', triggerLivePreview);
+        });
+    }
+
+    function triggerLivePreview() {
         if (!currentTemplate) return;
 
-        let content = currentTemplate.template_content;
-        const inputs = document.querySelectorAll('.var-dynamic-input');
+        const templateId = templateSelect.value;
+        if (!templateId) return;
 
-        inputs.forEach(input => {
-            const pos = input.dataset.pos;
-            const val = input.value.trim() || `[${input.placeholder}]`;
-            
-            const pattern = /\{#[^#]*#\}|\{\d+\}/;
-            content = content.replace(pattern, val);
+        const mappingConfig = {};
+        if (currentTemplate.variables && currentTemplate.variables.length > 0) {
+            currentTemplate.variables.forEach(v => {
+                const key = `var_${v.position}`;
+                const radioField = document.getElementById(`var_${v.position}_radio_field`);
+                const stype = (radioField && radioField.checked) ? 'field' : 'static';
+
+                let sval = '';
+                if (stype === 'field') {
+                    const sel = document.querySelector(`select[name="var_${v.position}_field_val"]`);
+                    sval = sel ? sel.value : 'name';
+                } else {
+                    const txt = document.querySelector(`input[name="var_${v.position}_static_val"]`);
+                    sval = txt ? txt.value : '';
+                }
+                mappingConfig[key] = { type: stype, value: sval };
+            });
+        }
+
+        const staffId = selectedStaffIdInput ? selectedStaffIdInput.value : '';
+        const mobileNum = mobileInput ? mobileInput.value : '';
+
+        fetch("{% url 'sms:bulk_preview_personalized_ajax' %}", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": "{{ csrf_token }}"
+            },
+            body: JSON.stringify({
+                staff_id: staffId,
+                mobile_number: mobileNum,
+                template_id: currentTemplate.id,
+                mapping_config: mappingConfig
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                renderedLiveText.innerText = data.rendered_text;
+                charCountEl.innerText = data.char_count;
+                creditCountEl.innerText = data.single_credits;
+            }
+        })
+        .catch(err => {
+            console.error('Single SMS preview error:', err);
         });
-
-        renderedLiveText.innerText = content;
-        const len = content.length;
-        charCountEl.innerText = len;
-
-        let isUnicode = false;
-        for (let i = 0; i < len; i++) {
-            if (content.charCodeAt(i) > 127) { isUnicode = true; break; }
-        }
-
-        let credits = 1;
-        if (!isUnicode) {
-            credits = len <= 160 ? 1 : Math.ceil(len / 153);
-        } else {
-            credits = len <= 70 ? 1 : Math.ceil(len / 67);
-        }
-        creditCountEl.innerText = credits;
     }
 
     if (templateSelect.value) {
