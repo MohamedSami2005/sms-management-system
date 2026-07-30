@@ -19,9 +19,8 @@
             </a>
         </div>
 
-        <!-- 2. SMS Communication (Collapsible) -->
         <div class="nav-item">
-            <a class="nav-link-main {% if request.resolver_match.app_name == 'sms' and request.resolver_match.url_name != 'queue' or request.resolver_match.url_name == 'single' or 'bulk' in request.resolver_match.url_name %}active{% endif %}" 
+            <a class="nav-link-main {% if request.resolver_match.app_name == 'sms' %}active{% endif %}" 
                href="#smsCommSubmenu" 
                data-bs-toggle="collapse" 
                role="button" 
@@ -55,7 +54,7 @@
         <!-- 3. Recipients (Direct Click) -->
         {% if user.is_admin or user.role == 'COE' or user.role == 'ADMISSION' or user.role == 'ACCOUNTS' or user.role == 'PLACEMENT' %}
         <div class="nav-item">
-            <a href="{% url 'users:staff_list' %}" class="nav-link-main {% if request.resolver_match.url_name == 'staff_list' or request.resolver_match.url_name == 'department_list' %}active{% endif %}">
+            <a href="{% url 'users:staff_list' %}" class="nav-link-main {% if request.resolver_match.url_name == 'staff_list' or request.resolver_match.url_name == 'department_list' or request.resolver_match.url_name == 'staff_create' or request.resolver_match.url_name == 'staff_edit' or request.resolver_match.url_name == 'department_create' or request.resolver_match.url_name == 'department_edit' %}active{% endif %}">
                 <i class="bi bi-person-badge nav-icon"></i>
                 <span>Recipients</span>
             </a>
@@ -97,12 +96,12 @@
             <div class="collapse {% if request.resolver_match.app_name == 'logs' or request.resolver_match.app_name == 'reports' %}show{% endif %}" id="logsReportsSubmenu">
                 <ul class="sidebar-submenu">
                     <li>
-                        <a href="{% url 'logs:list' %}" class="sub-link {% if request.resolver_match.app_name == 'logs' %}active{% endif %}">
+                        <a href="{% url 'logs:list' %}" class="sub-link {% if request.resolver_match.app_name == 'logs' and 'view' not in request.GET %}active{% endif %}">
                             <i class="bi bi-journal-check me-1"></i>SMS Logs
                         </a>
                     </li>
                     <li>
-                        <a href="{% url 'sms:queue' %}" class="sub-link {% if request.resolver_match.url_name == 'queue' %}active{% endif %}">
+                        <a href="{% url 'logs:list' %}?view=status" class="sub-link {% if request.resolver_match.app_name == 'logs' and request.GET.view == 'status' %}active{% endif %}">
                             <i class="bi bi-check2-all me-1"></i>Delivery Status
                         </a>
                     </li>
