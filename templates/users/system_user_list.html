@@ -37,9 +37,9 @@
             </select>
         </div>
         <div class="col-md-2">
-            <label class="form-label">Department</label>
+            <label class="form-label">Office</label>
             <select name="department" class="form-select">
-                <option value="">All Departments</option>
+                <option value="">All Offices</option>
                 {% for dept in departments %}
                     <option value="{{ dept.pk }}" {% if selected_dept == dept.pk|stringformat:"s" %}selected{% endif %}>{{ dept.name }}</option>
                 {% endfor %}
@@ -73,7 +73,7 @@
                         <th>Employee ID</th>
                         <th>Username</th>
                         <th>Role</th>
-                        <th>Department</th>
+                        <th>Office</th>
                         <th>Status</th>
                         <th class="text-end" style="width:200px;">Actions</th>
                     </tr>

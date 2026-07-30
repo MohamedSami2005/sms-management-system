@@ -3,11 +3,48 @@
 
 {% block title %}{% if object %}Edit User: {{ object.username }}{% else %}New User{% endif %} - Campus Communication Management System{% endblock %}
 
+{% block extra_css %}
+<style>
+.combobox-menu {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    z-index: 1050;
+    background: #ffffff;
+    border: 1px solid #cbd5e1 !important;
+}
+.combobox-menu.show {
+    display: block;
+}
+.combobox-item {
+    cursor: pointer;
+    font-size: 0.85rem;
+    padding: 0.5rem 0.875rem;
+    color: #334155;
+    transition: background-color 0.15s ease;
+}
+.combobox-item:hover, .combobox-item.active {
+    background-color: #f1f5f9;
+    color: #0f172a;
+}
+.combobox-item-new {
+    border-top: 1px solid #e2e8f0;
+    background-color: #eff6ff;
+    color: #2563eb;
+    font-weight: 600;
+}
+.combobox-item-new:hover {
+    background-color: #dbeafe;
+}
+</style>
+{% endblock %}
+
 {% block content %}
 <nav aria-label="breadcrumb" class="mb-3">
     <ol class="breadcrumb">
         <li class="breadcrumb-item"><a href="{% url 'dashboard:home' %}">Dashboard</a></li>
-        <li class="breadcrumb-item"><a href="{% url 'users:system_user_list' %}">Users & Roles</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'users:system_user_list' %}">Users &amp; Roles</a></li>
         <li class="breadcrumb-item active" aria-current="page">{% if object %}Edit User{% else %}New User{% endif %}</li>
     </ol>
 </nav>
@@ -23,7 +60,7 @@
                 <p class="text-muted small mb-0 mt-1">Create and manage application login accounts for CCMS operators.</p>
             </div>
             <div class="card-body p-4">
-                <form method="post">
+                <form method="post" id="systemUserForm">
                     {% csrf_token %}
                     
                     <div class="row g-3">
@@ -63,23 +100,35 @@
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Mobile Number</label>
                             {{ form.phone_number }}
-                            <small class="form-text text-muted">Useful for OTP/alerts (Optional).</small>
+                            <small class="form-text text-muted">10-digit Indian Mobile Number (Optional).</small>
                             {% if form.phone_number.errors %}<div class="text-danger small mt-1">{{ form.phone_number.errors }}</div>{% endif %}
                         </div>
 
-                        <!-- Role -->
-                        <div class="col-md-6">
+                        <!-- Role Combobox -->
+                        <div class="col-md-6 position-relative" id="roleComboboxWrapper">
                             <label class="form-label fw-semibold">Role *</label>
-                            {{ form.role }}
-                            <small class="form-text text-muted">System access role (e.g. Administrator, COE Staff, Department User).</small>
+                            <div class="input-group">
+                                {{ form.role }}
+                                <button class="btn btn-outline-secondary dropdown-toggle combobox-toggle" type="button" tabindex="-1" id="roleToggleBtn"></button>
+                            </div>
+                            <div class="combobox-menu dropdown-menu w-100 shadow-sm border-0 rounded-3 mt-1 p-0 overflow-hidden" id="roleDropdownMenu" style="max-height: 220px; overflow-y: auto;">
+                                <!-- Options dynamically rendered -->
+                            </div>
+                            <small class="form-text text-muted">Select an existing role or type a new role directly.</small>
                             {% if form.role.errors %}<div class="text-danger small mt-1">{{ form.role.errors }}</div>{% endif %}
                         </div>
 
-                        <!-- Department -->
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold">Department *</label>
-                            {{ form.department }}
-                            <small class="form-text text-muted">Assigned department (e.g. CSE, Commerce, COE Office).</small>
+                        <!-- Office Combobox (Renamed from Department) -->
+                        <div class="col-md-6 position-relative" id="officeComboboxWrapper">
+                            <label class="form-label fw-semibold">Office *</label>
+                            <div class="input-group">
+                                {{ form.department }}
+                                <button class="btn btn-outline-secondary dropdown-toggle combobox-toggle" type="button" tabindex="-1" id="officeToggleBtn"></button>
+                            </div>
+                            <div class="combobox-menu dropdown-menu w-100 shadow-sm border-0 rounded-3 mt-1 p-0 overflow-hidden" id="officeDropdownMenu" style="max-height: 220px; overflow-y: auto;">
+                                <!-- Options dynamically rendered -->
+                            </div>
+                            <small class="form-text text-muted">Select an existing office or type a new office directly.</small>
                             {% if form.department.errors %}<div class="text-danger small mt-1">{{ form.department.errors }}</div>{% endif %}
                         </div>
 
@@ -141,4 +190,141 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const rolesList = {{ existing_roles_json|safe }};
+    const officesList = {{ existing_offices_json|safe }};
+
+    function attachCombobox(wrapperId, inputId, toggleBtnId, dropdownId, itemsList, entityName) {
+        const wrapper = document.getElementById(wrapperId);
+        const input = document.getElementById(inputId);
+        const toggleBtn = document.getElementById(toggleBtnId);
+        const dropdown = document.getElementById(dropdownId);
+        if (!wrapper || !input || !dropdown) return;
+
+        let activeIndex = -1;
+
+        function renderMenu(query) {
+            const trimmed = (query || '').trim();
+            const lowerQuery = trimmed.toLowerCase();
+            dropdown.innerHTML = '';
+            activeIndex = -1;
+
+            const filtered = itemsList.filter(item => item.toLowerCase().includes(lowerQuery));
+
+            filtered.forEach(item => {
+                const btn = document.createElement('div');
+                btn.className = 'combobox-item';
+                btn.textContent = item;
+                btn.addEventListener('mousedown', function(e) {
+                    e.preventDefault();
+                    input.value = item;
+                    hideMenu();
+                });
+                dropdown.appendChild(btn);
+            });
+
+            const exactMatch = itemsList.some(item => item.toLowerCase() === lowerQuery);
+            if (trimmed && !exactMatch) {
+                const newBtn = document.createElement('div');
+                newBtn.className = 'combobox-item combobox-item-new';
+                newBtn.innerHTML = `<i class="bi bi-plus-circle me-1"></i> Add new ${entityName}: "<strong>${trimmed}</strong>"`;
+                newBtn.addEventListener('mousedown', function(e) {
+                    e.preventDefault();
+                    input.value = trimmed;
+                    hideMenu();
+                });
+                dropdown.appendChild(newBtn);
+            }
+
+            if (dropdown.children.length > 0) {
+                showMenu();
+            } else {
+                hideMenu();
+            }
+        }
+
+        function showMenu() {
+            dropdown.classList.add('show');
+        }
+
+        function hideMenu() {
+            dropdown.classList.remove('show');
+            activeIndex = -1;
+        }
+
+        input.addEventListener('focus', function() {
+            renderMenu(input.value);
+        });
+
+        input.addEventListener('input', function() {
+            renderMenu(input.value);
+        });
+
+        input.addEventListener('keydown', function(e) {
+            const items = dropdown.querySelectorAll('.combobox-item');
+            if (!dropdown.classList.contains('show') || items.length === 0) {
+                if (e.key === 'ArrowDown') {
+                    renderMenu(input.value);
+                }
+                return;
+            }
+
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                activeIndex = (activeIndex + 1) % items.length;
+                updateActive(items);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                activeIndex = (activeIndex - 1 + items.length) % items.length;
+                updateActive(items);
+            } else if (e.key === 'Enter') {
+                if (activeIndex >= 0 && items[activeIndex]) {
+                    e.preventDefault();
+                    items[activeIndex].dispatchEvent(new Event('mousedown'));
+                } else {
+                    hideMenu();
+                }
+            } else if (e.key === 'Escape') {
+                hideMenu();
+            }
+        });
+
+        function updateActive(items) {
+            items.forEach((it, idx) => {
+                if (idx === activeIndex) {
+                    it.classList.add('active');
+                    it.scrollIntoView({ block: 'nearest' });
+                } else {
+                    it.classList.remove('active');
+                }
+            });
+        }
+
+        if (toggleBtn) {
+            toggleBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                if (dropdown.classList.contains('show')) {
+                    hideMenu();
+                } else {
+                    input.focus();
+                    renderMenu(input.value);
+                }
+            });
+        }
+
+        document.addEventListener('click', function(e) {
+            if (!wrapper.contains(e.target)) {
+                hideMenu();
+            }
+        });
+    }
+
+    attachCombobox('roleComboboxWrapper', 'id_role', 'roleToggleBtn', 'roleDropdownMenu', rolesList, 'role');
+    attachCombobox('officeComboboxWrapper', 'id_department', 'officeToggleBtn', 'officeDropdownMenu', officesList, 'office');
+});
+</script>
 {% endblock %}

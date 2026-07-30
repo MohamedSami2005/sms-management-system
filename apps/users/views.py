@@ -6,7 +6,7 @@ from django.shortcuts import redirect, get_object_or_404
 from django.db.models import Q
 
 from apps.common.mixins import RoleRequiredMixin
-from apps.accounts.models import CustomUser, RoleChoices, ScopeChoices
+from apps.accounts.models import CustomUser, Role, RoleChoices, ScopeChoices
 from .models import Department, Staff
 from .forms import DepartmentForm, StaffForm, UserCreateForm, UserUpdateForm, AdminResetPasswordForm
 from .services import DepartmentService, UserService
@@ -170,6 +170,8 @@ class DepartmentDeleteView(LoginRequiredMixin, RoleRequiredMixin, View):
 
 # --- System Users (Application Login Accounts) Views ---
 
+import json
+
 class SystemUserListView(LoginRequiredMixin, RoleRequiredMixin, ListView):
     """
     Administrator System User Directory displaying application login accounts.
@@ -195,9 +197,14 @@ class SystemUserListView(LoginRequiredMixin, RoleRequiredMixin, ListView):
                 Q(employee_id__icontains=query) | Q(phone_number__icontains=query)
             )
         if role_filter:
-            queryset = queryset.filter(role=role_filter)
+            queryset = queryset.filter(
+                Q(role=role_filter) | Q(role_obj__name__iexact=role_filter) | Q(role_obj__code__iexact=role_filter)
+            )
         if dept_filter:
-            queryset = queryset.filter(department_id=dept_filter)
+            if dept_filter.isdigit():
+                queryset = queryset.filter(department_id=int(dept_filter))
+            else:
+                queryset = queryset.filter(department__name__iexact=dept_filter)
         if status_filter:
             if status_filter == 'active':
                 queryset = queryset.filter(is_active=True, is_locked=False)
@@ -214,7 +221,14 @@ class SystemUserListView(LoginRequiredMixin, RoleRequiredMixin, ListView):
         context['selected_role'] = self.request.GET.get('role', '')
         context['selected_dept'] = self.request.GET.get('department', '')
         context['selected_status'] = self.request.GET.get('status', '')
-        context['roles'] = RoleChoices.choices
+
+        role_names = list(Role.objects.values_list('name', flat=True))
+        for code, label in RoleChoices.choices:
+            if str(label) not in role_names:
+                role_names.append(str(label))
+        role_names.sort()
+
+        context['roles'] = [(r, r) for r in role_names]
         context['departments'] = Department.objects.filter(is_active=True)
         return context
 
@@ -228,6 +242,21 @@ class SystemUserCreateView(LoginRequiredMixin, RoleRequiredMixin, CreateView):
     template_name = 'users/system_user_form.html'
     success_url = reverse_lazy('users:system_user_list')
     allowed_roles = ['ADMIN']
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        role_names = list(Role.objects.values_list('name', flat=True))
+        for code, label in RoleChoices.choices:
+            if str(label) not in role_names:
+                role_names.append(str(label))
+        role_names.sort()
+
+        office_names = list(Department.objects.filter(is_active=True).values_list('name', flat=True))
+        office_names.sort()
+
+        context['existing_roles_json'] = json.dumps(role_names)
+        context['existing_offices_json'] = json.dumps(office_names)
+        return context
 
     def form_valid(self, form):
         user = UserService.create_user(form, created_by=self.request.user)
@@ -244,6 +273,21 @@ class SystemUserUpdateView(LoginRequiredMixin, RoleRequiredMixin, UpdateView):
     template_name = 'users/system_user_form.html'
     success_url = reverse_lazy('users:system_user_list')
     allowed_roles = ['ADMIN']
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        role_names = list(Role.objects.values_list('name', flat=True))
+        for code, label in RoleChoices.choices:
+            if str(label) not in role_names:
+                role_names.append(str(label))
+        role_names.sort()
+
+        office_names = list(Department.objects.filter(is_active=True).values_list('name', flat=True))
+        office_names.sort()
+
+        context['existing_roles_json'] = json.dumps(role_names)
+        context['existing_offices_json'] = json.dumps(office_names)
+        return context
 
     def form_valid(self, form):
         user = UserService.update_user(self.object, form, updated_by=self.request.user)
