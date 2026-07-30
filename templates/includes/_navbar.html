@@ -6,9 +6,9 @@
         </div>
         <div class="ms-auto d-flex align-items-center gap-3">
             {% if user.is_authenticated %}
-                <div class="dropdown">
-                    <button class="btn btn-outline-secondary dropdown-toggle d-flex align-items-center gap-2 px-3" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="border-radius: 9999px;">
-                        <i class="bi bi-person-circle text-primary"></i>
+                <div class="dropdown navbar-user-dropdown">
+                    <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <div class="user-avatar-sm">{{ user.get_full_name|default:user.username|slice:":1"|upper }}</div>
                         <span>{{ user.get_full_name|default:user.username }}</span>
                         <span class="badge bg-primary-soft text-primary">{{ user.get_role_display }}</span>
                     </button>
