@@ -1,12 +1,12 @@
 <div id="sidebar-wrapper">
     <!-- Brand Header -->
-    <div class="sidebar-brand px-3 py-4 d-flex align-items-center gap-3">
-        <div class="brand-icon rounded-3 p-2 d-flex align-items-center justify-content-center" style="width: 44px; height: 44px; background: rgba(56, 189, 248, 0.14);">
-            <i class="bi bi-chat-left-dots-fill fs-4 text-info"></i>
+    <div class="sidebar-brand">
+        <div class="sidebar-brand-icon">
+            <i class="bi bi-building"></i>
         </div>
-        <div>
-            <h5 class="fw-bold mb-0 text-white" style="letter-spacing: -0.3px; font-size: 1.1rem;">CCMS Platform</h5>
-            <small class="text-muted d-block mt-1" style="font-size: 0.75rem; line-height: 1.3; color: #94a3b8 !important;">Campus Communication<br>Management System</small>
+        <div class="sidebar-brand-text">
+            <strong>CCMS Platform</strong>
+            <span>Communication Manager</span>
         </div>
     </div>
     
@@ -14,24 +14,23 @@
         <!-- 1. Dashboard -->
         <div class="nav-item">
             <a href="{% url 'dashboard:home' %}" class="nav-link-main {% if request.resolver_match.app_name == 'dashboard' %}active{% endif %}">
-                <i class="bi bi-speedometer2 fs-5 text-primary me-1"></i>
-                <span class="fw-semibold">Dashboard</span>
+                <i class="bi bi-speedometer2 nav-icon"></i>
+                <span>Dashboard</span>
             </a>
         </div>
 
-        <!-- 2. SMS Communication (Collapsible) -->
         <div class="nav-item">
-            <a class="nav-link-main {% if request.resolver_match.app_name == 'sms' and request.resolver_match.url_name != 'queue' or request.resolver_match.url_name == 'single' or 'bulk' in request.resolver_match.url_name %}active{% endif %}" 
+            <a class="nav-link-main {% if request.resolver_match.app_name == 'sms' and request.GET.view != 'status' %}active{% endif %}" 
                href="#smsCommSubmenu" 
                data-bs-toggle="collapse" 
                role="button" 
-               aria-expanded="{% if request.resolver_match.app_name == 'sms' %}true{% else %}false{% endif %}" 
+               aria-expanded="{% if request.resolver_match.app_name == 'sms' and request.GET.view != 'status' %}true{% else %}false{% endif %}" 
                aria-controls="smsCommSubmenu">
-                <i class="bi bi-chat-dots text-info fs-5 me-1"></i>
-                <span class="fw-semibold">SMS Communication</span>
-                <i class="bi bi-chevron-down ms-auto small opacity-75"></i>
+                <i class="bi bi-chat-dots nav-icon"></i>
+                <span>Communication</span>
+                <i class="bi bi-chevron-down nav-chevron"></i>
             </a>
-            <div class="collapse {% if request.resolver_match.app_name == 'sms' %}show{% endif %}" id="smsCommSubmenu">
+            <div class="collapse {% if request.resolver_match.app_name == 'sms' and request.GET.view != 'status' %}show{% endif %}" id="smsCommSubmenu">
                 <ul class="sidebar-submenu">
                     <li>
                         <a href="{% url 'sms:single' %}" class="sub-link {% if request.resolver_match.url_name == 'single' %}active{% endif %}">
@@ -44,7 +43,7 @@
                         </a>
                     </li>
                     <li>
-                        <a href="{% url 'sms:queue' %}" class="sub-link {% if request.resolver_match.url_name == 'queue' %}active{% endif %}">
+                        <a href="{% url 'sms:queue' %}" class="sub-link {% if request.resolver_match.url_name == 'queue' and request.GET.view != 'status' %}active{% endif %}">
                             <i class="bi bi-hourglass-split me-1"></i>SMS Queue
                         </a>
                     </li>
@@ -55,9 +54,9 @@
         <!-- 3. Recipients (Direct Click) -->
         {% if user.is_admin or user.role == 'COE' or user.role == 'ADMISSION' or user.role == 'ACCOUNTS' or user.role == 'PLACEMENT' %}
         <div class="nav-item">
-            <a href="{% url 'users:staff_list' %}" class="nav-link-main {% if request.resolver_match.url_name == 'staff_list' or request.resolver_match.url_name == 'department_list' %}active{% endif %}">
-                <i class="bi bi-person-badge text-primary fs-5 me-1"></i>
-                <span class="fw-semibold">Recipients</span>
+            <a href="{% url 'users:staff_list' %}" class="nav-link-main {% if request.resolver_match.url_name == 'staff_list' or request.resolver_match.url_name == 'department_list' or request.resolver_match.url_name == 'staff_create' or request.resolver_match.url_name == 'staff_edit' or request.resolver_match.url_name == 'department_create' or request.resolver_match.url_name == 'department_edit' %}active{% endif %}">
+                <i class="bi bi-person-badge nav-icon"></i>
+                <span>Recipients</span>
             </a>
         </div>
         {% endif %}
@@ -66,8 +65,8 @@
         {% if user.is_admin or user.role == 'COE' or user.role == 'ADMISSION' or user.role == 'ACCOUNTS' or user.role == 'PLACEMENT' %}
         <div class="nav-item">
             <a href="{% url 'dlt_templates:list' %}" class="nav-link-main {% if request.resolver_match.app_name == 'dlt_templates' %}active{% endif %}">
-                <i class="bi bi-file-earmark-text text-success fs-5 me-1"></i>
-                <span class="fw-semibold">SMS Templates</span>
+                <i class="bi bi-file-earmark-text nav-icon"></i>
+                <span>SMS Templates</span>
             </a>
         </div>
         {% endif %}
@@ -76,33 +75,32 @@
         {% if user.is_admin %}
         <div class="nav-item">
             <a href="{% url 'users:system_user_list' %}" class="nav-link-main {% if request.resolver_match.url_name == 'system_user_list' or request.resolver_match.url_name == 'system_user_create' or request.resolver_match.url_name == 'system_user_edit' %}active{% endif %}">
-                <i class="bi bi-shield-lock text-warning fs-5 me-1"></i>
-                <span class="fw-semibold">Users & Roles</span>
+                <i class="bi bi-shield-lock nav-icon"></i>
+                <span>Users & Roles</span>
             </a>
         </div>
         {% endif %}
 
-        <!-- 6. Logs & Reports (Collapsible) -->
         <div class="nav-item">
-            <a class="nav-link-main {% if request.resolver_match.app_name == 'logs' or request.resolver_match.app_name == 'reports' %}active{% endif %}" 
+            <a class="nav-link-main {% if request.resolver_match.app_name == 'logs' or request.resolver_match.app_name == 'reports' or request.GET.view == 'status' %}active{% endif %}" 
                href="#logsReportsSubmenu" 
                data-bs-toggle="collapse" 
                role="button" 
-               aria-expanded="{% if request.resolver_match.app_name == 'logs' or request.resolver_match.app_name == 'reports' %}true{% else %}false{% endif %}" 
+               aria-expanded="{% if request.resolver_match.app_name == 'logs' or request.resolver_match.app_name == 'reports' or request.GET.view == 'status' %}true{% else %}false{% endif %}" 
                aria-controls="logsReportsSubmenu">
-                <i class="bi bi-journal-text text-danger fs-5 me-1"></i>
-                <span class="fw-semibold">Logs & Reports</span>
-                <i class="bi bi-chevron-down ms-auto small opacity-75"></i>
+                <i class="bi bi-journal-text nav-icon"></i>
+                <span>Logs & Reports</span>
+                <i class="bi bi-chevron-down nav-chevron"></i>
             </a>
-            <div class="collapse {% if request.resolver_match.app_name == 'logs' or request.resolver_match.app_name == 'reports' %}show{% endif %}" id="logsReportsSubmenu">
+            <div class="collapse {% if request.resolver_match.app_name == 'logs' or request.resolver_match.app_name == 'reports' or request.GET.view == 'status' %}show{% endif %}" id="logsReportsSubmenu">
                 <ul class="sidebar-submenu">
                     <li>
-                        <a href="{% url 'logs:list' %}" class="sub-link {% if request.resolver_match.app_name == 'logs' %}active{% endif %}">
+                        <a href="{% url 'logs:list' %}" class="sub-link {% if request.resolver_match.app_name == 'logs' and 'view' not in request.GET %}active{% endif %}">
                             <i class="bi bi-journal-check me-1"></i>SMS Logs
                         </a>
                     </li>
                     <li>
-                        <a href="{% url 'sms:queue' %}" class="sub-link {% if request.resolver_match.url_name == 'queue' %}active{% endif %}">
+                        <a href="{% url 'sms:queue' %}?view=status" class="sub-link {% if request.resolver_match.url_name == 'queue' and request.GET.view == 'status' %}active{% endif %}">
                             <i class="bi bi-check2-all me-1"></i>Delivery Status
                         </a>
                     </li>
@@ -121,8 +119,8 @@
         {% if user.is_admin %}
         <div class="nav-item">
             <a href="{% url 'settings_app:index' %}" class="nav-link-main {% if request.resolver_match.app_name == 'settings_app' %}active{% endif %}">
-                <i class="bi bi-gear text-white fs-5 me-1"></i>
-                <span class="fw-semibold">Settings</span>
+                <i class="bi bi-gear nav-icon"></i>
+                <span>Settings</span>
             </a>
         </div>
         {% endif %}
