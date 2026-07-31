@@ -4,10 +4,10 @@
 {% block title %}User Profile{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
+<div class="page-header mb-4">
     <div>
-        <h3 class="fw-bold mb-1">Account Profile</h3>
-        <p class="text-muted mb-0">Manage your profile details and view assigned system role.</p>
+        <h4 class="page-header-title"><i class="bi bi-person-badge"></i> Account Profile</h5>
+        <p class="page-header-sub">Manage your profile details and view assigned system role.</p>
     </div>
     <a href="{% url 'accounts:password_change' %}" class="btn btn-outline-primary">
         <i class="bi bi-shield-lock me-1"></i> Change Password
@@ -17,33 +17,35 @@
 <div class="row g-4">
     <!-- Profile Info Metadata Card -->
     <div class="col-md-4">
-        <div class="card border-0 shadow-sm rounded-4 text-center p-4">
-            <div class="mb-3">
-                <i class="bi bi-person-bounding-box display-1 text-primary"></i>
-            </div>
-            <h4 class="fw-bold mb-1">{{ user.get_full_name|default:user.username }}</h4>
-            <p class="text-muted mb-2">{{ user.email }}</p>
+        <div class="card text-center h-100">
+            <div class="card-body">
+                <div class="mb-3">
+                    <i class="bi bi-person-bounding-box display-1 text-primary"></i>
+                </div>
+                <h4 class="fw-bold mb-1">{{ user.get_full_name|default:user.username }}</h5>
+                <p class="text-muted mb-2">{{ user.email }}</p>
 
-            <div class="d-flex justify-content-center gap-2 mb-3">
-                <span class="badge bg-primary fs-6 px-3 py-2">{{ user.get_role_display }}</span>
-            </div>
+                <div class="d-flex justify-content-center gap-2 mb-3">
+                    <span class="badge bg-primary fs-6 px-3 py-2">{{ user.get_role_display }}</span>
+                </div>
 
-            <hr>
+                <hr>
 
-            <div class="text-start">
-                <p class="mb-2"><strong>Department:</strong> {{ user.department.name|default:"Unassigned" }} ({{ user.department.code|default:"-" }})</p>
-                <p class="mb-2"><strong>Employee ID:</strong> <code>{{ user.employee_id|default:"N/A" }}</code></p>
-                <p class="mb-2"><strong>Username:</strong> {{ user.username }}</p>
-                <p class="mb-0"><strong>Last Login:</strong> {{ user.last_login|date:"M d, Y H:i"|default:"Never" }}</p>
+                <div class="text-start">
+                    <p class="mb-2"><strong>Department:</strong> {{ user.department.name|default:"Unassigned" }} ({{ user.department.code|default:"-" }})</p>
+                    <p class="mb-2"><strong>Employee ID:</strong> <code>{{ user.employee_id|default:"N/A" }}</code></p>
+                    <p class="mb-2"><strong>Username:</strong> {{ user.username }}</p>
+                    <p class="mb-0"><strong>Last Login:</strong> {{ user.last_login|date:"M d, Y H:i"|default:"Never" }}</p>
+                </div>
             </div>
         </div>
     </div>
 
     <!-- Profile Edit Form Card -->
     <div class="col-md-8">
-        <div class="card border-0 shadow-sm rounded-4">
-            <div class="card-header bg-white py-3 border-0">
-                <h5 class="fw-bold mb-0"><i class="bi bi-pencil-square text-primary me-2"></i>Edit Profile Details</h5>
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="card-title"><i class="bi bi-pencil-square"></i> Edit Profile Details</h5>
             </div>
             <div class="card-body p-4">
                 <form method="post">

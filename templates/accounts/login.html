@@ -4,57 +4,85 @@
 {% block title %}Sign In - Campus Communication Management System{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center align-items-center min-vh-75 mt-4 mb-5">
-    <div class="col-md-7 col-lg-5">
-        <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
-            <div class="card-header bg-primary text-white text-center py-4 border-0">
-                <i class="bi bi-building-gear display-5 mb-2 d-block"></i>
-                <h4 class="fw-bold mb-1">Campus Communication Management System</h4>
-                <small class="text-white-50">Secure Communication Platform for Educational Institutions</small>
+<div class="auth-wrapper" style="margin: -2.5rem -3rem; min-height: calc(100vh - var(--navbar-height, 0px));">
+    <div class="auth-card">
+        <div class="auth-header">
+            <div class="auth-icon">
+                <i class="bi bi-building-gear"></i>
             </div>
-            <div class="card-body p-4 p-md-5">
-                <form method="post">
-                    {% csrf_token %}
-                    
-                    <div class="mb-3">
-                        <label for="{{ form.username.id_for_label }}" class="form-label fw-semibold">Username</label>
+            <h3 class="fw-bold mb-1">CCMS Platform</h3>
+            <p class="text-white-50 small mb-0 fw-medium">Secure Communication Management</p>
+        </div>
+        <div class="auth-body">
+            <h4 class="fw-bold text-center mb-4 text-dark">Welcome Back</h5>
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="mb-3">
+                    <label for="{{ form.username.id_for_label }}" class="form-label">Username</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-transparent text-muted border-end-0">
+                            <i class="bi bi-person"></i>
+                        </span>
                         {{ form.username }}
-                        {% if form.username.errors %}
-                            <div class="text-danger small mt-1">{{ form.username.errors }}</div>
-                        {% endif %}
                     </div>
+                    {% if form.username.errors %}
+                        <div class="text-danger small mt-1">{{ form.username.errors }}</div>
+                    {% endif %}
+                </div>
 
-                    <div class="mb-3">
-                        <label for="{{ form.password.id_for_label }}" class="form-label fw-semibold">Password</label>
+                <div class="mb-4">
+                    <label for="{{ form.password.id_for_label }}" class="form-label">Password</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-transparent text-muted border-end-0">
+                            <i class="bi bi-shield-lock"></i>
+                        </span>
                         {{ form.password }}
-                        {% if form.password.errors %}
-                            <div class="text-danger small mt-1">{{ form.password.errors }}</div>
-                        {% endif %}
                     </div>
+                    {% if form.password.errors %}
+                        <div class="text-danger small mt-1">{{ form.password.errors }}</div>
+                    {% endif %}
+                </div>
 
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <div class="form-check">
-                            {{ form.remember_me }}
-                            <label class="form-check-label text-muted small" for="{{ form.remember_me.id_for_label }}">
-                                Remember me
-                            </label>
-                        </div>
-                        <a href="{% url 'accounts:password_reset' %}" class="text-decoration-none small text-primary fw-semibold">
-                            Forgot password?
-                        </a>
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div class="form-check">
+                        {{ form.remember_me }}
+                        <label class="form-check-label text-muted small fw-medium" for="{{ form.remember_me.id_for_label }}">
+                            Remember me
+                        </label>
                     </div>
+                    <a href="{% url 'accounts:password_reset' %}" class="text-decoration-none small text-primary fw-semibold">
+                        Forgot password?
+                    </a>
+                </div>
 
-                    <div class="d-grid gap-2">
-                        <button type="submit" class="btn btn-primary btn-lg rounded-3 fw-bold">
-                            <i class="bi bi-box-arrow-in-right me-1"></i> Sign In to CCMS
-                        </button>
-                    </div>
-                </form>
-            </div>
-            <div class="card-footer bg-light text-center py-3 border-0">
-                <small class="text-muted">Campus Communication Management System (CCMS) &bull; Version 1.0</small>
-            </div>
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-primary btn-lg fw-bold">
+                        Sign In to CCMS <i class="bi bi-arrow-right ms-2"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+        <div class="card-footer bg-slate-50 text-center py-3 border-top-0">
+            <small class="text-muted fw-medium">Campus Communication Management System &bull; V1.0</small>
         </div>
     </div>
 </div>
+
+<style>
+/* Fix borders for input group */
+.auth-body .input-group .form-control {
+    border-left: 0;
+}
+.auth-body .input-group-text {
+    border-color: var(--border-color);
+}
+.auth-body .input-group:focus-within .input-group-text,
+.auth-body .input-group:focus-within .form-control {
+    border-color: var(--primary);
+}
+.auth-body .input-group:focus-within .input-group-text {
+    color: var(--primary) !important;
+}
+</style>
 {% endblock %}
