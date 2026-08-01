@@ -8,13 +8,14 @@ from django.http import JsonResponse, HttpResponse
 from django.db.models import Q
 
 from apps.common.mixins import RoleRequiredMixin
+from apps.common.scopes import get_scoped_queryset, is_global_admin
 from apps.users.models import Department
 from .models import DLTTemplate, TemplateVariable, TemplateCategoryChoices
 from .forms import DLTTemplateForm, TemplateVariableFormSet, TemplateImportForm
 from .services import TemplateService, TemplateImportService, TemplateExportService
 
 
-ALLOWED_TEMPLATE_ROLES = ['ADMIN', 'COE', 'ADMISSION', 'ACCOUNTS', 'PLACEMENT']
+ALLOWED_TEMPLATE_ROLES = []
 
 
 class TemplateListView(LoginRequiredMixin, RoleRequiredMixin, ListView):
@@ -25,7 +26,10 @@ class TemplateListView(LoginRequiredMixin, RoleRequiredMixin, ListView):
     paginate_by = 10
 
     def get_queryset(self):
-        queryset = super().get_queryset().select_related('department')
+        queryset = get_scoped_queryset(
+            self.request.user,
+            super().get_queryset().select_related('department')
+        )
         query = self.request.GET.get('q')
         cat_filter = self.request.GET.get('category')
         dept_filter = self.request.GET.get('department')
@@ -58,10 +62,17 @@ class TemplateListView(LoginRequiredMixin, RoleRequiredMixin, ListView):
         context['selected_dept'] = self.request.GET.get('department', '')
         context['selected_status'] = self.request.GET.get('status', '')
         context['selected_header'] = self.request.GET.get('header', '')
-        
+
         context['categories'] = TemplateCategoryChoices.choices
-        context['departments'] = Department.objects.filter(is_active=True)
-        context['sender_headers'] = DLTTemplate.objects.values_list('header_sender_id', flat=True).distinct()
+
+        if is_global_admin(self.request.user):
+            context['departments'] = Department.objects.filter(is_active=True)
+        elif self.request.user.department:
+            context['departments'] = Department.objects.filter(pk=self.request.user.department.pk)
+        else:
+            context['departments'] = Department.objects.none()
+
+        context['sender_headers'] = get_scoped_queryset(self.request.user, DLTTemplate.objects.all()).values_list('header_sender_id', flat=True).distinct()
         return context
 
 
@@ -70,6 +81,9 @@ class TemplateDetailView(LoginRequiredMixin, RoleRequiredMixin, DetailView):
     template_name = 'dlt_templates/template_detail.html'
     context_object_name = 'template'
     allowed_roles = ALLOWED_TEMPLATE_ROLES
+
+    def get_queryset(self):
+        return get_scoped_queryset(self.request.user, super().get_queryset())
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -89,6 +103,11 @@ class TemplateCreateView(LoginRequiredMixin, RoleRequiredMixin, CreateView):
     success_url = reverse_lazy('dlt_templates:list')
     allowed_roles = ALLOWED_TEMPLATE_ROLES
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['user'] = self.request.user
+        return kwargs
+
     def form_valid(self, form):
         template = TemplateService.save_template(form, user=self.request.user)
         messages.success(self.request, f"DLT Template '{template.name}' created and variables extracted successfully.")
@@ -100,6 +119,14 @@ class TemplateUpdateView(LoginRequiredMixin, RoleRequiredMixin, UpdateView):
     form_class = DLTTemplateForm
     template_name = 'dlt_templates/template_form.html'
     allowed_roles = ALLOWED_TEMPLATE_ROLES
+
+    def get_queryset(self):
+        return get_scoped_queryset(self.request.user, super().get_queryset())
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['user'] = self.request.user
+        return kwargs
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -127,7 +154,7 @@ class TemplateToggleStatusView(LoginRequiredMixin, RoleRequiredMixin, View):
     allowed_roles = ALLOWED_TEMPLATE_ROLES
 
     def post(self, request, pk):
-        template = get_object_or_404(DLTTemplate, pk=pk)
+        template = get_object_or_404(get_scoped_queryset(request.user, DLTTemplate.objects.all()), pk=pk)
         new_status = TemplateService.toggle_status(template)
         status_str = "activated" if new_status else "deactivated"
         messages.success(request, f"DLT Template '{template.name}' has been {status_str}.")
@@ -138,7 +165,7 @@ class TemplateDeleteView(LoginRequiredMixin, RoleRequiredMixin, View):
     allowed_roles = ALLOWED_TEMPLATE_ROLES
 
     def post(self, request, pk):
-        template = get_object_or_404(DLTTemplate, pk=pk)
+        template = get_object_or_404(get_scoped_queryset(request.user, DLTTemplate.objects.all()), pk=pk)
         _, msg = TemplateService.delete_or_deactivate(template)
         messages.info(request, msg)
         return redirect('dlt_templates:list')
@@ -168,7 +195,7 @@ class TemplateExportView(LoginRequiredMixin, RoleRequiredMixin, View):
 
     def get(self, request):
         export_format = request.GET.get('format', 'excel')
-        queryset = DLTTemplate.objects.all().select_related('department')
+        queryset = get_scoped_queryset(request.user, DLTTemplate.objects.all().select_related('department'))
 
         if export_format == 'csv':
             return TemplateExportService.export_csv(queryset)
@@ -177,13 +204,10 @@ class TemplateExportView(LoginRequiredMixin, RoleRequiredMixin, View):
 
 
 class TemplatePreviewAjaxView(LoginRequiredMixin, RoleRequiredMixin, View):
-    """
-    JSON API view returning dynamic interpolated message preview, character count, and estimated SMS credits.
-    """
     allowed_roles = ALLOWED_TEMPLATE_ROLES
 
     def post(self, request, pk):
-        template = get_object_or_404(DLTTemplate, pk=pk)
+        template = get_object_or_404(get_scoped_queryset(request.user, DLTTemplate.objects.all()), pk=pk)
         try:
             body = json.loads(request.body)
             sample_values = body.get('sample_values', {})
@@ -203,13 +227,10 @@ class TemplatePreviewAjaxView(LoginRequiredMixin, RoleRequiredMixin, View):
 
 
 class TemplateVariableSchemaAjaxView(LoginRequiredMixin, RoleRequiredMixin, View):
-    """
-    JSON API view returning extracted variables schema, header, and content for a selected DLT Template.
-    """
     allowed_roles = ALLOWED_TEMPLATE_ROLES
 
     def get(self, request, pk):
-        template = get_object_or_404(DLTTemplate, pk=pk)
+        template = get_object_or_404(get_scoped_queryset(request.user, DLTTemplate.objects.all()), pk=pk)
         template.sync_variables()
         vars_list = [
             {'position': v.position, 'name': v.name, 'sample_value': v.sample_value}
@@ -223,3 +244,77 @@ class TemplateVariableSchemaAjaxView(LoginRequiredMixin, RoleRequiredMixin, View
             'template_content': template.template_content,
             'variables': vars_list
         })
+
+
+class TemplateScopeListView(LoginRequiredMixin, RoleRequiredMixin, ListView):
+    """
+    Scope Management Page displaying DLT Templates and their allowed office scopes.
+    Admin-Only view for granting cross-office template access permissions.
+    """
+    model = DLTTemplate
+    template_name = 'dlt_templates/template_scope_list.html'
+    context_object_name = 'templates'
+    allowed_roles = ['ADMIN']
+    paginate_by = 15
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return self.handle_no_permission()
+        if not is_global_admin(request.user):
+            messages.error(request, "Access Denied: Template Scope management is restricted to Administrators.")
+            from django.core.exceptions import PermissionDenied
+            raise PermissionDenied("Scope management is restricted to Administrators.")
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_queryset(self):
+        queryset = DLTTemplate.objects.all().select_related('department').prefetch_related('allowed_offices')
+        query = self.request.GET.get('q')
+        dept_filter = self.request.GET.get('department')
+
+        if query:
+            queryset = queryset.filter(
+                Q(name__icontains=query) | Q(dlt_template_id__icontains=query)
+            )
+        if dept_filter:
+            queryset = queryset.filter(department_id=dept_filter)
+
+        return queryset.order_by('name')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['search_query'] = self.request.GET.get('q', '')
+        context['selected_dept'] = self.request.GET.get('department', '')
+        context['departments'] = Department.objects.filter(is_active=True).order_by('name')
+        context['all_offices'] = Department.objects.filter(is_active=True).order_by('name')
+        return context
+
+
+class TemplateScopeUpdateView(LoginRequiredMixin, RoleRequiredMixin, View):
+    """
+    Endpoint for updating allowed office scope for a specific DLT Template (Admin-Only).
+    """
+    allowed_roles = ['ADMIN']
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return self.handle_no_permission()
+        if not is_global_admin(request.user):
+            from django.core.exceptions import PermissionDenied
+            raise PermissionDenied("Scope management is restricted to Administrators.")
+        return super().dispatch(request, *args, **kwargs)
+
+    def post(self, request, pk):
+        template = get_object_or_404(DLTTemplate, pk=pk)
+        office_ids = request.POST.getlist('allowed_offices')
+        
+        selected_offices = list(Department.objects.filter(pk__in=office_ids, is_active=True))
+        
+        # Requirement 6: Primary Office MUST ALWAYS be in allowed_offices
+        if template.department and template.department not in selected_offices:
+            selected_offices.append(template.department)
+
+        template.allowed_offices.set(selected_offices)
+        template.ensure_primary_office_in_allowed()
+
+        messages.success(request, f"Scope updated successfully for template '{template.name}'.")
+        return redirect('dlt_templates:scope_list')

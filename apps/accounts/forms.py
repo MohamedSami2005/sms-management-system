@@ -7,7 +7,7 @@ from django.utils.translation import gettext_lazy as _
 from .models import CustomUser
 
 
-class CustomLoginForm(AuthenticationForm):
+class CustomLoginForm(forms.Form):
     """
     Login form supporting username, password, and 'Remember Me' session persistence.
     """
@@ -33,6 +33,10 @@ class CustomLoginForm(AuthenticationForm):
         widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         label=_("Remember me on this browser")
     )
+
+    def __init__(self, request=None, *args, **kwargs):
+        self.request = request
+        super().__init__(*args, **kwargs)
 
 
 class UserProfileForm(forms.ModelForm):

@@ -22,7 +22,7 @@ from .services import SingleSMSService, BulkSMSService, StaffFieldMapper
 
 logger = logging.getLogger('apps.sms')
 
-ALLOWED_SMS_ROLES = ['ADMIN', 'COE', 'ADMISSION', 'ACCOUNTS', 'PLACEMENT']
+ALLOWED_SMS_ROLES = []
 
 
 class SingleSMSView(LoginRequiredMixin, RoleRequiredMixin, FormView):
@@ -30,11 +30,17 @@ class SingleSMSView(LoginRequiredMixin, RoleRequiredMixin, FormView):
     Single SMS Dispatch View.
     Supports staff selection auto-complete, dynamic variable mapping (Static vs Staff DB Field),
     and live message preview sandbox. Reuses StaffFieldMapper and SingleSMSService.
+    Enforces Office scope for DLT template selection and log recording.
     """
     template_name = 'sms/single_sms.html'
     form_class = SingleSMSForm
     success_url = reverse_lazy('sms:single')
     allowed_roles = ALLOWED_SMS_ROLES
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['user'] = self.request.user
+        return kwargs
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -42,8 +48,15 @@ class SingleSMSView(LoginRequiredMixin, RoleRequiredMixin, FormView):
         return context
 
     def form_valid(self, form):
+        from apps.common.scopes import get_scoped_queryset
         mobile_number = form.cleaned_data['mobile_number']
-        template = form.cleaned_data['template']
+        template_form_obj = form.cleaned_data['template']
+
+        # Validate backend scope: ensure template belongs to user's Office
+        template = get_object_or_404(
+            get_scoped_queryset(self.request.user, DLTTemplate.objects.filter(is_active=True)),
+            pk=template_form_obj.pk
+        )
 
         # 1. Resolve staff recipient instance if selected by ID or mobile
         staff_id = self.request.POST.get('staff_id')
@@ -74,7 +87,7 @@ class SingleSMSView(LoginRequiredMixin, RoleRequiredMixin, FormView):
         # 3. Resolve all template variables via StaffFieldMapper
         variable_values = StaffFieldMapper.resolve_all_variables(staff_recipient, mapping_config)
 
-        # 4. Dispatch single SMS via SingleSMSService
+        # 4. Dispatch single SMS via SingleSMSService (associated with user's Office)
         success, log_entry, gw_result = SingleSMSService.process_and_send(
             user=self.request.user,
             mobile_number=mobile_number,
@@ -151,7 +164,7 @@ class BulkSMSStaffSelectionView(LoginRequiredMixin, RoleRequiredMixin, ListView)
 
     def get_queryset(self):
         qs = Staff.objects.filter(is_active=True).select_related('department').order_by('name')
-        
+
         search_query = self.request.GET.get('q', '').strip()
         dept_id = self.request.GET.get('department', '').strip()
 
@@ -187,13 +200,14 @@ class BulkSMSStaffSelectionView(LoginRequiredMixin, RoleRequiredMixin, ListView)
 class BulkSMSComposeView(LoginRequiredMixin, RoleRequiredMixin, TemplateView):
     """
     Step 2: Personalized Bulk SMS Compose Screen.
-    Displays selected recipients, DLT Template dropdown, Variable Mapping UI (Static vs Staff DB Field),
-    and live "Preview As" recipient sandbox.
+    Displays selected recipients, DLT Template dropdown (scoped to user's Office), Variable Mapping UI,
+    and live recipient sandbox.
     """
     template_name = 'sms/bulk_sms_compose.html'
     allowed_roles = ALLOWED_SMS_ROLES
 
     def get(self, request, *args, **kwargs):
+        from apps.common.scopes import get_scoped_queryset
         staff_ids = request.session.get('bulk_sms_staff_ids', [])
         if not staff_ids:
             messages.warning(request, "No staff members selected. Please select recipients first.")
@@ -203,7 +217,7 @@ class BulkSMSComposeView(LoginRequiredMixin, RoleRequiredMixin, TemplateView):
         if not staff_members.exists():
             staff_members = CustomUser.objects.filter(id__in=staff_ids).select_related('department')
 
-        dlt_templates = DLTTemplate.objects.filter(is_active=True)
+        dlt_templates = get_scoped_queryset(request.user, DLTTemplate.objects.filter(is_active=True))
         db_fields = StaffFieldMapper.get_supported_fields()
 
         context = self.get_context_data()
@@ -214,6 +228,7 @@ class BulkSMSComposeView(LoginRequiredMixin, RoleRequiredMixin, TemplateView):
         return self.render_to_response(context)
 
     def post(self, request, *args, **kwargs):
+        from apps.common.scopes import get_scoped_queryset
         staff_ids = request.session.get('bulk_sms_staff_ids', [])
         if not staff_ids:
             messages.error(request, "Session expired or no recipients selected.")
@@ -224,7 +239,11 @@ class BulkSMSComposeView(LoginRequiredMixin, RoleRequiredMixin, TemplateView):
             messages.error(request, "Please select a valid DLT Template.")
             return redirect('sms:bulk_compose')
 
-        template = get_object_or_404(DLTTemplate, pk=template_id, is_active=True)
+        # Validate backend Office scope: template MUST belong to user's accessible Office
+        template = get_object_or_404(
+            get_scoped_queryset(request.user, DLTTemplate.objects.filter(is_active=True)),
+            pk=template_id
+        )
 
         # Build mapping_config for each variable (var_1, var_2...)
         mapping_config = {}
@@ -265,6 +284,7 @@ class PersonalizedPreviewAjaxView(LoginRequiredMixin, RoleRequiredMixin, View):
     allowed_roles = ALLOWED_SMS_ROLES
 
     def post(self, request):
+        from apps.common.scopes import get_scoped_queryset
         try:
             body = json.loads(request.body)
             staff_id = body.get('staff_id')
@@ -287,7 +307,8 @@ class PersonalizedPreviewAjaxView(LoginRequiredMixin, RoleRequiredMixin, View):
         if staff:
             staff_name = staff.name if isinstance(staff, Staff) else (staff.get_full_name() or staff.username)
 
-        template = get_object_or_404(DLTTemplate, pk=template_id)
+        # Enforce Office scope on template preview
+        template = get_object_or_404(get_scoped_queryset(request.user, DLTTemplate.objects.all()), pk=template_id)
 
         # Resolve personalized variable values for this staff recipient
         personalized_vars = StaffFieldMapper.resolve_all_variables(staff, mapping_config)
@@ -302,7 +323,6 @@ class PersonalizedPreviewAjaxView(LoginRequiredMixin, RoleRequiredMixin, View):
             'staff_name': staff_name,
             'rendered_text': rendered_text,
             'char_count': char_count,
-            'single_credits': single_credits
         })
 
 

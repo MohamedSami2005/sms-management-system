@@ -64,9 +64,19 @@
         <!-- 4. SMS Templates (Direct Click) -->
         {% if user.is_admin or user.role == 'COE' or user.role == 'ADMISSION' or user.role == 'ACCOUNTS' or user.role == 'PLACEMENT' %}
         <div class="nav-item">
-            <a href="{% url 'dlt_templates:list' %}" class="nav-link-main {% if request.resolver_match.app_name == 'dlt_templates' %}active{% endif %}">
+            <a href="{% url 'dlt_templates:list' %}" class="nav-link-main {% if request.resolver_match.app_name == 'dlt_templates' and request.resolver_match.url_name != 'scope_list' %}active{% endif %}">
                 <i class="bi bi-file-earmark-text nav-icon"></i>
                 <span>SMS Templates</span>
+            </a>
+        </div>
+        {% endif %}
+
+        <!-- Scope (Direct Click - Admin Only) -->
+        {% if user.is_admin %}
+        <div class="nav-item">
+            <a href="{% url 'dlt_templates:scope_list' %}" class="nav-link-main {% if request.resolver_match.url_name == 'scope_list' %}active{% endif %}">
+                <i class="bi bi-diagram-3 nav-icon"></i>
+                <span>Scope</span>
             </a>
         </div>
         {% endif %}

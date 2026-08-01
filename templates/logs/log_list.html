@@ -7,8 +7,128 @@
 <!-- Page Header -->
 <div class="page-header mb-4">
     <div>
-        <h4 class="page-header-title"><i class="bi bi-journal-text text-primary"></i> Communication Audit Logs</h5>
+        <h4 class="page-header-title"><i class="bi bi-journal-text text-primary me-2"></i> Communication Audit Logs</h4>
         <p class="page-header-sub">Complete historical dispatch, delivery report, and gateway transaction log records.</p>
+    </div>
+</div>
+
+<!-- Filters Section -->
+<div class="filter-toolbar mb-3">
+    <form method="get" action="{% url 'logs:list' %}" id="logFilterForm" class="row g-2 align-items-end">
+        {% if per_page %}<input type="hidden" name="per_page" value="{{ per_page }}">{% endif %}
+        {% if search_query %}<input type="hidden" name="q" value="{{ search_query }}">{% endif %}
+
+        <!-- Start Date -->
+        <div class="col-md-2">
+            <label class="form-label">Start Date</label>
+            <input type="date" name="start_date" class="form-control" value="{{ start_date }}">
+        </div>
+
+        <!-- End Date -->
+        <div class="col-md-2">
+            <label class="form-label">End Date</label>
+            <input type="date" name="end_date" class="form-control" value="{{ end_date }}">
+        </div>
+
+        <!-- Mobile Number -->
+        <div class="col-md-2">
+            <label class="form-label">Mobile Number</label>
+            <input type="text" name="mobile" class="form-control" placeholder="Search mobile..." value="{{ mobile }}">
+        </div>
+
+        <!-- SMS Template -->
+        <div class="col-md-3">
+            <label class="form-label">SMS Template</label>
+            <select name="template" class="form-select">
+                <option value="">All SMS Templates</option>
+                {% for tmpl in templates %}
+                    <option value="{{ tmpl.pk }}" {% if selected_template == tmpl.pk|stringformat:"s" %}selected{% endif %}>{{ tmpl.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Status -->
+        <div class="col-md-3">
+            <label class="form-label">Status</label>
+            <select name="status" class="form-select">
+                <option value="">All Statuses</option>
+                <option value="SENT"    {% if selected_status == 'SENT'    %}selected{% endif %}>Sent</option>
+                <option value="FAILED"  {% if selected_status == 'FAILED'  %}selected{% endif %}>Failed</option>
+                <option value="PENDING" {% if selected_status == 'PENDING' %}selected{% endif %}>Pending</option>
+                <option value="QUEUED"  {% if selected_status == 'QUEUED'  %}selected{% endif %}>Queued</option>
+            </select>
+        </div>
+
+        <!-- Sender -->
+        <div class="col-md-3">
+            <label class="form-label">Sender</label>
+            <select name="sender" class="form-select">
+                <option value="">All Senders</option>
+                {% for s in senders %}
+                    <option value="{{ s }}" {% if selected_sender == s %}selected{% endif %}>{{ s }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Office -->
+        <div class="col-md-4">
+            <label class="form-label">Office</label>
+            <select name="office" class="form-select">
+                <option value="">All Offices</option>
+                {% for off in offices %}
+                    <option value="{{ off.pk }}" {% if selected_office == off.pk|stringformat:"s" %}selected{% endif %}>{{ off.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Filter Action Buttons -->
+        <div class="col-md-5 d-flex gap-2">
+            <button type="submit" class="btn btn-primary w-100"><i class="bi bi-funnel me-1"></i> Apply Filters</button>
+            <a href="{% url 'logs:list' %}" class="btn btn-outline-secondary w-100" title="Reset Filters"><i class="bi bi-arrow-counterclockwise me-1"></i> Reset Filters</a>
+        </div>
+    </form>
+</div>
+
+<!-- Global Search & Records Per Page Toolbar -->
+<div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
+    <!-- Global Search -->
+    <div class="flex-grow-1" style="max-width: 520px;">
+        <form method="get" action="{% url 'logs:list' %}">
+            <!-- Retain current filter state -->
+            {% if start_date %}<input type="hidden" name="start_date" value="{{ start_date }}">{% endif %}
+            {% if end_date %}<input type="hidden" name="end_date" value="{{ end_date }}">{% endif %}
+            {% if mobile %}<input type="hidden" name="mobile" value="{{ mobile }}">{% endif %}
+            {% if selected_template %}<input type="hidden" name="template" value="{{ selected_template }}">{% endif %}
+            {% if selected_status %}<input type="hidden" name="status" value="{{ selected_status }}">{% endif %}
+            {% if selected_sender %}<input type="hidden" name="sender" value="{{ selected_sender }}">{% endif %}
+            {% if selected_office %}<input type="hidden" name="office" value="{{ selected_office }}">{% endif %}
+            {% if per_page %}<input type="hidden" name="per_page" value="{{ per_page }}">{% endif %}
+
+            <div class="input-group">
+                <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+                <input type="text" name="q" class="form-control border-start-0 ps-0" placeholder="Search Mobile Number, Template, Sender, Office or Status..." value="{{ search_query }}">
+                <button type="submit" class="btn btn-primary px-3">Search</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Record Counter & Per-Page Selector -->
+    <div class="d-flex align-items-center gap-3">
+        {% if is_paginated %}
+        <span class="text-muted small">Showing <strong>{{ page_obj.start_index }}–{{ page_obj.end_index }}</strong> of <strong>{{ page_obj.paginator.count }}</strong> records</span>
+        {% else %}
+        <span class="text-muted small">Total <strong>{{ logs|length }}</strong> records</span>
+        {% endif %}
+
+        <div class="d-flex align-items-center gap-2">
+            <label class="text-muted small mb-0 fw-semibold">Show:</label>
+            <select class="form-select form-select-sm" style="width: 75px;" onchange="location.href='?{% if querystring %}{{ querystring }}&{% endif %}per_page=' + this.value;">
+                <option value="10" {% if per_page == '10' %}selected{% endif %}>10</option>
+                <option value="25" {% if per_page == '25' or not per_page %}selected{% endif %}>25</option>
+                <option value="50" {% if per_page == '50' %}selected{% endif %}>50</option>
+                <option value="100" {% if per_page == '100' %}selected{% endif %}>100</option>
+            </select>
+        </div>
     </div>
 </div>
 
@@ -19,39 +139,72 @@
             <table class="table table-hover align-middle mb-0">
                 <thead>
                     <tr>
-                        <th>Recipient Mobile</th>
-                        <th>DLT Template</th>
-                        <th>Delivery Status</th>
-                        <th>Gateway Msg ID</th>
-                        <th>Dispatched By</th>
-                        <th>Timestamp</th>
+                        <th style="width: 60px;">S.No.</th>
+                        <th>Date</th>
+                        <th>Mobile Number</th>
+                        <th>SMS Template</th>
+                        <th>Sender</th>
+                        <th>Office</th>
+                        <th>Status</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for log in logs %}
                     <tr>
+                        <!-- S.No. (Continues across pagination) -->
+                        <td class="text-muted font-monospace" style="font-size:0.78rem;">
+                            {% if is_paginated %}
+                                {{ page_obj.start_index|add:forloop.counter0 }}
+                            {% else %}
+                                {{ forloop.counter }}
+                            {% endif %}
+                        </td>
+
+                        <!-- Date -->
+                        <td class="text-muted" style="font-size: 0.82rem; white-space: nowrap;">
+                            <i class="bi bi-calendar3 me-1 opacity-50"></i>{{ log.created_at|date:"M d, Y H:i:s" }}
+                        </td>
+
+                        <!-- Mobile Number -->
                         <td><span class="font-monospace fw-semibold">{{ log.mobile_number }}</span></td>
+
+                        <!-- SMS Template -->
                         <td><span class="fw-medium" style="font-size: 0.875rem;">{{ log.template.name|default:"—" }}</span></td>
+
+                        <!-- Sender -->
+                        <td>
+                            <span class="badge bg-light text-dark border font-monospace">
+                                {{ log.sender_id }}
+                            </span>
+                        </td>
+
+                        <!-- Office -->
+                        <td>
+                            {% if log.office_name != "—" %}
+                                <span class="badge bg-light text-dark border">{{ log.office_name }}</span>
+                            {% else %}
+                                <span class="text-muted" style="font-size:0.8rem;">—</span>
+                            {% endif %}
+                        </td>
+
+                        <!-- Status Badge -->
                         <td>
                             {% if log.status == 'SENT' or log.status == 'DELIVRD' or log.status == 'Success' %}
-                                <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill"><i class="bi bi-check-circle-fill me-1"></i>Delivered</span>
+                                <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill"><i class="bi bi-check-circle-fill me-1"></i>Sent</span>
                             {% elif log.status == 'FAILED' or log.status == 'REJECTD' or log.status == 'UNDELIV' or log.status == 'Failure' %}
                                 <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill"><i class="bi bi-x-circle-fill me-1"></i>Failed</span>
+                            {% elif log.status == 'QUEUED' %}
+                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill"><i class="bi bi-clock me-1"></i>Queued</span>
                             {% else %}
                                 <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle rounded-pill"><i class="bi bi-clock-history me-1"></i>Pending</span>
                             {% endif %}
                         </td>
-                        <td><code style="font-size: 0.8rem;">{{ log.gateway_message_id|default:"—" }}</code></td>
-                        <td><span class="badge bg-light text-dark border">{{ log.user.username|default:"System" }}</span></td>
-                        <td class="text-muted" style="font-size: 0.82rem; white-space: nowrap;">
-                            <i class="bi bi-calendar3 me-1 opacity-50"></i>{{ log.created_at|date:"M d, Y H:i:s" }}
-                        </td>
                     </tr>
                     {% empty %}
                     <tr class="table-empty">
-                        <td colspan="6">
+                        <td colspan="7" class="text-center py-4 text-muted">
                             <i class="bi bi-journal-x d-block fs-1 mb-2 opacity-25"></i>
-                            No communication audit log records found.
+                            No communication audit log records found matching your criteria.
                         </td>
                     </tr>
                     {% endfor %}
@@ -60,5 +213,38 @@
         </div>
     </div>
 </div>
+
+<!-- Pagination Controls -->
+{% if is_paginated %}
+<div class="mt-4 d-flex justify-content-between align-items-center">
+    <span class="text-muted small">Showing <strong>{{ page_obj.start_index }}–{{ page_obj.end_index }}</strong> of <strong>{{ page_obj.paginator.count }}</strong> records</span>
+    <nav aria-label="Log list page navigation">
+        <ul class="pagination mb-0">
+            <!-- Previous Button -->
+            {% if page_obj.has_previous %}
+                <li class="page-item"><a class="page-link" href="?{% if querystring %}{{ querystring }}&{% endif %}page={{ page_obj.previous_page_number }}">&laquo; Previous</a></li>
+            {% else %}
+                <li class="page-item disabled"><span class="page-link">&laquo; Previous</span></li>
+            {% endif %}
+
+            <!-- Page Number Links -->
+            {% for page_num in paginator.page_range %}
+                {% if page_num == page_obj.number %}
+                    <li class="page-item active"><span class="page-link">{{ page_num }}</span></li>
+                {% elif page_num > page_obj.number|add:"-4" and page_num < page_obj.number|add:"4" %}
+                    <li class="page-item"><a class="page-link" href="?{% if querystring %}{{ querystring }}&{% endif %}page={{ page_num }}">{{ page_num }}</a></li>
+                {% endif %}
+            {% endfor %}
+
+            <!-- Next Button -->
+            {% if page_obj.has_next %}
+                <li class="page-item"><a class="page-link" href="?{% if querystring %}{{ querystring }}&{% endif %}page={{ page_obj.next_page_number }}">Next &raquo;</a></li>
+            {% else %}
+                <li class="page-item disabled"><span class="page-link">Next &raquo;</span></li>
+            {% endif %}
+        </ul>
+    </nav>
+</div>
+{% endif %}
 
 {% endblock %}

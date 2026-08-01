@@ -13,13 +13,14 @@ from apps.sms.models import SMSBatch, SMSQueue, SMSStatusChoices
 from apps.logs.models import SMSLog
 from apps.settings_app.models import SMSGatewayConfig
 from apps.sms.services.gateway_service import SMSGatewayService
+from apps.common.scopes import get_scoped_queryset, is_global_admin
 
 logger = logging.getLogger('apps.dashboard')
 
 
 class DashboardService:
     """
-    Real-time enterprise dashboard analytics service layer.
+    Real-time enterprise dashboard analytics service layer with Office scope data isolation.
     Retrieves dynamic database counters, aggregations, gateway diagnostics,
     and Chart.js trend datasets with optimized queries.
     """
@@ -29,20 +30,27 @@ class DashboardService:
         now = timezone.now()
         today = now.date()
 
+        # Office Scoped Base Querysets
+        log_qs = get_scoped_queryset(user, SMSLog.objects.all())
+        tmpl_qs = get_scoped_queryset(user, DLTTemplate.objects.filter(is_active=True))
+        queue_qs = get_scoped_queryset(user, SMSQueue.objects.all())
+        batch_qs = get_scoped_queryset(user, SMSBatch.objects.all())
+
         # 1. System & Recipient Summary Counters
         total_staff = Staff.objects.filter(is_active=True).count()
         if total_staff == 0:
             total_staff = CustomUser.objects.filter(is_active=True).count()
-        total_departments = Department.objects.filter(is_active=True).count()
-        active_templates = DLTTemplate.objects.filter(is_active=True).count()
-        
-        total_sms_sent = SMSLog.objects.filter(status__in=['SENT', 'DELIVRD', 'Success']).count()
-        failed_sms = SMSLog.objects.filter(status__in=['FAILED', 'REJECTD', 'UNDELIV', 'Failure']).count()
-        pending_queue = SMSQueue.objects.filter(status='QUEUED').count()
-        processing_batches = SMSBatch.objects.filter(status=SMSStatusChoices.PROCESSING).count()
 
-        today_count = SMSLog.objects.filter(created_at__date=today).count()
-        month_count = SMSLog.objects.filter(created_at__year=now.year, created_at__month=now.month).count()
+        total_departments = Department.objects.filter(is_active=True).count() if is_global_admin(user) else (1 if getattr(user, 'department', None) else 0)
+        active_templates = tmpl_qs.count()
+
+        total_sms_sent = log_qs.filter(status__in=['SENT', 'DELIVRD', 'Success']).count()
+        failed_sms = log_qs.filter(status__in=['FAILED', 'REJECTD', 'UNDELIV', 'Failure']).count()
+        pending_queue = queue_qs.filter(status='QUEUED').count()
+        processing_batches = batch_qs.filter(status=SMSStatusChoices.PROCESSING).count()
+
+        today_count = log_qs.filter(created_at__date=today).count()
+        month_count = log_qs.filter(created_at__year=now.year, created_at__month=now.month).count()
 
         # 2. SMS Status Overview
         delivered_count = total_sms_sent
@@ -50,17 +58,17 @@ class DashboardService:
         pending_count = pending_queue
 
         # 3. Recent SMS Activity (Latest 10)
-        recent_activities = SMSLog.objects.select_related(
+        recent_activities = log_qs.select_related(
             'user', 'template', 'department'
         ).order_by('-created_at')[:10]
 
         # 4. Recent Bulk SMS Batches (Latest 5)
-        recent_batches = SMSBatch.objects.select_related(
+        recent_batches = batch_qs.select_related(
             'user', 'template', 'department'
         ).order_by('-started_at')[:5]
 
         # 5. Department-wise SMS Usage Aggregation
-        dept_usage_qs = SMSLog.objects.filter(department__isnull=False).values(
+        dept_usage_qs = log_qs.filter(department__isnull=False).values(
             'department__name', 'department__code'
         ).annotate(
             total_sent=Count('id', filter=Q(status__in=['SENT', 'DELIVRD', 'Success'])),
@@ -84,7 +92,7 @@ class DashboardService:
             dept_chart_sent.append(sent_val)
 
         # 6. Top DLT Templates by Usage
-        top_templates_qs = SMSLog.objects.filter(template__isnull=False).values(
+        top_templates_qs = log_qs.filter(template__isnull=False).values(
             'template__name', 'template__department__name'
         ).annotate(
             times_used=Count('id'),
@@ -110,9 +118,11 @@ class DashboardService:
                 credit_balance = "Balance not available"
 
         # 8. Recent Login Activity (Latest 5)
-        recent_logins = CustomUser.objects.filter(
-            last_login__isnull=False
-        ).select_related('department', 'role_obj').order_by('-last_login')[:5]
+        recent_logins_qs = CustomUser.objects.filter(last_login__isnull=False)
+        if not is_global_admin(user) and getattr(user, 'department', None):
+            recent_logins_qs = recent_logins_qs.filter(department=user.department)
+
+        recent_logins = recent_logins_qs.select_related('department', 'role_obj').order_by('-last_login')[:5]
 
         # 9. Last 7 Days Daily Dispatch Trend Dataset for Chart.js
         last_7_days = [today - timedelta(days=i) for i in range(6, -1, -1)]
@@ -121,8 +131,8 @@ class DashboardService:
         daily_failed_data = []
 
         for d in last_7_days:
-            s_count = SMSLog.objects.filter(created_at__date=d, status__in=['SENT', 'DELIVRD', 'Success']).count()
-            f_count = SMSLog.objects.filter(created_at__date=d, status__in=['FAILED', 'REJECTD', 'UNDELIV', 'Failure']).count()
+            s_count = log_qs.filter(created_at__date=d, status__in=['SENT', 'DELIVRD', 'Success']).count()
+            f_count = log_qs.filter(created_at__date=d, status__in=['FAILED', 'REJECTD', 'UNDELIV', 'Failure']).count()
             daily_sent_data.append(s_count)
             daily_failed_data.append(f_count)
 

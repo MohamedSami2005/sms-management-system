@@ -33,6 +33,7 @@ class TemplateService:
 
             # Synchronize extracted variables from content
             template.sync_variables()
+            template.ensure_primary_office_in_allowed()
             logger.info(f"TEMPLATE_SAVED | DLT Template '{template.dlt_template_id}' saved by '{user.username}'.")
             return template
 
@@ -142,11 +143,13 @@ class TemplateImportService:
                     header_sender_id=sender_id[:6] or 'CLGEXM',
                     template_content=content,
                     category=category,
+                    department=getattr(user, 'department', None),
                     is_active=True,
                     created_by=user,
                     updated_by=user
                 )
                 tmpl.sync_variables()
+                tmpl.ensure_primary_office_in_allowed()
                 imported_count += 1
             except Exception as e:
                 errors.append(f"Row {row_num}: Error creating template '{tmpl_name}': {str(e)}")

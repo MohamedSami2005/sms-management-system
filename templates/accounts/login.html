@@ -14,7 +14,17 @@
             <p class="text-white-50 small mb-0 fw-medium">Secure Communication Management</p>
         </div>
         <div class="auth-body">
-            <h4 class="fw-bold text-center mb-4 text-dark">Welcome Back</h5>
+            <h4 class="fw-bold text-center mb-4 text-dark">Welcome Back</h4>
+
+            {% if form.non_field_errors %}
+                <div class="alert alert-danger alert-dismissible fade show mb-3" role="alert">
+                    {% for error in form.non_field_errors %}
+                        <div><i class="bi bi-exclamation-triangle-fill me-2"></i>{{ error }}</div>
+                    {% endfor %}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endif %}
+
             <form method="post">
                 {% csrf_token %}
                 

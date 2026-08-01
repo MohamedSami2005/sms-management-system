@@ -8,6 +8,6 @@ class DashboardHomeView(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        metrics = DashboardService.get_summary_metrics()
+        metrics = DashboardService.get_summary_metrics(user=self.request.user)
         context.update(metrics)
         return context

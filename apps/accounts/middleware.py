@@ -50,11 +50,13 @@ class LastLoginUpdateMiddleware(MiddlewareMixin):
 class ForcePasswordChangeMiddleware(MiddlewareMixin):
     """
     Middleware enforcing password change on next login if user.must_change_password is True.
-    Exempts static/media, logout, and password change endpoints.
+    Exempts static/media, logout, login, and password change endpoints.
     """
     EXEMPT_PATHS = [
+        '/accounts/password/change/',
         '/accounts/password-change/',
         '/accounts/logout/',
+        '/accounts/login/',
         '/static/',
         '/media/',
     ]

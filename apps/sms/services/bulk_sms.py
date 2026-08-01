@@ -90,7 +90,7 @@ class BulkSMSService:
                     mobile_number=mobile,
                     template=template,
                     variable_values=personalized_vars,
-                    department=staff.department or dept
+                    department=dept
                 )
 
                 # Associate log entry with this SMSBatch

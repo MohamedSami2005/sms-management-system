@@ -104,5 +104,21 @@ class SMSLog(TimeStampedModel):
             models.Index(fields=['gateway_message_id'], name='idx_log_gw_msg_id'),
         ]
 
+    @property
+    def sender_id(self) -> str:
+        if self.template and self.template.header_sender_id:
+            return self.template.header_sender_id
+        if self.batch and self.batch.sender_id:
+            return self.batch.sender_id
+        return "—"
+
+    @property
+    def office_name(self) -> str:
+        if self.department:
+            return self.department.name
+        if self.user and self.user.department:
+            return self.user.department.name
+        return "—"
+
     def __str__(self) -> str:
         return f"Log #{self.id} -> {self.mobile_number} [{self.get_status_display()}]"

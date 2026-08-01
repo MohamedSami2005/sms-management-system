@@ -1,0 +1,263 @@
+from django.test import TestCase
+from django.urls import reverse
+from apps.accounts.models import CustomUser, Role
+from apps.users.models import Department, Staff
+from apps.dlt_templates.models import DLTTemplate
+from apps.logs.models import SMSLog
+
+
+class TemplateScopeTestCase(TestCase):
+    def setUp(self):
+        # Create Offices
+        self.admin_office, _ = Department.objects.get_or_create(name="Admin Management", code="ADMIN_MGMT")
+        self.coe_office, _ = Department.objects.get_or_create(name="COE", code="COE")
+        self.erp_office, _ = Department.objects.get_or_create(name="ERP", code="ERP")
+        self.accounts_office, _ = Department.objects.get_or_create(name="Accounts", code="ACCOUNTS")
+
+        # Create Roles
+        self.admin_role = Role.objects.create(code='ADMIN', name='System Admin')
+        self.staff_role = Role.objects.create(code='STAFF', name='College Staff')
+
+        # Create Users
+        self.global_admin = CustomUser.objects.create_superuser(
+            username="global_admin",
+            email="admin@college.edu",
+            password="adminpassword123",
+            department=self.admin_office,
+            role_obj=self.admin_role,
+            role='ADMIN'
+        )
+        self.coe_user = CustomUser.objects.create_user(
+            username="coe_user",
+            password="userpassword123",
+            department=self.coe_office,
+            role_obj=self.staff_role,
+            role='STAFF'
+        )
+        self.erp_user = CustomUser.objects.create_user(
+            username="erp_user",
+            password="userpassword123",
+            department=self.erp_office,
+            role_obj=self.staff_role,
+            role='STAFF'
+        )
+        self.accounts_user = CustomUser.objects.create_user(
+            username="accounts_user",
+            password="userpassword123",
+            department=self.accounts_office,
+            role_obj=self.staff_role,
+            role='STAFF'
+        )
+
+        # Create Staff Recipients
+        self.staff_recipient = Staff.objects.create(
+            name="Supplier Sami",
+            mobile_number="8098778622",
+            department=self.erp_office,
+            is_active=True
+        )
+
+        # Create DLT Templates
+        self.coe_template = DLTTemplate.objects.create(
+            name="COE Exam Notice",
+            dlt_template_id="1107160000000100001",
+            entity_id="1001999988887777666",
+            header_sender_id="CLGEXM",
+            template_content="Dear {#var#}, your exam is on {#var#}.",
+            department=self.coe_office,
+            is_active=True
+        )
+        self.coe_template.ensure_primary_office_in_allowed()
+
+        self.erp_template = DLTTemplate.objects.create(
+            name="ERP Fee Notice",
+            dlt_template_id="1107160000000100002",
+            entity_id="1001999988887777666",
+            header_sender_id="CLGERP",
+            template_content="Dear {#var#}, fee of Rs.{#var#} received.",
+            department=self.erp_office,
+            is_active=True
+        )
+        self.erp_template.ensure_primary_office_in_allowed()
+
+        # Create Active Gateway Config for SMS dispatch tests
+        from apps.settings_app.models import SMSGatewayConfig
+        SMSGatewayConfig.objects.filter(is_active=True).update(is_active=False)
+        self.gateway_config = SMSGatewayConfig.objects.create(
+            provider_name="Test Gateway",
+            api_url="https://text.draft4sms.com/vb/apikey.php",
+            api_key="TESTKEY123",
+            default_sender_id="CLGEXM",
+            is_active=True
+        )
+
+    def test_1_newly_created_template_appears_in_scope_table(self):
+        """1. Newly created template appears in Scope table."""
+        self.client.force_login(self.global_admin)
+        new_tmpl = DLTTemplate.objects.create(
+            name="New Admission Template",
+            dlt_template_id="1107160000000100099",
+            entity_id="1001999988887777666",
+            header_sender_id="CLGADM",
+            template_content="Welcome to college {#var#}.",
+            department=self.coe_office,
+            is_active=True
+        )
+        new_tmpl.ensure_primary_office_in_allowed()
+        response = self.client.get(reverse('dlt_templates:scope_list'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "New Admission Template")
+        self.assertContains(response, "1107160000000100099")
+
+    def test_2_existing_template_primary_office_belongs_to_allowed_offices(self):
+        """2. Existing template Primary Office automatically belongs to Allowed Offices."""
+        self.assertTrue(self.coe_template.allowed_offices.filter(pk=self.coe_office.pk).exists())
+        self.assertTrue(self.erp_template.allowed_offices.filter(pk=self.erp_office.pk).exists())
+
+    def test_3_admin_can_grant_template_to_multiple_offices(self):
+        """3. Admin can grant a template to multiple offices."""
+        self.client.force_login(self.global_admin)
+        response = self.client.post(reverse('dlt_templates:scope_edit', kwargs={'pk': self.coe_template.pk}), {
+            'allowed_offices': [self.coe_office.pk, self.erp_office.pk]
+        })
+        self.assertEqual(response.status_code, 302)
+        self.coe_template.refresh_from_db()
+        self.assertTrue(self.coe_template.allowed_offices.filter(pk=self.coe_office.pk).exists())
+        self.assertTrue(self.coe_template.allowed_offices.filter(pk=self.erp_office.pk).exists())
+
+    def test_4_primary_office_cannot_be_removed_from_allowed_offices(self):
+        """4. Primary Office cannot be removed from Allowed Offices."""
+        self.client.force_login(self.global_admin)
+        # Attempt to save only ERP office for COE template
+        response = self.client.post(reverse('dlt_templates:scope_edit', kwargs={'pk': self.coe_template.pk}), {
+            'allowed_offices': [self.erp_office.pk]
+        })
+        self.assertEqual(response.status_code, 302)
+        self.coe_template.refresh_from_db()
+        # COE office (Primary Office) MUST automatically remain in allowed_offices
+        self.assertTrue(self.coe_template.allowed_offices.filter(pk=self.coe_office.pk).exists())
+        self.assertTrue(self.coe_template.allowed_offices.filter(pk=self.erp_office.pk).exists())
+
+    def test_5_erp_user_sees_erp_scoped_templates(self):
+        """5. ERP user can see ERP-scoped templates."""
+        self.client.force_login(self.erp_user)
+        response = self.client.get(reverse('dlt_templates:list'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "ERP Fee Notice")
+
+    def test_6_erp_user_sees_coe_template_if_erp_added_to_scope(self):
+        """6. ERP user can see a COE template if ERP was added to its scope."""
+        self.coe_template.allowed_offices.add(self.erp_office)
+        self.client.force_login(self.erp_user)
+        response = self.client.get(reverse('dlt_templates:list'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "COE Exam Notice")
+
+    def test_7_erp_user_cannot_see_coe_only_template(self):
+        """7. ERP user cannot see a COE-only template."""
+        self.coe_template.allowed_offices.set([self.coe_office])
+        self.client.force_login(self.erp_user)
+        response = self.client.get(reverse('dlt_templates:list'))
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "COE Exam Notice")
+
+    def test_8_accounts_user_cannot_see_coe_erp_template_unless_added(self):
+        """8. Accounts user cannot see COE + ERP template unless Accounts is explicitly added."""
+        self.coe_template.allowed_offices.set([self.coe_office, self.erp_office])
+        self.client.force_login(self.accounts_user)
+        response = self.client.get(reverse('dlt_templates:list'))
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "COE Exam Notice")
+
+        # Now add Accounts to scope
+        self.coe_template.allowed_offices.add(self.accounts_office)
+        response = self.client.get(reverse('dlt_templates:list'))
+        self.assertContains(response, "COE Exam Notice")
+
+    def test_9_single_sms_respects_allowed_offices(self):
+        """9. Single SMS template selection respects Allowed Offices."""
+        self.coe_template.allowed_offices.set([self.coe_office, self.erp_office])
+        self.client.force_login(self.erp_user)
+        response = self.client.get(reverse('sms:single'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "COE Exam Notice")
+        self.assertContains(response, "ERP Fee Notice")
+
+    def test_10_bulk_sms_respects_allowed_offices(self):
+        """10. Bulk SMS template selection respects Allowed Offices."""
+        self.coe_template.allowed_offices.set([self.coe_office, self.erp_office])
+        session = self.client.session
+        session['bulk_sms_staff_ids'] = [self.staff_recipient.pk]
+        session.save()
+
+        self.client.force_login(self.erp_user)
+        response = self.client.get(reverse('sms:bulk_compose'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "COE Exam Notice")
+
+    def test_11_direct_unauthorized_template_access_rejected(self):
+        """11. Direct unauthorized template access via POST manipulation is rejected."""
+        self.coe_template.allowed_offices.set([self.coe_office])
+        self.client.force_login(self.erp_user)
+        response = self.client.post(reverse('sms:single'), {
+            'mobile_number': '9876543211',
+            'template': str(self.coe_template.pk),
+            'var_1_source_type': 'static',
+            'var_1_static_val': 'Test'
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context['form'].errors)
+        self.assertIn('template', response.context['form'].errors)
+
+    def test_12_superuser_accesses_all_templates(self):
+        """12. Superuser can access all templates regardless of scope."""
+        self.client.force_login(self.global_admin)
+        response = self.client.get(reverse('dlt_templates:list'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "COE Exam Notice")
+        self.assertContains(response, "ERP Fee Notice")
+
+    def test_13_admin_management_users_manage_all_scopes(self):
+        """13. Admin Management users can manage all scopes."""
+        self.client.force_login(self.global_admin)
+        response = self.client.get(reverse('dlt_templates:scope_list'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Template Scope")
+
+        # Non-admin user gets 403 Forbidden
+        self.client.force_login(self.erp_user)
+        response = self.client.get(reverse('dlt_templates:scope_list'))
+        self.assertEqual(response.status_code, 403)
+
+    def test_14_sms_logs_retain_actual_sender_office(self):
+        """14. SMS logs retain the actual sender's Office even when using a cross-office template."""
+        self.coe_template.allowed_offices.add(self.erp_office)
+        self.client.force_login(self.erp_user)
+
+        response = self.client.post(reverse('sms:single'), {
+            'mobile_number': '9876543211',
+            'template': str(self.coe_template.pk),
+            'var_1_source_type': 'static',
+            'var_1_static_val': 'Student',
+            'var_2_source_type': 'static',
+            'var_2_static_val': 'Tomorrow'
+        })
+        self.assertEqual(response.status_code, 302)
+        log = SMSLog.objects.latest('id')
+        self.assertEqual(log.department, self.erp_office)
+
+    def test_15_existing_sms_functionality_continues_working(self):
+        """15. Existing SMS functionality continues working."""
+        self.client.force_login(self.erp_user)
+        response = self.client.post(reverse('sms:single'), {
+            'mobile_number': '9876543211',
+            'template': str(self.erp_template.pk),
+            'var_1_source_type': 'static',
+            'var_1_static_val': 'Student',
+            'var_2_source_type': 'static',
+            'var_2_static_val': '5000'
+        })
+        self.assertEqual(response.status_code, 302)
+        log = SMSLog.objects.latest('id')
+        self.assertEqual(log.template, self.erp_template)
+        self.assertEqual(log.department, self.erp_office)

@@ -11,7 +11,7 @@ from .models import Department, Staff
 from .forms import DepartmentForm, StaffForm, UserCreateForm, UserUpdateForm, AdminResetPasswordForm
 from .services import DepartmentService, UserService
 
-ALLOWED_STAFF_MANAGEMENT_ROLES = ['ADMIN', 'COE', 'ADMISSION', 'ACCOUNTS', 'PLACEMENT']
+ALLOWED_STAFF_MANAGEMENT_ROLES = []
 
 
 # --- Staff Directory (SMS Recipient Master) Views ---

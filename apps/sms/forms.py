@@ -39,6 +39,13 @@ class SingleSMSForm(forms.Form):
         label=_("Select Approved DLT Template")
     )
 
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        if user:
+            from apps.common.scopes import get_scoped_queryset
+            self.fields['template'].queryset = get_scoped_queryset(user, DLTTemplate.objects.filter(is_active=True))
+
     def clean_mobile_number(self):
         mobile = self.cleaned_data.get('mobile_number', '').strip()
         # Remove country code prefix +91 or 91 if entered

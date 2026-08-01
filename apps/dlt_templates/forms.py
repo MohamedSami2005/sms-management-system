@@ -1,12 +1,15 @@
 from django import forms
 from django.forms import inlineformset_factory
 from django.utils.translation import gettext_lazy as _
+from apps.common.scopes import is_global_admin
+from apps.users.models import Department
 from .models import DLTTemplate, TemplateVariable, TemplateCategoryChoices
 
 
 class DLTTemplateForm(forms.ModelForm):
     """
     Form for creating and editing DLT registered content templates.
+    Enforces Office scope for normal users and allows Office selection for Global Administrators.
     """
     class Meta:
         model = DLTTemplate
@@ -25,6 +28,19 @@ class DLTTemplateForm(forms.ModelForm):
             'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
 
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        self.fields['department'].label = _("Office")
+        self.fields['department'].required = True
+
+        if self.user and not is_global_admin(self.user):
+            user_office = getattr(self.user, 'department', None)
+            if user_office:
+                self.fields['department'].queryset = Department.objects.filter(pk=user_office.pk)
+                self.fields['department'].initial = user_office
+                self.fields['department'].widget.attrs['readonly'] = True
+
     def clean_dlt_template_id(self):
         dlt_id = self.cleaned_data.get('dlt_template_id', '').strip()
         qs = DLTTemplate.objects.filter(dlt_template_id=dlt_id)
@@ -37,6 +53,16 @@ class DLTTemplateForm(forms.ModelForm):
     def clean_header_sender_id(self):
         header = self.cleaned_data.get('header_sender_id', '').strip().upper()
         return header
+
+    def clean_department(self):
+        dept = self.cleaned_data.get('department')
+        if self.user and not is_global_admin(self.user):
+            user_office = getattr(self.user, 'department', None)
+            if user_office:
+                return user_office
+        if not dept:
+            raise forms.ValidationError(_("Office is required."))
+        return dept
 
 
 class TemplateVariableForm(forms.ModelForm):
@@ -68,3 +94,41 @@ class TemplateImportForm(forms.Form):
         label=_("Select Excel/CSV Template File"),
         help_text=_("Required columns: template_name, dlt_template_id, entity_id, sender_id, template_content, category")
     )
+
+
+class TemplateScopeForm(forms.ModelForm):
+    """
+    Form for managing allowed offices for a DLT template (Admin-Only).
+    """
+    allowed_offices = forms.ModelMultipleChoiceField(
+        queryset=Department.objects.filter(is_active=True).order_by('name'),
+        widget=forms.CheckboxSelectMultiple(attrs={'class': 'form-check-input'}),
+        required=False,
+        label=_("Allowed Offices")
+    )
+
+    class Meta:
+        model = DLTTemplate
+        fields = ['allowed_offices']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance and self.instance.pk:
+            self.fields['allowed_offices'].initial = self.instance.allowed_offices.all()
+
+    def clean_allowed_offices(self):
+        offices = set(self.cleaned_data.get('allowed_offices') or [])
+        if self.instance and self.instance.department:
+            offices.add(self.instance.department)
+        return list(offices)
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        if commit:
+            instance.save()
+            offices = list(self.cleaned_data.get('allowed_offices', []))
+            if instance.department and instance.department not in offices:
+                offices.append(instance.department)
+            instance.allowed_offices.set(offices)
+            instance.ensure_primary_office_in_allowed()
+        return instance

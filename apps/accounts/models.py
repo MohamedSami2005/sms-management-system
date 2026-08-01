@@ -178,8 +178,9 @@ class CustomUser(AbstractUser):
 
     @property
     def is_admin(self) -> bool:
-        """Returns True if the user has Administrator privileges."""
-        return self.role == RoleChoices.ADMIN or self.is_superuser
+        """Returns True if the user has Administrator privileges or belongs to Admin Management office."""
+        from apps.common.scopes import is_global_admin
+        return is_global_admin(self)
 
     @property
     def display_role(self) -> str:

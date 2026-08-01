@@ -62,8 +62,15 @@ class DLTTemplate(AuditModel):
         null=True,
         blank=True,
         related_name='dlt_templates',
-        verbose_name=_("Associated Department"),
-        help_text=_("Restrict usage to specific department (leave empty for global access).")
+        verbose_name=_("Primary Office"),
+        help_text=_("Primary department/office template belongs to.")
+    )
+    allowed_offices = models.ManyToManyField(
+        'users.Department',
+        blank=True,
+        related_name='allowed_dlt_templates',
+        verbose_name=_("Allowed Offices"),
+        help_text=_("Offices permitted to view and use this template.")
     )
     is_active = models.BooleanField(
         default=True,
@@ -82,6 +89,19 @@ class DLTTemplate(AuditModel):
 
     def __str__(self) -> str:
         return f"{self.name} ({self.dlt_template_id})"
+
+    def ensure_primary_office_in_allowed(self):
+        """Ensures that the primary department is always included in allowed_offices."""
+        if self.department and self.pk:
+            if not self.allowed_offices.filter(pk=self.department.pk).exists():
+                self.allowed_offices.add(self.department)
+
+    def get_allowed_offices_display(self) -> str:
+        """Returns comma-separated string of allowed office codes/names."""
+        offices = list(self.allowed_offices.all())
+        if not offices and self.department:
+            return self.department.code or self.department.name
+        return ", ".join([o.code or o.name for o in offices])
 
     def extract_variable_placeholders(self) -> list[str]:
         """
