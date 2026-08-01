@@ -439,7 +439,7 @@
                         </div>
                     </div>
 
-                    <!-- Row 2: Mobile + Department side by side -->
+                    <!-- Row 2: Mobile Number & DLT Template side by side -->
                     <div class="row g-2 field-group">
                         <div class="col-6">
                             <label class="std-label">Mobile Number</label>
@@ -447,17 +447,10 @@
                             {% if form.mobile_number.errors %}<div class="text-danger mt-1" style="font-size:0.72rem;">{{ form.mobile_number.errors }}</div>{% endif %}
                         </div>
                         <div class="col-6">
-                            <label class="std-label">Department Scope</label>
-                            {{ form.department }}
-                            {% if form.department.errors %}<div class="text-danger mt-1" style="font-size:0.72rem;">{{ form.department.errors }}</div>{% endif %}
+                            <label class="std-label">DLT Template *</label>
+                            {{ form.template }}
+                            {% if form.template.errors %}<div class="text-danger mt-1" style="font-size:0.72rem;">{{ form.template.errors }}</div>{% endif %}
                         </div>
-                    </div>
-
-                    <!-- Row 3: DLT Template -->
-                    <div class="field-group">
-                        <label class="std-label">DLT Template *</label>
-                        {{ form.template }}
-                        {% if form.template.errors %}<div class="text-danger mt-1" style="font-size:0.72rem;">{{ form.template.errors }}</div>{% endif %}
                     </div>
 
                     <!-- Dynamic Variables Container -->
@@ -542,7 +535,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const noMobileWarning = document.getElementById('noMobileWarning');
     
     const mobileInput = document.getElementById('mobileNumberInput');
-    const departmentSelect = document.getElementById('departmentSelect');
     const sendSmsBtn = document.getElementById('sendSmsBtn');
     
     const templateSelect = document.getElementById('dltTemplateSelect');

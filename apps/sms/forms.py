@@ -26,12 +26,6 @@ class SingleSMSForm(forms.Form):
         }),
         label=_("Recipient Mobile Number")
     )
-    department = forms.ModelChoiceField(
-        queryset=Department.objects.filter(is_active=True),
-        required=False,
-        widget=forms.Select(attrs={'class': 'form-select', 'id': 'departmentSelect'}),
-        label=_("Department Scope")
-    )
     template = forms.ModelChoiceField(
         queryset=DLTTemplate.objects.filter(is_active=True),
         required=True,
