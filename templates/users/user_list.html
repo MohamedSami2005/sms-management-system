@@ -92,7 +92,7 @@
                         <th>Department</th>
                         <th>Login Activity</th>
                         <th>Account Status</th>
-                        <th class="text-end pe-4">Actions</th>
+                        <th class="actions-header">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -143,44 +143,44 @@
                                 <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle rounded-pill mt-1 d-block"><i class="bi bi-exclamation-triangle me-1"></i> Must Change Pass</span>
                             {% endif %}
                         </td>
-                        <td class="text-end pe-4">
-                            <div class="table-actions justify-content-end">
-                                <a href="{% url 'users:user_edit' user_obj.pk %}" class="btn btn-sm btn-outline-primary" title="Edit User">
-                                    <i class="bi bi-pencil-square"></i> Edit
+                        <td class="actions-cell">
+                            <div class="table-actions">
+                                <a href="{% url 'users:user_edit' user_obj.pk %}" class="btn-action btn-action-edit" title="Edit User">
+                                    <i class="bi bi-pencil"></i>
                                 </a>
 
-                                <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#resetPassModal{{ user_obj.pk }}" title="Reset Password">
-                                    <i class="bi bi-shield-lock"></i> Reset Pass
+                                <button type="button" class="btn-action btn-action-reset" data-bs-toggle="modal" data-bs-target="#resetPassModal{{ user_obj.pk }}" title="Reset Password">
+                                    <i class="bi bi-key"></i>
                                 </button>
 
                                 {% if user_obj != request.user %}
-                                    <form method="post" action="{% url 'users:user_toggle_lock' user_obj.pk %}" class="d-inline">
+                                    <form method="post" action="{% url 'users:user_toggle_lock' user_obj.pk %}" class="d-inline-flex m-0 p-0">
                                         {% csrf_token %}
                                         {% if user_obj.is_locked %}
-                                            <button type="submit" class="btn btn-sm btn-outline-success" title="Unlock Account">
-                                                <i class="bi bi-unlock"></i> Unlock
+                                            <button type="submit" class="btn-action btn-action-success" title="Unlock Account">
+                                                <i class="bi bi-unlock"></i>
                                             </button>
                                         {% else %}
-                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Lock Account">
-                                                <i class="bi bi-lock"></i> Lock
+                                            <button type="submit" class="btn-action btn-action-danger" title="Lock Account">
+                                                <i class="bi bi-lock"></i>
                                             </button>
                                         {% endif %}
                                     </form>
 
-                                    <form method="post" action="{% url 'users:user_toggle_status' user_obj.pk %}" class="d-inline">
+                                    <form method="post" action="{% url 'users:user_toggle_status' user_obj.pk %}" class="d-inline-flex m-0 p-0">
                                         {% csrf_token %}
                                         {% if user_obj.is_active %}
-                                            <button type="submit" class="btn btn-sm btn-outline-warning" title="Deactivate Account">
-                                                <i class="bi bi-pause-circle"></i> Deactivate
+                                            <button type="submit" class="btn-action btn-action-warning" title="Deactivate Account">
+                                                <i class="bi bi-pause-circle"></i>
                                             </button>
                                         {% else %}
-                                            <button type="submit" class="btn btn-sm btn-outline-success" title="Activate Account">
-                                                <i class="bi bi-play-circle"></i> Activate
+                                            <button type="submit" class="btn-action btn-action-success" title="Activate Account">
+                                                <i class="bi bi-play-circle"></i>
                                             </button>
                                         {% endif %}
                                     </form>
 
-                                    <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ user_obj.pk }}" title="Soft Delete">
+                                    <button type="button" class="btn-action btn-action-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ user_obj.pk }}" title="Delete">
                                         <i class="bi bi-trash"></i>
                                     </button>
                                 {% endif %}

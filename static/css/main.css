@@ -21,16 +21,16 @@
   --brand-900: #312E81; /* Primary Dark */
 
   /* Slate Gray Scale */
-  --slate-50:  #F8FAFC; /* Page Background */
-  --slate-100: #F1F5F9; /* Input/Hover Background */
-  --slate-200: #E2E8F0; /* Borders */
-  --slate-300: #CBD5E1;
-  --slate-400: #94A3B8;
-  --slate-500: #64748B; /* Text Muted */
-  --slate-600: #475569; /* Text Secondary */
-  --slate-700: #334155;
-  --slate-800: #1E293B;
-  --slate-900: #0F172A; /* Text Primary */
+  --slate-50:  #F1F5F9; /* Page Background for clear sidebar/content contrast */
+  --slate-100: #E2E8F0; /* Input/Hover Background */
+  --slate-200: #CBD5E1; /* Borders */
+  --slate-300: #94A3B8;
+  --slate-400: #64748B;
+  --slate-500: #475569; /* Text Muted */
+  --slate-600: #334155; /* Text Secondary */
+  --slate-700: #1E293B;
+  --slate-800: #0F172A;
+  --slate-900: #020617; /* Text Primary */
   
   --white:     #FFFFFF;
   --amber:     #F59E0B; /* Accent / Warning */
@@ -169,14 +169,14 @@ hr {
 
 .main-content {
     flex: 1;
-    padding: 2.5rem 3rem;
+    padding: 2rem 2.5rem;
     max-width: 1440px;
     margin: 0 auto;
     width: 100%;
 }
 
 footer {
-    padding: 2rem 3rem;
+    padding: 1.75rem 2.5rem;
     text-align: center;
     color: var(--text-muted);
     font-size: 0.85rem;
@@ -190,7 +190,7 @@ footer {
 ================================================================ */
 #sidebar-wrapper {
     width: var(--sidebar-width);
-    background: var(--bg-card);
+    background: #FFFFFF;
     flex-shrink: 0;
     display: flex;
     flex-direction: column;
@@ -200,7 +200,7 @@ footer {
     top: 0;
     height: 100vh;
     border-right: 1px solid var(--border-color);
-    box-shadow: 2px 0 10px rgba(15, 23, 42, 0.02);
+    box-shadow: 4px 0 16px rgba(15, 23, 42, 0.04);
     z-index: 1000;
 }
 
@@ -252,7 +252,7 @@ footer {
 
 .sidebar-menu {
     flex: 1;
-    padding: 0 1rem 1.5rem;
+    padding: 2.25rem 1rem 1.5rem;
     display: flex;
     flex-direction: column;
     gap: 0.35rem;
@@ -382,13 +382,32 @@ footer {
 }
 
 .navbar-custom .navbar-title {
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: var(--text-primary);
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: 0.85rem;
     margin: 0;
+}
+
+.navbar-brand-icon {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, var(--brand-700), var(--brand-900));
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    color: var(--white);
+    flex-shrink: 0;
+    box-shadow: var(--shadow-primary);
+}
+
+.navbar-brand-text {
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    letter-spacing: -0.025em;
+    line-height: 1.1;
 }
 
 .navbar-user-dropdown .dropdown-toggle {
@@ -533,17 +552,18 @@ footer {
    7. DASHBOARD KPI CARDS
 ================================================================ */
 .premium-kpi-card {
-    background: var(--bg-card);
+    background: #FFFFFF;
     border: 1px solid var(--border-color);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-sm);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-xs);
     transition: all var(--duration-base) var(--ease);
-    padding: 1.5rem;
+    padding: 0.95rem 1.15rem;
     position: relative;
     overflow: hidden;
     height: 100%;
     display: flex;
-    flex-direction: column;
+    align-items: center;
+    gap: 0.9rem;
 }
 
 .premium-kpi-card::after {
@@ -551,17 +571,17 @@ footer {
     position: absolute;
     top: 0;
     left: 0;
-    width: 4px;
+    width: 3.5px;
     height: 100%;
     background: var(--primary);
-    border-radius: var(--radius-lg) 0 0 var(--radius-lg);
+    border-radius: var(--radius-md) 0 0 var(--radius-md);
     opacity: 0;
     transition: opacity var(--duration-base) var(--ease);
 }
 
 .premium-kpi-card:hover {
-    transform: translateY(-4px);
-    box-shadow: var(--shadow-lg);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
     border-color: var(--border-color-hover);
 }
 
@@ -569,23 +589,16 @@ footer {
     opacity: 1;
 }
 
-.kpi-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 1rem;
-}
-
 .kpi-icon-wrapper {
-    width: 48px;
-    height: 48px;
+    width: 40px;
+    height: 40px;
     background: var(--primary-light);
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-sm);
     display: flex;
     align-items: center;
     justify-content: center;
+    flex-shrink: 0;
     transition: all var(--duration-base) var(--ease);
-    box-shadow: 0 4px 6px rgba(55, 48, 163, 0.05);
 }
 
 .premium-kpi-card:hover .kpi-icon-wrapper {
@@ -594,7 +607,7 @@ footer {
 }
 
 .kpi-icon {
-    font-size: 1.5rem;
+    font-size: 1.15rem;
     color: var(--primary);
     transition: color var(--duration-base) var(--ease);
 }
@@ -603,23 +616,33 @@ footer {
     color: var(--white);
 }
 
+.kpi-content {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-width: 0;
+}
+
 .kpi-label {
-    font-size: 0.85rem;
+    font-size: 0.725rem;
     font-weight: 600;
     color: var(--text-muted);
     text-transform: uppercase;
-    letter-spacing: 0.05em;
-    margin-top: 0.25rem;
-    margin-bottom: 0;
+    letter-spacing: 0.04em;
+    margin-bottom: 0.1rem;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .kpi-value {
-    font-size: 2.25rem;
+    font-size: 1.45rem;
     font-weight: 800;
     color: var(--text-primary);
-    line-height: 1.1;
-    letter-spacing: -0.04em;
-    margin-top: auto;
+    line-height: 1.15;
+    letter-spacing: -0.03em;
+    margin-bottom: 0;
 }
 
 /* Variant KPI Cards for different semantics */
@@ -945,9 +968,129 @@ textarea.form-control {
 }
 
 .table-actions {
-    display: flex;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     gap: 0.5rem;
-    justify-content: flex-end;
+    vertical-align: middle;
+}
+
+.actions-header,
+.actions-cell {
+    text-align: center !important;
+    width: 190px;
+    min-width: 190px;
+    vertical-align: middle !important;
+    padding-left: 0.75rem !important;
+    padding-right: 0.75rem !important;
+}
+
+/* Premium Enterprise Action Buttons (Soft Tinted Containers) */
+.btn-action {
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-sm);
+    transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+    flex-shrink: 0;
+    border: 1px solid transparent;
+    cursor: pointer;
+    text-decoration: none;
+    outline: none;
+    position: relative;
+}
+.btn-action i {
+    font-size: 0.925rem;
+    line-height: 1;
+    margin: 0;
+    transition: color 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Edit Action: Soft Blue Container -> Solid Blue Hover */
+.btn-action-edit {
+    color: #2563EB;
+    border-color: #DBEAFE;
+    background-color: #EFF6FF;
+}
+.btn-action-edit:hover, .btn-action-edit:focus {
+    color: #FFFFFF;
+    background-color: #2563EB;
+    border-color: #2563EB;
+    box-shadow: 0 4px 10px rgba(37, 99, 235, 0.28);
+    transform: translateY(-2px) scale(1.05);
+}
+
+/* View Action: Soft Indigo Container -> Solid Indigo Hover */
+.btn-action-view {
+    color: #4F46E5;
+    border-color: #E0E7FF;
+    background-color: #EEF2FF;
+}
+.btn-action-view:hover, .btn-action-view:focus {
+    color: #FFFFFF;
+    background-color: #4F46E5;
+    border-color: #4F46E5;
+    box-shadow: 0 4px 10px rgba(79, 70, 229, 0.28);
+    transform: translateY(-2px) scale(1.05);
+}
+
+/* Reset Password Action: Soft Slate Container -> Solid Slate Hover */
+.btn-action-reset {
+    color: #475569;
+    border-color: #E2E8F0;
+    background-color: #F8FAFC;
+}
+.btn-action-reset:hover, .btn-action-reset:focus {
+    color: #FFFFFF;
+    background-color: #334155;
+    border-color: #334155;
+    box-shadow: 0 4px 10px rgba(51, 65, 85, 0.28);
+    transform: translateY(-2px) scale(1.05);
+}
+
+/* Activate / Enable / Unlock Action: Soft Emerald Green Container -> Solid Green Hover */
+.btn-action-success {
+    color: #059669;
+    border-color: #D1FAE5;
+    background-color: #ECFDF5;
+}
+.btn-action-success:hover, .btn-action-success:focus {
+    color: #FFFFFF;
+    background-color: #059669;
+    border-color: #059669;
+    box-shadow: 0 4px 10px rgba(5, 150, 105, 0.28);
+    transform: translateY(-2px) scale(1.05);
+}
+
+/* Deactivate / Pause / Disable Action: Soft Amber Container -> Solid Amber Hover */
+.btn-action-warning {
+    color: #D97706;
+    border-color: #FEF3C7;
+    background-color: #FFFBEB;
+}
+.btn-action-warning:hover, .btn-action-warning:focus {
+    color: #FFFFFF;
+    background-color: #D97706;
+    border-color: #D97706;
+    box-shadow: 0 4px 10px rgba(217, 119, 6, 0.28);
+    transform: translateY(-2px) scale(1.05);
+}
+
+/* Delete / Lock / Danger Action: Soft Rose/Red Container -> Solid Red Hover */
+.btn-action-danger {
+    color: #DC2626;
+    border-color: #FEE2E2;
+    background-color: #FEF2F2;
+}
+.btn-action-danger:hover, .btn-action-danger:focus {
+    color: #FFFFFF;
+    background-color: #DC2626;
+    border-color: #DC2626;
+    box-shadow: 0 4px 10px rgba(220, 38, 38, 0.28);
+    transform: translateY(-2px) scale(1.05);
 }
 
 /* ================================================================

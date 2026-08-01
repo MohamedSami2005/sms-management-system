@@ -129,7 +129,7 @@
                         <th>Sender ID</th>
                         <th>Route ID</th>
                         <th>Status</th>
-                        <th class="text-end pe-4">Actions</th>
+                        <th class="actions-header">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -147,19 +147,19 @@
                                 <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill px-3 py-1"><i class="bi bi-x-circle-fill me-1"></i> Inactive</span>
                             {% endif %}
                         </td>
-                        <td class="text-end pe-4">
-                            <div class="table-actions justify-content-end">
-                                <a href="{% url 'settings_app:edit' cfg.pk %}" class="btn btn-sm btn-outline-primary" title="Edit Configuration">
-                                    <i class="bi bi-pencil-square"></i> Edit
+                        <td class="actions-cell">
+                            <div class="table-actions">
+                                <a href="{% url 'settings_app:edit' cfg.pk %}" class="btn-action btn-action-edit" title="Edit Configuration">
+                                    <i class="bi bi-pencil"></i>
                                 </a>
                                 {% if not cfg.is_active %}
-                                    <form method="post" action="{% url 'settings_app:activate' cfg.pk %}" class="d-inline">
+                                    <form method="post" action="{% url 'settings_app:activate' cfg.pk %}" class="d-inline-flex m-0 p-0">
                                         {% csrf_token %}
-                                        <button type="submit" class="btn btn-sm btn-outline-success" title="Activate Profile">
-                                            <i class="bi bi-check-circle"></i> Activate
+                                        <button type="submit" class="btn-action btn-action-success" title="Activate Profile">
+                                            <i class="bi bi-play-circle"></i>
                                         </button>
                                     </form>
-                                    <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ cfg.pk }}" title="Delete">
+                                    <button type="button" class="btn-action btn-action-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ cfg.pk }}" title="Delete">
                                         <i class="bi bi-trash"></i>
                                     </button>
                                 {% endif %}
