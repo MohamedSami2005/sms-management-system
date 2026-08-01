@@ -248,14 +248,13 @@ class TemplateVariableSchemaAjaxView(LoginRequiredMixin, RoleRequiredMixin, View
 
 class TemplateScopeListView(LoginRequiredMixin, RoleRequiredMixin, ListView):
     """
-    Scope Management Page displaying DLT Templates and their allowed office scopes.
-    Admin-Only view for granting cross-office template access permissions.
+    Template Scope Management Permission Matrix Page.
+    Admin-Only interactive matrix displaying DLT Templates as rows and Offices as dynamic columns.
     """
     model = DLTTemplate
     template_name = 'dlt_templates/template_scope_list.html'
     context_object_name = 'templates'
     allowed_roles = ['ADMIN']
-    paginate_by = 15
 
     def dispatch(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
@@ -267,54 +266,56 @@ class TemplateScopeListView(LoginRequiredMixin, RoleRequiredMixin, ListView):
         return super().dispatch(request, *args, **kwargs)
 
     def get_queryset(self):
-        queryset = DLTTemplate.objects.all().select_related('department').prefetch_related('allowed_offices')
-        query = self.request.GET.get('q')
-        dept_filter = self.request.GET.get('department')
-
-        if query:
-            queryset = queryset.filter(
-                Q(name__icontains=query) | Q(dlt_template_id__icontains=query)
-            )
-        if dept_filter:
-            queryset = queryset.filter(department_id=dept_filter)
-
-        return queryset.order_by('name')
+        return DLTTemplate.objects.all().prefetch_related('allowed_offices').order_by('name')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['search_query'] = self.request.GET.get('q', '')
-        context['selected_dept'] = self.request.GET.get('department', '')
-        context['departments'] = Department.objects.filter(is_active=True).order_by('name')
-        context['all_offices'] = Department.objects.filter(is_active=True).order_by('name')
+        context['offices'] = Department.objects.filter(is_active=True).order_by('name')
         return context
 
 
-class TemplateScopeUpdateView(LoginRequiredMixin, RoleRequiredMixin, View):
+class TemplateScopeToggleAjaxView(LoginRequiredMixin, RoleRequiredMixin, View):
     """
-    Endpoint for updating allowed office scope for a specific DLT Template (Admin-Only).
+    AJAX endpoint for toggling an Office permission on a DLT Template (Admin-Only).
     """
     allowed_roles = ['ADMIN']
 
     def dispatch(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
-            return self.handle_no_permission()
+            return JsonResponse({'success': False, 'error': 'Unauthorized'}, status=401)
         if not is_global_admin(request.user):
-            from django.core.exceptions import PermissionDenied
-            raise PermissionDenied("Scope management is restricted to Administrators.")
+            return JsonResponse({'success': False, 'error': 'Permission Denied'}, status=403)
         return super().dispatch(request, *args, **kwargs)
 
-    def post(self, request, pk):
-        template = get_object_or_404(DLTTemplate, pk=pk)
-        office_ids = request.POST.getlist('allowed_offices')
-        
-        selected_offices = list(Department.objects.filter(pk__in=office_ids, is_active=True))
-        
-        # Requirement 6: Primary Office MUST ALWAYS be in allowed_offices
-        if template.department and template.department not in selected_offices:
-            selected_offices.append(template.department)
+    def post(self, request):
+        try:
+            if request.content_type == 'application/json':
+                body = json.loads(request.body)
+                template_id = body.get('template_id')
+                office_id = body.get('office_id')
+                allowed = body.get('allowed', False)
+            else:
+                template_id = request.POST.get('template_id')
+                office_id = request.POST.get('office_id')
+                allowed = request.POST.get('allowed', 'false').lower() in ['true', '1', 'on']
 
-        template.allowed_offices.set(selected_offices)
-        template.ensure_primary_office_in_allowed()
+            if not template_id or not office_id:
+                return JsonResponse({'success': False, 'error': 'Missing parameters'}, status=400)
 
-        messages.success(request, f"Scope updated successfully for template '{template.name}'.")
-        return redirect('dlt_templates:scope_list')
+            template = get_object_or_404(DLTTemplate, pk=template_id)
+            office = get_object_or_404(Department, pk=office_id, is_active=True)
+
+            if allowed:
+                template.allowed_offices.add(office)
+            else:
+                template.allowed_offices.remove(office)
+
+            return JsonResponse({
+                'success': True,
+                'message': 'Template scope updated successfully.',
+                'template_id': template.pk,
+                'office_id': office.pk,
+                'allowed': allowed
+            })
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)}, status=400)

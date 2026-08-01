@@ -91,10 +91,9 @@ class DLTTemplate(AuditModel):
         return f"{self.name} ({self.dlt_template_id})"
 
     def ensure_primary_office_in_allowed(self):
-        """Ensures that the primary department is always included in allowed_offices."""
-        if self.department and self.pk:
-            if not self.allowed_offices.filter(pk=self.department.pk).exists():
-                self.allowed_offices.add(self.department)
+        """Initializes allowed_offices with primary department if allowed_offices is empty."""
+        if self.department and self.pk and not self.allowed_offices.exists():
+            self.allowed_offices.add(self.department)
 
     def get_allowed_offices_display(self) -> str:
         """Returns comma-separated string of allowed office codes/names."""
