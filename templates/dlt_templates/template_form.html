@@ -63,6 +63,28 @@
                         </div>
 
                         <div class="col-12">
+                            <label class="form-label fw-semibold mb-1">Allowed Offices Scope (Multiple Optional)</label>
+                            <div class="form-text text-muted mb-2">Select which Offices can access and use this template. (Optional, can also be configured anytime from Template Scope Management).</div>
+                            <div class="card bg-light border p-3 rounded-3">
+                                <div class="row g-2">
+                                    {% for checkbox in form.allowed_offices %}
+                                        <div class="col-6 col-md-4 col-lg-3">
+                                            <div class="form-check">
+                                                {{ checkbox.tag }}
+                                                <label class="form-check-label text-dark small fw-medium" for="{{ checkbox.id_for_label }}">
+                                                    {{ checkbox.choice_label }}
+                                                </label>
+                                            </div>
+                                        </div>
+                                    {% empty %}
+                                        <span class="text-muted small">No offices available.</span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% if form.allowed_offices.errors %}<div class="text-danger small mt-1">{{ form.allowed_offices.errors }}</div>{% endif %}
+                        </div>
+
+                        <div class="col-12">
                             <label class="form-label fw-semibold">DLT Registered Content Text *</label>
                             {{ form.template_content }}
                             <small class="form-text text-muted">Use <code>{#var#}</code> or <code>{1}</code> placeholders for dynamic variables.</small>

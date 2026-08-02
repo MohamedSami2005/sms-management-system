@@ -30,6 +30,7 @@ class TemplateService:
                 template.created_by = user
             template.updated_by = user
             template.save()
+            form.save_m2m()
 
             # Synchronize extracted variables from content
             template.sync_variables()

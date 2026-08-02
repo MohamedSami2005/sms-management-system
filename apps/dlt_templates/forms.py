@@ -9,13 +9,20 @@ from .models import DLTTemplate, TemplateVariable, TemplateCategoryChoices
 class DLTTemplateForm(forms.ModelForm):
     """
     Form for creating and editing DLT registered content templates.
-    Enforces Office scope for normal users and allows Office selection for Global Administrators.
+    Allows selecting multiple allowed Offices (optional) during template registration/editing.
     """
+    allowed_offices = forms.ModelMultipleChoiceField(
+        queryset=Department.objects.filter(is_active=True).order_by('name'),
+        widget=forms.CheckboxSelectMultiple(attrs={'class': 'form-check-input'}),
+        required=False,
+        label=_("Allowed Offices Scope (Multiple Optional)")
+    )
+
     class Meta:
         model = DLTTemplate
         fields = [
             'name', 'dlt_template_id', 'entity_id', 'header_sender_id',
-            'category', 'department', 'template_content', 'is_active'
+            'category', 'department', 'allowed_offices', 'template_content', 'is_active'
         ]
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g. Semester Exam Fee Notice'}),
@@ -31,8 +38,11 @@ class DLTTemplateForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
-        self.fields['department'].label = _("Office")
-        self.fields['department'].required = True
+        self.fields['department'].label = _("Office (Optional)")
+        self.fields['department'].required = False
+
+        if self.instance and self.instance.pk:
+            self.fields['allowed_offices'].initial = self.instance.allowed_offices.all()
 
         if self.user and not is_global_admin(self.user):
             user_office = getattr(self.user, 'department', None)
@@ -60,8 +70,6 @@ class DLTTemplateForm(forms.ModelForm):
             user_office = getattr(self.user, 'department', None)
             if user_office:
                 return user_office
-        if not dept:
-            raise forms.ValidationError(_("Office is required."))
         return dept
 
 
