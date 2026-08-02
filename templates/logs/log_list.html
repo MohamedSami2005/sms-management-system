@@ -13,43 +13,29 @@
 </div>
 
 <!-- Filters Section -->
-<div class="filter-toolbar mb-3">
-    <form method="get" action="{% url 'logs:list' %}" id="logFilterForm" class="row g-2 align-items-end">
+<div class="filter-toolbar mb-4">
+    <form method="get" action="{% url 'logs:list' %}" id="logFilterForm" class="row g-3 align-items-end">
         {% if per_page %}<input type="hidden" name="per_page" value="{{ per_page }}">{% endif %}
         {% if search_query %}<input type="hidden" name="q" value="{{ search_query }}">{% endif %}
 
-        <!-- Start Date -->
-        <div class="col-md-2">
-            <label class="form-label">Start Date</label>
+        <!-- Row 1 Filters -->
+        <div class="col-12 col-sm-6 col-md-3">
+            <label class="form-label text-uppercase text-muted fw-semibold small mb-1">Start Date</label>
             <input type="date" name="start_date" class="form-control" value="{{ start_date }}">
         </div>
 
-        <!-- End Date -->
-        <div class="col-md-2">
-            <label class="form-label">End Date</label>
+        <div class="col-12 col-sm-6 col-md-3">
+            <label class="form-label text-uppercase text-muted fw-semibold small mb-1">End Date</label>
             <input type="date" name="end_date" class="form-control" value="{{ end_date }}">
         </div>
 
-        <!-- Mobile Number -->
-        <div class="col-md-2">
-            <label class="form-label">Mobile Number</label>
+        <div class="col-12 col-sm-6 col-md-3">
+            <label class="form-label text-uppercase text-muted fw-semibold small mb-1">Mobile Number</label>
             <input type="text" name="mobile" class="form-control" placeholder="Search mobile..." value="{{ mobile }}">
         </div>
 
-        <!-- SMS Template -->
-        <div class="col-md-3">
-            <label class="form-label">SMS Template</label>
-            <select name="template" class="form-select">
-                <option value="">All SMS Templates</option>
-                {% for tmpl in templates %}
-                    <option value="{{ tmpl.pk }}" {% if selected_template == tmpl.pk|stringformat:"s" %}selected{% endif %}>{{ tmpl.name }}</option>
-                {% endfor %}
-            </select>
-        </div>
-
-        <!-- Status -->
-        <div class="col-md-3">
-            <label class="form-label">Status</label>
+        <div class="col-12 col-sm-6 col-md-3">
+            <label class="form-label text-uppercase text-muted fw-semibold small mb-1">Status</label>
             <select name="status" class="form-select">
                 <option value="">All Statuses</option>
                 <option value="SENT"    {% if selected_status == 'SENT'    %}selected{% endif %}>Sent</option>
@@ -59,20 +45,19 @@
             </select>
         </div>
 
-        <!-- Sender -->
-        <div class="col-md-3">
-            <label class="form-label">Sender</label>
-            <select name="sender" class="form-select">
-                <option value="">All Senders</option>
-                {% for s in senders %}
-                    <option value="{{ s }}" {% if selected_sender == s %}selected{% endif %}>{{ s }}</option>
+        <!-- Row 2 Filters -->
+        <div class="col-12 col-sm-6 col-md-4">
+            <label class="form-label text-uppercase text-muted fw-semibold small mb-1">SMS Template</label>
+            <select name="template" class="form-select">
+                <option value="">All SMS Templates</option>
+                {% for tmpl in templates %}
+                    <option value="{{ tmpl.pk }}" {% if selected_template == tmpl.pk|stringformat:"s" %}selected{% endif %}>{{ tmpl.name }}</option>
                 {% endfor %}
             </select>
         </div>
 
-        <!-- Office -->
-        <div class="col-md-4">
-            <label class="form-label">Office</label>
+        <div class="col-12 col-sm-6 col-md-4">
+            <label class="form-label text-uppercase text-muted fw-semibold small mb-1">Office</label>
             <select name="office" class="form-select">
                 <option value="">All Offices</option>
                 {% for off in offices %}
@@ -82,9 +67,9 @@
         </div>
 
         <!-- Filter Action Buttons -->
-        <div class="col-md-5 d-flex gap-2">
-            <button type="submit" class="btn btn-primary w-100"><i class="bi bi-funnel me-1"></i> Apply Filters</button>
-            <a href="{% url 'logs:list' %}" class="btn btn-outline-secondary w-100" title="Reset Filters"><i class="bi bi-arrow-counterclockwise me-1"></i> Reset Filters</a>
+        <div class="col-12 col-md-4 d-flex gap-2">
+            <button type="submit" class="btn btn-primary w-100 fw-semibold"><i class="bi bi-funnel me-1"></i> Filter</button>
+            <a href="{% url 'logs:list' %}" class="btn btn-outline-secondary w-100 fw-semibold" title="Reset Filters"><i class="bi bi-arrow-counterclockwise me-1"></i> Reset</a>
         </div>
     </form>
 </div>

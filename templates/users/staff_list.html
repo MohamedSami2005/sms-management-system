@@ -21,17 +21,17 @@
 </div>
 
 <!-- Filter Toolbar -->
-<div class="filter-toolbar">
-    <form method="get" class="row g-2 align-items-end">
-        <div class="col-md-6">
-            <label class="form-label">Search</label>
+<div class="filter-toolbar mb-4">
+    <form method="get" class="row g-3 align-items-end">
+        <div class="col-12 col-sm-6 col-md-6">
+            <label class="form-label text-uppercase text-muted fw-semibold small mb-1">Search</label>
             <div class="input-group">
                 <span class="input-group-text"><i class="bi bi-search"></i></span>
                 <input type="text" name="q" class="form-control border-start-0" placeholder="Search staff name or mobile number..." value="{{ search_query }}">
             </div>
         </div>
-        <div class="col-md-4">
-            <label class="form-label">Department</label>
+        <div class="col-12 col-sm-6 col-md-4">
+            <label class="form-label text-uppercase text-muted fw-semibold small mb-1">Department</label>
             <select name="department" class="form-select">
                 <option value="">All Departments</option>
                 {% for dept in departments %}
@@ -39,8 +39,8 @@
                 {% endfor %}
             </select>
         </div>
-        <div class="col-md-2 d-flex gap-1">
-            <button type="submit" class="btn btn-primary w-100"><i class="bi bi-funnel"></i> Filter</button>
+        <div class="col-12 col-sm-6 col-md-2 d-flex gap-2">
+            <button type="submit" class="btn btn-primary w-100 fw-semibold"><i class="bi bi-funnel"></i> Filter</button>
             <a href="{% url 'users:staff_list' %}" class="btn btn-outline-secondary" title="Clear"><i class="bi bi-x-lg"></i></a>
         </div>
     </form>
@@ -57,7 +57,7 @@
                         <th>Staff Name</th>
                         <th>Mobile Number</th>
                         <th>Department</th>
-                        <th class="text-end" style="width: 160px;">Actions</th>
+                        <th class="actions-header">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -80,10 +80,10 @@
                         </td>
                         <td class="actions-cell">
                             <div class="table-actions">
-                                <a href="{% url 'users:staff_edit' staff.pk %}" class="btn btn-sm btn-outline-primary" title="Edit">
-                                    <i class="bi bi-pencil"></i> Edit
+                                <a href="{% url 'users:staff_edit' staff.pk %}" class="btn-action btn-action-edit" title="Edit">
+                                    <i class="bi bi-pencil"></i>
                                 </a>
-                                <button type="button" class="btn btn-sm btn-outline-danger btn-icon" data-bs-toggle="modal" data-bs-target="#deleteModal{{ staff.pk }}" title="Delete">
+                                <button type="button" class="btn-action btn-action-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ staff.pk }}" title="Delete">
                                     <i class="bi bi-trash"></i>
                                 </button>
                             </div>

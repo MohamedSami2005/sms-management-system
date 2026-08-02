@@ -18,17 +18,17 @@
 </div>
 
 <!-- Filter Toolbar -->
-<div class="filter-toolbar">
-    <form method="get" class="row g-2 align-items-end">
-        <div class="col-md-9">
-            <label class="form-label">Search</label>
+<div class="filter-toolbar mb-4">
+    <form method="get" class="row g-3 align-items-end">
+        <div class="col-12 col-md-9">
+            <label class="form-label text-uppercase text-muted fw-semibold small mb-1">Search</label>
             <div class="input-group">
                 <span class="input-group-text"><i class="bi bi-search"></i></span>
                 <input type="text" name="q" class="form-control border-start-0" placeholder="Search department name or code..." value="{{ search_query }}">
             </div>
         </div>
-        <div class="col-md-3 d-flex gap-1">
-            <button type="submit" class="btn btn-primary w-100"><i class="bi bi-funnel"></i> Filter</button>
+        <div class="col-12 col-md-3 d-flex gap-2">
+            <button type="submit" class="btn btn-primary w-100 fw-semibold"><i class="bi bi-funnel"></i> Filter</button>
             {% if search_query %}
                 <a href="{% url 'users:department_list' %}" class="btn btn-outline-secondary" title="Clear"><i class="bi bi-x-lg"></i></a>
             {% endif %}
@@ -48,7 +48,7 @@
                         <th>Description</th>
                         <th>Assigned Staff</th>
                         <th>Status</th>
-                        <th class="text-end" style="width: 200px;">Actions</th>
+                        <th class="actions-header">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -67,18 +67,18 @@
                         </td>
                         <td class="actions-cell">
                             <div class="table-actions">
-                                <a href="{% url 'users:department_edit' dept.pk %}" class="btn btn-sm btn-outline-primary" title="Edit">
-                                    <i class="bi bi-pencil"></i> Edit
+                                <a href="{% url 'users:department_edit' dept.pk %}" class="btn-action btn-action-edit" title="Edit">
+                                    <i class="bi bi-pencil"></i>
                                 </a>
-                                <form method="post" action="{% url 'users:department_toggle_status' dept.pk %}" class="d-inline m-0">
+                                <form method="post" action="{% url 'users:department_toggle_status' dept.pk %}" class="d-inline-flex m-0 p-0">
                                     {% csrf_token %}
                                     {% if dept.is_active %}
-                                        <button type="submit" class="btn btn-sm btn-outline-warning btn-icon" title="Deactivate"><i class="bi bi-pause-circle"></i></button>
+                                        <button type="submit" class="btn-action btn-action-warning" title="Deactivate"><i class="bi bi-pause-circle"></i></button>
                                     {% else %}
-                                        <button type="submit" class="btn btn-sm btn-outline-success btn-icon" title="Activate"><i class="bi bi-play-circle"></i></button>
+                                        <button type="submit" class="btn-action btn-action-success" title="Activate"><i class="bi bi-play-circle"></i></button>
                                     {% endif %}
                                 </form>
-                                <button type="button" class="btn btn-sm btn-outline-danger btn-icon" data-bs-toggle="modal" data-bs-target="#deleteModal{{ dept.pk }}" title="Delete">
+                                <button type="button" class="btn-action btn-action-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ dept.pk }}" title="Delete">
                                     <i class="bi bi-trash"></i>
                                 </button>
                             </div>

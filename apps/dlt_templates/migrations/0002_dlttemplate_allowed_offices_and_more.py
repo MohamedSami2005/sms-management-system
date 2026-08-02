@@ -14,7 +14,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('dlt_templates', '0001_initial'),
-        ('users', '0003_admin_management_office'),
+        ('users', '0001_initial'),
     ]
 
     operations = [
