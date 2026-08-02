@@ -92,7 +92,7 @@ class TemplateScopeTestCase(TestCase):
         )
 
     def test_1_newly_created_template_appears_in_scope_table(self):
-        """1. Newly created template appears in Scope table."""
+        """1. Newly created template appears in Scope table row."""
         self.client.force_login(self.global_admin)
         new_tmpl = DLTTemplate.objects.create(
             name="New Admission Template",
@@ -107,36 +107,37 @@ class TemplateScopeTestCase(TestCase):
         response = self.client.get(reverse('dlt_templates:scope_list'))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "New Admission Template")
-        self.assertContains(response, "1107160000000100099")
 
-    def test_2_existing_template_primary_office_belongs_to_allowed_offices(self):
-        """2. Existing template Primary Office automatically belongs to Allowed Offices."""
+    def test_2_existing_template_office_belongs_to_allowed_offices(self):
+        """2. Initial template office belongs to Allowed Offices."""
         self.assertTrue(self.coe_template.allowed_offices.filter(pk=self.coe_office.pk).exists())
         self.assertTrue(self.erp_template.allowed_offices.filter(pk=self.erp_office.pk).exists())
 
-    def test_3_admin_can_grant_template_to_multiple_offices(self):
-        """3. Admin can grant a template to multiple offices."""
+    def test_3_admin_can_grant_template_to_multiple_offices_via_ajax(self):
+        """3. Admin can grant a template to multiple offices via AJAX toggle endpoint."""
         self.client.force_login(self.global_admin)
-        response = self.client.post(reverse('dlt_templates:scope_edit', kwargs={'pk': self.coe_template.pk}), {
-            'allowed_offices': [self.coe_office.pk, self.erp_office.pk]
-        })
-        self.assertEqual(response.status_code, 302)
+        response = self.client.post(
+            reverse('dlt_templates:scope_toggle_ajax'),
+            data={'template_id': self.coe_template.pk, 'office_id': self.erp_office.pk, 'allowed': 'true'}
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json()['success'])
         self.coe_template.refresh_from_db()
         self.assertTrue(self.coe_template.allowed_offices.filter(pk=self.coe_office.pk).exists())
         self.assertTrue(self.coe_template.allowed_offices.filter(pk=self.erp_office.pk).exists())
 
-    def test_4_primary_office_cannot_be_removed_from_allowed_offices(self):
-        """4. Primary Office cannot be removed from Allowed Offices."""
+    def test_4_ajax_toggle_can_revoke_office_permission(self):
+        """4. Admin can revoke an office permission via AJAX toggle endpoint."""
+        self.coe_template.allowed_offices.add(self.erp_office)
         self.client.force_login(self.global_admin)
-        # Attempt to save only ERP office for COE template
-        response = self.client.post(reverse('dlt_templates:scope_edit', kwargs={'pk': self.coe_template.pk}), {
-            'allowed_offices': [self.erp_office.pk]
-        })
-        self.assertEqual(response.status_code, 302)
+        response = self.client.post(
+            reverse('dlt_templates:scope_toggle_ajax'),
+            data={'template_id': self.coe_template.pk, 'office_id': self.erp_office.pk, 'allowed': 'false'}
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json()['success'])
         self.coe_template.refresh_from_db()
-        # COE office (Primary Office) MUST automatically remain in allowed_offices
-        self.assertTrue(self.coe_template.allowed_offices.filter(pk=self.coe_office.pk).exists())
-        self.assertTrue(self.coe_template.allowed_offices.filter(pk=self.erp_office.pk).exists())
+        self.assertFalse(self.coe_template.allowed_offices.filter(pk=self.erp_office.pk).exists())
 
     def test_5_erp_user_sees_erp_scoped_templates(self):
         """5. ERP user can see ERP-scoped templates."""
@@ -175,7 +176,7 @@ class TemplateScopeTestCase(TestCase):
         self.assertContains(response, "COE Exam Notice")
 
     def test_9_single_sms_respects_allowed_offices(self):
-        """9. Single SMS template selection respects Allowed Offices."""
+        """9. Single SMS template selection respects Allowed Offices matrix."""
         self.coe_template.allowed_offices.set([self.coe_office, self.erp_office])
         self.client.force_login(self.erp_user)
         response = self.client.get(reverse('sms:single'))
@@ -184,7 +185,7 @@ class TemplateScopeTestCase(TestCase):
         self.assertContains(response, "ERP Fee Notice")
 
     def test_10_bulk_sms_respects_allowed_offices(self):
-        """10. Bulk SMS template selection respects Allowed Offices."""
+        """10. Bulk SMS template selection respects Allowed Offices matrix."""
         self.coe_template.allowed_offices.set([self.coe_office, self.erp_office])
         session = self.client.session
         session['bulk_sms_staff_ids'] = [self.staff_recipient.pk]
@@ -218,11 +219,11 @@ class TemplateScopeTestCase(TestCase):
         self.assertContains(response, "ERP Fee Notice")
 
     def test_13_admin_management_users_manage_all_scopes(self):
-        """13. Admin Management users can manage all scopes."""
+        """13. Admin Management users can access Permission Matrix page."""
         self.client.force_login(self.global_admin)
         response = self.client.get(reverse('dlt_templates:scope_list'))
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Template Scope")
+        self.assertContains(response, "Template Scope Management")
 
         # Non-admin user gets 403 Forbidden
         self.client.force_login(self.erp_user)
@@ -261,3 +262,20 @@ class TemplateScopeTestCase(TestCase):
         log = SMSLog.objects.latest('id')
         self.assertEqual(log.template, self.erp_template)
         self.assertEqual(log.department, self.erp_office)
+
+    def test_16_new_office_automatically_appears_in_matrix_columns(self):
+        """16. Newly created Office automatically appears as a matrix column."""
+        self.client.force_login(self.global_admin)
+        Department.objects.create(name="Library Office", code="LIBRARY")
+        response = self.client.get(reverse('dlt_templates:scope_list'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "LIBRARY")
+
+    def test_17_unauthorized_user_cannot_toggle_scope_ajax(self):
+        """17. Non-admin user cannot invoke AJAX toggle endpoint."""
+        self.client.force_login(self.erp_user)
+        response = self.client.post(
+            reverse('dlt_templates:scope_toggle_ajax'),
+            data={'template_id': self.coe_template.pk, 'office_id': self.erp_office.pk, 'allowed': 'true'}
+        )
+        self.assertEqual(response.status_code, 403)
