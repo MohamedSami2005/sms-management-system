@@ -263,7 +263,7 @@ document.addEventListener('DOMContentLoaded', function() {
         new Chart(statusCtx.getContext('2d'), {
             type: 'pie',
             data: {
-                labels: ['Delivered', 'Failed', 'Queued'],
+                labels: ['Delivered', 'Failed', 'Pending'],
                 datasets: [{
                     data: [
                         {{ delivered_count|default:"0" }},

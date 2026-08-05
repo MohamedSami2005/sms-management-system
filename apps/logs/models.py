@@ -18,6 +18,14 @@ class SMSLog(TimeStampedModel):
         related_name='sms_logs',
         verbose_name=_("Dispatched By User")
     )
+    office = models.ForeignKey(
+        'users.Office',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='sms_logs',
+        verbose_name=_("Office")
+    )
     department = models.ForeignKey(
         'users.Department',
         on_delete=models.SET_NULL,
@@ -114,10 +122,12 @@ class SMSLog(TimeStampedModel):
 
     @property
     def office_name(self) -> str:
+        if self.office:
+            return self.office.name
+        if self.user and self.user.office:
+            return self.user.office.name
         if self.department:
             return self.department.name
-        if self.user and self.user.department:
-            return self.user.department.name
         return "—"
 
     def __str__(self) -> str:

@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load crispy_forms_tags %}
 
-{% block title %}{% if object %}Edit Staff: {{ object.name }}{% else %}Add Staff Recipient{% endif %} - Campus Communication Management System{% endblock %}
+{% block title %}{% if object %}Edit Contact: {{ object.name }}{% else %}Add Contact{% endif %} - Campus Communication Management System{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">
@@ -9,28 +9,30 @@
         <nav aria-label="breadcrumb" class="mb-3">
             <ol class="breadcrumb">
                 <li class="breadcrumb-item"><a href="{% url 'dashboard:home' %}">Dashboard</a></li>
-                <li class="breadcrumb-item"><a href="{% url 'users:staff_list' %}">Staff Directory</a></li>
-                <li class="breadcrumb-item active" aria-current="page">{% if object %}Edit Recipient{% else %}Add Recipient{% endif %}</li>
+                <li class="breadcrumb-item"><a href="{% url 'users:staff_list' %}">Contacts</a></li>
+                <li class="breadcrumb-item active" aria-current="page">{% if object %}Edit Contact{% else %}Add Contact{% endif %}</li>
             </ol>
         </nav>
 
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title">
-                    <i class="bi bi-person-badge"></i>
-                    {% if object %}Edit Staff Recipient: {{ object.name }}{% else %}Add New Staff Recipient{% endif %}
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-header bg-white border-bottom py-3">
+                <h5 class="card-title fw-bold mb-0">
+                    <i class="bi bi-person-badge text-primary me-2"></i>
+                    {% if object %}Edit Contact: {{ object.name }}{% else %}Add New Contact{% endif %}
                 </h5>
             </div>
             <div class="card-body p-4">
                 <form method="post">
                     {% csrf_token %}
                     
+                    <!-- Contact Name -->
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Staff Name *</label>
+                        <label class="form-label fw-semibold">Contact Name *</label>
                         {{ form.name }}
                         {% if form.name.errors %}<div class="text-danger small mt-1">{{ form.name.errors }}</div>{% endif %}
                     </div>
 
+                    <!-- Mobile Number -->
                     <div class="mb-3">
                         <label class="form-label fw-semibold">Mobile Number *</label>
                         {{ form.mobile_number }}
@@ -38,16 +40,24 @@
                         {% if form.mobile_number.errors %}<div class="text-danger small mt-1">{{ form.mobile_number.errors }}</div>{% endif %}
                     </div>
 
-                    <div class="mb-4">
+                    <!-- Department Combobox -->
+                    <div class="mb-4 position-relative" id="deptComboboxWrapper">
                         <label class="form-label fw-semibold">Department</label>
-                        {{ form.department }}
+                        <div class="input-group">
+                            {{ form.department }}
+                            <button class="btn btn-outline-secondary dropdown-toggle combobox-toggle" type="button" tabindex="-1" id="deptToggleBtn"></button>
+                        </div>
+                        <div class="combobox-menu dropdown-menu w-100 shadow-sm border-0 rounded-3 mt-1 p-0 overflow-hidden" id="deptDropdownMenu" style="max-height: 220px; overflow-y: auto;">
+                            <!-- Dynamic Department options -->
+                        </div>
+                        <small class="form-text text-muted">Select an existing department or type a new department name directly.</small>
                         {% if form.department.errors %}<div class="text-danger small mt-1">{{ form.department.errors }}</div>{% endif %}
                     </div>
 
-                    <div class="d-flex justify-content-between">
+                    <div class="d-flex justify-content-between pt-2">
                         <a href="{% url 'users:staff_list' %}" class="btn btn-outline-secondary">Cancel</a>
                         <button type="submit" class="btn btn-primary fw-bold px-4">
-                            {% if object %}Save Changes{% else %}Add Staff Recipient{% endif %}
+                            {% if object %}Save Changes{% else %}Add Contact{% endif %}
                         </button>
                     </div>
                 </form>
@@ -55,4 +65,79 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .combobox-menu .dropdown-item {
+        padding: 0.5rem 0.85rem;
+        font-size: 0.875rem;
+        cursor: pointer;
+    }
+    .combobox-menu .dropdown-item:hover, .combobox-menu .dropdown-item.active {
+        background-color: var(--bs-primary-bg-subtle, #e0e7ff);
+        color: var(--bs-primary, #3730a3);
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const existingDepts = {{ departments_json|safe|default:"[]" }};
+    const input = document.getElementById('id_department');
+    const toggleBtn = document.getElementById('deptToggleBtn');
+    const menu = document.getElementById('deptDropdownMenu');
+    const wrapper = document.getElementById('deptComboboxWrapper');
+
+    if (!input || !menu || !wrapper) return;
+
+    function renderMenu(filterText = '') {
+        const query = filterText.trim().toLowerCase();
+        const matches = existingDepts.filter(d => d.toLowerCase().includes(query));
+
+        menu.innerHTML = '';
+        if (matches.length > 0) {
+            matches.forEach(dept => {
+                const item = document.createElement('button');
+                item.type = 'button';
+                item.className = 'dropdown-item text-start w-100 border-bottom-0';
+                item.innerText = dept;
+                item.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    input.value = dept;
+                    hideMenu();
+                });
+                menu.appendChild(item);
+            });
+            menu.style.display = 'block';
+        } else if (query.length > 0) {
+            const newItem = document.createElement('div');
+            newItem.className = 'p-2 text-muted small text-center';
+            newItem.innerHTML = `<i class="bi bi-plus-circle me-1 text-primary"></i> Type <strong>"${filterText}"</strong> to create new department`;
+            menu.appendChild(newItem);
+            menu.style.display = 'block';
+        } else {
+            hideMenu();
+        }
+    }
+
+    function showMenu() { renderMenu(input.value); }
+    function hideMenu() { menu.style.display = 'none'; }
+
+    input.addEventListener('focus', showMenu);
+    input.addEventListener('input', function() { renderMenu(this.value); });
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            if (menu.style.display === 'block') hideMenu();
+            else { renderMenu(''); input.focus(); }
+        });
+    }
+
+    document.addEventListener('click', function(e) {
+        if (!wrapper.contains(e.target)) hideMenu();
+    });
+});
+</script>
 {% endblock %}

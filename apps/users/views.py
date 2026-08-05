@@ -4,21 +4,22 @@ from django.urls import reverse_lazy
 from django.contrib import messages
 from django.shortcuts import redirect, get_object_or_404
 from django.db.models import Q
+import json
 
 from apps.common.mixins import RoleRequiredMixin
 from apps.accounts.models import CustomUser, Role, RoleChoices, ScopeChoices
-from .models import Department, Staff
-from .forms import DepartmentForm, StaffForm, UserCreateForm, UserUpdateForm, AdminResetPasswordForm
-from .services import DepartmentService, UserService
+from .models import Department, Staff, Office
+from .forms import StaffForm, OfficeForm, UserCreateForm, UserUpdateForm, AdminResetPasswordForm
+from .services import DepartmentService, OfficeService, UserService
 
 ALLOWED_STAFF_MANAGEMENT_ROLES = []
 
 
-# --- Staff Directory (SMS Recipient Master) Views ---
+# --- Contacts Master Views ---
 
 class StaffListView(LoginRequiredMixin, RoleRequiredMixin, ListView):
     """
-    Staff Directory Master displaying recipient staff members.
+    Contacts Master displaying recipient contact members.
     Clean recipient table with auto-generated S.No based on pagination.
     """
     model = Staff
@@ -51,7 +52,7 @@ class StaffListView(LoginRequiredMixin, RoleRequiredMixin, ListView):
 
 class StaffCreateView(LoginRequiredMixin, RoleRequiredMixin, CreateView):
     """
-    Creates a new recipient staff member in the Staff Directory.
+    Creates a new recipient contact member.
     """
     model = Staff
     form_class = StaffForm
@@ -59,16 +60,22 @@ class StaffCreateView(LoginRequiredMixin, RoleRequiredMixin, CreateView):
     success_url = reverse_lazy('users:staff_list')
     allowed_roles = ALLOWED_STAFF_MANAGEMENT_ROLES
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        departments = list(Department.objects.filter(is_active=True).values_list('name', flat=True))
+        context['departments_json'] = json.dumps(departments)
+        return context
+
     def form_valid(self, form):
         form.instance.created_by = self.request.user
         form.instance.updated_by = self.request.user
-        messages.success(self.request, f"Staff recipient '{form.instance.name}' added to directory successfully.")
+        messages.success(self.request, f"Contact '{form.instance.name}' added successfully.")
         return super().form_valid(form)
 
 
 class StaffUpdateView(LoginRequiredMixin, RoleRequiredMixin, UpdateView):
     """
-    Updates recipient staff member details.
+    Updates recipient contact member details.
     """
     model = Staff
     form_class = StaffForm
@@ -76,15 +83,21 @@ class StaffUpdateView(LoginRequiredMixin, RoleRequiredMixin, UpdateView):
     success_url = reverse_lazy('users:staff_list')
     allowed_roles = ALLOWED_STAFF_MANAGEMENT_ROLES
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        departments = list(Department.objects.filter(is_active=True).values_list('name', flat=True))
+        context['departments_json'] = json.dumps(departments)
+        return context
+
     def form_valid(self, form):
         form.instance.updated_by = self.request.user
-        messages.success(self.request, f"Staff recipient '{form.instance.name}' updated successfully.")
+        messages.success(self.request, f"Contact '{form.instance.name}' updated successfully.")
         return super().form_valid(form)
 
 
 class StaffDeleteView(LoginRequiredMixin, RoleRequiredMixin, View):
     """
-    Deletes or deactivates a recipient staff record.
+    Deletes or deactivates a recipient contact record.
     """
     allowed_roles = ALLOWED_STAFF_MANAGEMENT_ROLES
 
@@ -92,22 +105,22 @@ class StaffDeleteView(LoginRequiredMixin, RoleRequiredMixin, View):
         staff = get_object_or_404(Staff, pk=pk)
         name = staff.name
         staff.delete()
-        messages.success(request, f"Staff member '{name}' removed from directory.")
+        messages.success(request, f"Contact '{name}' removed from directory.")
         return redirect('users:staff_list')
 
 
-# --- Department Views ---
+# --- Office Management Views (Users & Roles -> Offices) ---
 
-class DepartmentListView(LoginRequiredMixin, RoleRequiredMixin, ListView):
-    model = Department
-    template_name = 'users/department_list.html'
-    context_object_name = 'departments'
+class OfficeListView(LoginRequiredMixin, RoleRequiredMixin, ListView):
+    model = Office
+    template_name = 'users/office_list.html'
+    context_object_name = 'offices'
     allowed_roles = ['ADMIN']
     paginate_by = 10
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        query = self.request.GET.get('q')
+        query = self.request.GET.get('q', '').strip()
         if query:
             queryset = queryset.filter(
                 Q(name__icontains=query) | Q(code__icontains=query) | Q(description__icontains=query)
@@ -120,52 +133,52 @@ class DepartmentListView(LoginRequiredMixin, RoleRequiredMixin, ListView):
         return context
 
 
-class DepartmentCreateView(LoginRequiredMixin, RoleRequiredMixin, CreateView):
-    model = Department
-    form_class = DepartmentForm
-    template_name = 'users/department_form.html'
-    success_url = reverse_lazy('users:department_list')
+class OfficeCreateView(LoginRequiredMixin, RoleRequiredMixin, CreateView):
+    model = Office
+    form_class = OfficeForm
+    template_name = 'users/office_form.html'
+    success_url = reverse_lazy('users:office_list')
     allowed_roles = ['ADMIN']
 
     def form_valid(self, form):
         form.instance.created_by = self.request.user
         form.instance.updated_by = self.request.user
-        messages.success(self.request, f"Department '{form.instance.name}' created successfully.")
+        messages.success(self.request, f"Office '{form.instance.name}' created successfully.")
         return super().form_valid(form)
 
 
-class DepartmentUpdateView(LoginRequiredMixin, RoleRequiredMixin, UpdateView):
-    model = Department
-    form_class = DepartmentForm
-    template_name = 'users/department_form.html'
-    success_url = reverse_lazy('users:department_list')
+class OfficeUpdateView(LoginRequiredMixin, RoleRequiredMixin, UpdateView):
+    model = Office
+    form_class = OfficeForm
+    template_name = 'users/office_form.html'
+    success_url = reverse_lazy('users:office_list')
     allowed_roles = ['ADMIN']
 
     def form_valid(self, form):
         form.instance.updated_by = self.request.user
-        messages.success(self.request, f"Department '{form.instance.name}' updated successfully.")
+        messages.success(self.request, f"Office '{form.instance.name}' updated successfully.")
         return super().form_valid(form)
 
 
-class DepartmentToggleStatusView(LoginRequiredMixin, RoleRequiredMixin, View):
+class OfficeToggleStatusView(LoginRequiredMixin, RoleRequiredMixin, View):
     allowed_roles = ['ADMIN']
 
     def post(self, request, pk):
-        department = get_object_or_404(Department, pk=pk)
-        new_status = DepartmentService.toggle_status(department)
+        office = get_object_or_404(Office, pk=pk)
+        new_status = OfficeService.toggle_status(office)
         status_label = "activated" if new_status else "deactivated"
-        messages.success(request, f"Department '{department.name}' has been {status_label}.")
-        return redirect('users:department_list')
+        messages.success(request, f"Office '{office.name}' has been {status_label}.")
+        return redirect('users:office_list')
 
 
-class DepartmentDeleteView(LoginRequiredMixin, RoleRequiredMixin, View):
+class OfficeDeleteView(LoginRequiredMixin, RoleRequiredMixin, View):
     allowed_roles = ['ADMIN']
 
     def post(self, request, pk):
-        department = get_object_or_404(Department, pk=pk)
-        _, msg = DepartmentService.delete_or_deactivate(department)
-        messages.info(request, msg)
-        return redirect('users:department_list')
+        office = get_object_or_404(Office, pk=pk)
+        _, msg = OfficeService.delete_or_deactivate(office)
+        messages.success(request, msg)
+        return redirect('users:office_list')
 
 
 # --- System Users (Application Login Accounts) Views ---
@@ -184,10 +197,10 @@ class SystemUserListView(LoginRequiredMixin, RoleRequiredMixin, ListView):
     paginate_by = 12
 
     def get_queryset(self):
-        queryset = super().get_queryset().filter(is_deleted=False).select_related('department', 'created_by', 'role_obj').order_by('-date_joined')
+        queryset = super().get_queryset().filter(is_deleted=False).select_related('office', 'department', 'created_by', 'role_obj').order_by('-date_joined')
         query = self.request.GET.get('q')
         role_filter = self.request.GET.get('role')
-        dept_filter = self.request.GET.get('department')
+        office_filter = self.request.GET.get('office') or self.request.GET.get('department')
         status_filter = self.request.GET.get('status')
 
         if query:
@@ -200,11 +213,11 @@ class SystemUserListView(LoginRequiredMixin, RoleRequiredMixin, ListView):
             queryset = queryset.filter(
                 Q(role=role_filter) | Q(role_obj__name__iexact=role_filter) | Q(role_obj__code__iexact=role_filter)
             )
-        if dept_filter:
-            if dept_filter.isdigit():
-                queryset = queryset.filter(department_id=int(dept_filter))
+        if office_filter:
+            if office_filter.isdigit():
+                queryset = queryset.filter(Q(office_id=int(office_filter)) | Q(department_id=int(office_filter)))
             else:
-                queryset = queryset.filter(department__name__iexact=dept_filter)
+                queryset = queryset.filter(Q(office__name__iexact=office_filter) | Q(department__name__iexact=office_filter))
         if status_filter:
             if status_filter == 'active':
                 queryset = queryset.filter(is_active=True, is_locked=False)
@@ -219,7 +232,7 @@ class SystemUserListView(LoginRequiredMixin, RoleRequiredMixin, ListView):
         context = super().get_context_data(**kwargs)
         context['search_query'] = self.request.GET.get('q', '')
         context['selected_role'] = self.request.GET.get('role', '')
-        context['selected_dept'] = self.request.GET.get('department', '')
+        context['selected_office'] = self.request.GET.get('office') or self.request.GET.get('department', '')
         context['selected_status'] = self.request.GET.get('status', '')
 
         role_names = list(Role.objects.values_list('name', flat=True))
@@ -229,7 +242,7 @@ class SystemUserListView(LoginRequiredMixin, RoleRequiredMixin, ListView):
         role_names.sort()
 
         context['roles'] = [(r, r) for r in role_names]
-        context['departments'] = Department.objects.filter(is_active=True)
+        context['offices'] = Office.objects.filter(is_active=True)
         return context
 
 
@@ -251,7 +264,7 @@ class SystemUserCreateView(LoginRequiredMixin, RoleRequiredMixin, CreateView):
                 role_names.append(str(label))
         role_names.sort()
 
-        office_names = list(Department.objects.filter(is_active=True).values_list('name', flat=True))
+        office_names = list(Office.objects.filter(is_active=True).values_list('name', flat=True))
         office_names.sort()
 
         context['existing_roles_json'] = json.dumps(role_names)
@@ -282,7 +295,7 @@ class SystemUserUpdateView(LoginRequiredMixin, RoleRequiredMixin, UpdateView):
                 role_names.append(str(label))
         role_names.sort()
 
-        office_names = list(Department.objects.filter(is_active=True).values_list('name', flat=True))
+        office_names = list(Office.objects.filter(is_active=True).values_list('name', flat=True))
         office_names.sort()
 
         context['existing_roles_json'] = json.dumps(role_names)

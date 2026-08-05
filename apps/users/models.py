@@ -3,6 +3,63 @@ from django.utils.translation import gettext_lazy as _
 from apps.common.models import AuditModel, phone_validator
 
 
+class Office(AuditModel):
+    """
+    Administrative Office Master model (e.g. Admin Management, ERP, COE, Admissions, Placement, Accounts, Library).
+    Used for System User access control, DLT Template Scoping, Queue, Logs, and Authorization.
+    """
+    name = models.CharField(
+        max_length=100,
+        unique=True,
+        verbose_name=_("Office Name"),
+        help_text=_("Full name of the administrative office (e.g. Controller of Examinations)")
+    )
+    code = models.CharField(
+        max_length=20,
+        unique=True,
+        db_index=True,
+        verbose_name=_("Office Code"),
+        help_text=_("Unique short code in uppercase (e.g., ADMIN, COE, ERP, ACCTS)")
+    )
+    description = models.TextField(
+        blank=True,
+        verbose_name=_("Description"),
+        help_text=_("Brief description of office responsibilities.")
+    )
+    is_active = models.BooleanField(
+        default=True,
+        db_index=True,
+        verbose_name=_("Is Active"),
+        help_text=_("Designates whether this office is active.")
+    )
+
+    class Meta:
+        verbose_name = _("Office")
+        verbose_name_plural = _("Offices")
+        ordering = ['name']
+        indexes = [
+            models.Index(fields=['code', 'is_active'], name='idx_office_code_active'),
+        ]
+
+    def save(self, *args, **kwargs):
+        if self.code:
+            self.code = self.code.upper().strip()
+        super().save(*args, **kwargs)
+
+    def __str__(self) -> str:
+        return f"{self.name} ({self.code})"
+
+    @property
+    def user_count(self) -> int:
+        """Returns total active users assigned to this office."""
+        return self.users.filter(is_active=True, is_deleted=False).count()
+
+    @property
+    def template_count(self) -> int:
+        """Returns total active templates permitted for this office."""
+        return self.allowed_dlt_templates.filter(is_active=True).count()
+
+
 class Department(AuditModel):
     """
     College Department model (e.g. Controller of Examinations, Admissions, Placement Cell, Accounts).

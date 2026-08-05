@@ -9,7 +9,7 @@ from django.db.models import Q
 
 from apps.common.mixins import RoleRequiredMixin
 from apps.common.scopes import get_scoped_queryset, is_global_admin
-from apps.users.models import Department
+from apps.users.models import Office, Department
 from .models import DLTTemplate, TemplateVariable, TemplateCategoryChoices
 from .forms import DLTTemplateForm, TemplateVariableFormSet, TemplateImportForm
 from .services import TemplateService, TemplateImportService, TemplateExportService
@@ -28,11 +28,11 @@ class TemplateListView(LoginRequiredMixin, RoleRequiredMixin, ListView):
     def get_queryset(self):
         queryset = get_scoped_queryset(
             self.request.user,
-            super().get_queryset().select_related('department')
+            super().get_queryset().select_related('office', 'department')
         )
         query = self.request.GET.get('q')
         cat_filter = self.request.GET.get('category')
-        dept_filter = self.request.GET.get('department')
+        dept_filter = self.request.GET.get('department') or self.request.GET.get('office')
         status_filter = self.request.GET.get('status')
         header_filter = self.request.GET.get('header')
 
@@ -44,7 +44,10 @@ class TemplateListView(LoginRequiredMixin, RoleRequiredMixin, ListView):
         if cat_filter:
             queryset = queryset.filter(category=cat_filter)
         if dept_filter:
-            queryset = queryset.filter(department_id=dept_filter)
+            if dept_filter.isdigit():
+                queryset = queryset.filter(Q(office_id=int(dept_filter)) | Q(department_id=int(dept_filter)))
+            else:
+                queryset = queryset.filter(Q(office__name__iexact=dept_filter) | Q(department__name__iexact=dept_filter))
         if status_filter:
             if status_filter == 'active':
                 queryset = queryset.filter(is_active=True)
@@ -59,18 +62,20 @@ class TemplateListView(LoginRequiredMixin, RoleRequiredMixin, ListView):
         context = super().get_context_data(**kwargs)
         context['search_query'] = self.request.GET.get('q', '')
         context['selected_cat'] = self.request.GET.get('category', '')
-        context['selected_dept'] = self.request.GET.get('department', '')
+        context['selected_dept'] = self.request.GET.get('department', '') or self.request.GET.get('office', '')
         context['selected_status'] = self.request.GET.get('status', '')
         context['selected_header'] = self.request.GET.get('header', '')
 
         context['categories'] = TemplateCategoryChoices.choices
 
         if is_global_admin(self.request.user):
-            context['departments'] = Department.objects.filter(is_active=True)
+            context['departments'] = Office.objects.filter(is_active=True)
+        elif getattr(self.request.user, 'office', None):
+            context['departments'] = Office.objects.filter(pk=self.request.user.office.pk)
         elif self.request.user.department:
             context['departments'] = Department.objects.filter(pk=self.request.user.department.pk)
         else:
-            context['departments'] = Department.objects.none()
+            context['departments'] = Office.objects.none()
 
         context['sender_headers'] = get_scoped_queryset(self.request.user, DLTTemplate.objects.all()).values_list('header_sender_id', flat=True).distinct()
         return context
@@ -195,7 +200,7 @@ class TemplateExportView(LoginRequiredMixin, RoleRequiredMixin, View):
 
     def get(self, request):
         export_format = request.GET.get('format', 'excel')
-        queryset = get_scoped_queryset(request.user, DLTTemplate.objects.all().select_related('department'))
+        queryset = get_scoped_queryset(request.user, DLTTemplate.objects.all().select_related('office', 'department'))
 
         if export_format == 'csv':
             return TemplateExportService.export_csv(queryset)
@@ -270,7 +275,7 @@ class TemplateScopeListView(LoginRequiredMixin, RoleRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['offices'] = Department.objects.filter(is_active=True).order_by('name')
+        context['offices'] = Office.objects.filter(is_active=True).order_by('name')
         return context
 
 
@@ -303,7 +308,7 @@ class TemplateScopeToggleAjaxView(LoginRequiredMixin, RoleRequiredMixin, View):
                 return JsonResponse({'success': False, 'error': 'Missing parameters'}, status=400)
 
             template = get_object_or_404(DLTTemplate, pk=template_id)
-            office = get_object_or_404(Department, pk=office_id, is_active=True)
+            office = get_object_or_404(Office, pk=office_id, is_active=True)
 
             if allowed:
                 template.allowed_offices.add(office)

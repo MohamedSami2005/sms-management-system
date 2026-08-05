@@ -84,6 +84,15 @@ class CustomUser(AbstractUser):
         related_name="users",
         verbose_name=_("RBAC Role Object")
     )
+    office = models.ForeignKey(
+        'users.Office',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='users',
+        verbose_name=_("Office"),
+        help_text=_("Associated administrative office.")
+    )
     department = models.ForeignKey(
         'users.Department',
         on_delete=models.SET_NULL,
@@ -173,8 +182,8 @@ class CustomUser(AbstractUser):
     def __str__(self) -> str:
         full_name = self.get_full_name()
         display_name = full_name if full_name else self.username
-        dept_str = f" - {self.department.code}" if self.department else ""
-        return f"{display_name} ({self.get_role_display()}{dept_str})"
+        office_str = f" - {self.office.code}" if self.office else (f" - {self.department.code}" if self.department else "")
+        return f"{display_name} ({self.get_role_display()}{office_str})"
 
     @property
     def is_admin(self) -> bool:

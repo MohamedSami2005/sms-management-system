@@ -24,6 +24,14 @@ class SMSBatch(AuditModel):
         related_name='sms_batches',
         verbose_name=_("Dispatched By User")
     )
+    office = models.ForeignKey(
+        'users.Office',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='sms_batches',
+        verbose_name=_("Office")
+    )
     department = models.ForeignKey(
         'users.Department',
         on_delete=models.SET_NULL,
@@ -120,6 +128,14 @@ class SMSQueue(TimeStampedModel):
         on_delete=models.PROTECT,
         related_name='queued_sms',
         verbose_name=_("Dispatched By User")
+    )
+    office = models.ForeignKey(
+        'users.Office',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='queued_sms',
+        verbose_name=_("Office")
     )
     department = models.ForeignKey(
         'users.Department',

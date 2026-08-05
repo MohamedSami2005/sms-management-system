@@ -19,7 +19,7 @@
                 <span>Communication</span>
                 <i class="bi bi-chevron-down nav-chevron"></i>
             </a>
-            <div class="collapse {% if request.resolver_match.app_name == 'sms' and request.GET.view != 'status' %}show{% endif %}" id="smsCommSubmenu">
+            <div class="collapse {% if request.resolver_match.app_name == 'sms' %}show{% endif %}" id="smsCommSubmenu">
                 <ul class="sidebar-submenu">
                     <li>
                         <a href="{% url 'sms:single' %}" class="sub-link {% if request.resolver_match.url_name == 'single' %}active{% endif %}">
@@ -31,21 +31,16 @@
                             <i class="bi bi-people me-1"></i>Bulk SMS
                         </a>
                     </li>
-                    <li>
-                        <a href="{% url 'sms:queue' %}" class="sub-link {% if request.resolver_match.url_name == 'queue' and request.GET.view != 'status' %}active{% endif %}">
-                            <i class="bi bi-hourglass-split me-1"></i>SMS Queue
-                        </a>
-                    </li>
                 </ul>
             </div>
         </div>
 
-        <!-- 3. Recipients (Direct Click) -->
+        <!-- 3. Contacts (Direct Click) -->
         {% if user.is_admin or user.role == 'COE' or user.role == 'ADMISSION' or user.role == 'ACCOUNTS' or user.role == 'PLACEMENT' %}
         <div class="nav-item">
-            <a href="{% url 'users:staff_list' %}" class="nav-link-main {% if request.resolver_match.url_name == 'staff_list' or request.resolver_match.url_name == 'department_list' or request.resolver_match.url_name == 'staff_create' or request.resolver_match.url_name == 'staff_edit' or request.resolver_match.url_name == 'department_create' or request.resolver_match.url_name == 'department_edit' %}active{% endif %}">
+            <a href="{% url 'users:staff_list' %}" class="nav-link-main {% if request.resolver_match.app_name == 'users' and 'staff' in request.resolver_match.url_name %}active{% endif %}">
                 <i class="bi bi-person-badge nav-icon"></i>
-                <span>Recipients</span>
+                <span>Contacts</span>
             </a>
         </div>
         {% endif %}
@@ -70,13 +65,33 @@
         </div>
         {% endif %}
 
-        <!-- 5. Users & Roles (Direct Click - Admin Only) -->
+        <!-- 5. Users & Roles (Submenu - Admin Only) -->
         {% if user.is_admin %}
         <div class="nav-item">
-            <a href="{% url 'users:system_user_list' %}" class="nav-link-main {% if request.resolver_match.url_name == 'system_user_list' or request.resolver_match.url_name == 'system_user_create' or request.resolver_match.url_name == 'system_user_edit' %}active{% endif %}">
+            <a class="nav-link-main {% if request.resolver_match.url_name == 'system_user_list' or request.resolver_match.url_name == 'system_user_create' or request.resolver_match.url_name == 'system_user_edit' or request.resolver_match.url_name == 'office_list' or request.resolver_match.url_name == 'office_create' or request.resolver_match.url_name == 'office_edit' %}active{% endif %}" 
+               href="#usersRolesSubmenu" 
+               data-bs-toggle="collapse" 
+               role="button" 
+               aria-expanded="{% if request.resolver_match.url_name == 'system_user_list' or request.resolver_match.url_name == 'system_user_create' or request.resolver_match.url_name == 'system_user_edit' or request.resolver_match.url_name == 'office_list' or request.resolver_match.url_name == 'office_create' or request.resolver_match.url_name == 'office_edit' %}true{% else %}false{% endif %}" 
+               aria-controls="usersRolesSubmenu">
                 <i class="bi bi-shield-lock nav-icon"></i>
                 <span>Users & Roles</span>
+                <i class="bi bi-chevron-down nav-chevron"></i>
             </a>
+            <div class="collapse {% if request.resolver_match.url_name == 'system_user_list' or request.resolver_match.url_name == 'system_user_create' or request.resolver_match.url_name == 'system_user_edit' or request.resolver_match.url_name == 'office_list' or request.resolver_match.url_name == 'office_create' or request.resolver_match.url_name == 'office_edit' %}show{% endif %}" id="usersRolesSubmenu">
+                <ul class="sidebar-submenu">
+                    <li>
+                        <a href="{% url 'users:system_user_list' %}" class="sub-link {% if 'system_user' in request.resolver_match.url_name %}active{% endif %}">
+                            <i class="bi bi-person-gear me-1"></i>System Users
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'users:office_list' %}" class="sub-link {% if 'office' in request.resolver_match.url_name %}active{% endif %}">
+                            <i class="bi bi-building-gear me-1"></i>Offices
+                        </a>
+                    </li>
+                </ul>
+            </div>
         </div>
         {% endif %}
 
@@ -94,13 +109,8 @@
             <div class="collapse {% if request.resolver_match.app_name == 'logs' or request.resolver_match.app_name == 'reports' or request.GET.view == 'status' %}show{% endif %}" id="logsReportsSubmenu">
                 <ul class="sidebar-submenu">
                     <li>
-                        <a href="{% url 'logs:list' %}" class="sub-link {% if request.resolver_match.app_name == 'logs' and 'view' not in request.GET %}active{% endif %}">
-                            <i class="bi bi-journal-check me-1"></i>SMS Logs
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{% url 'sms:queue' %}?view=status" class="sub-link {% if request.resolver_match.url_name == 'queue' and request.GET.view == 'status' %}active{% endif %}">
-                            <i class="bi bi-check2-all me-1"></i>Delivery Status
+                        <a href="{% url 'logs:list' %}" class="sub-link {% if request.resolver_match.app_name == 'logs' %}active{% endif %}">
+                            <i class="bi bi-journal-check me-1"></i>SMS Logs & Delivery Status
                         </a>
                     </li>
                     {% if user.is_admin or user.role == 'COE' or user.role == 'ADMISSION' or user.role == 'ACCOUNTS' or user.role == 'PLACEMENT' %}

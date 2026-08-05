@@ -1,7 +1,34 @@
 import logging
 from typing import Tuple
 from django.utils import timezone
-from apps.users.models import Department
+from apps.users.models import Department, Office, Staff
+
+
+class OfficeService:
+    """
+    Business service layer managing administrative offices.
+    """
+
+    @staticmethod
+    def delete_or_deactivate(office: Office) -> Tuple[bool, str]:
+        user_count = office.users.filter(is_deleted=False).count()
+        if user_count > 0:
+            office.is_active = False
+            office.save(update_fields=['is_active'])
+            logger.info(f"OFFICE_SOFT_DELETE | Office '{office.code}' deactivated because {user_count} users are assigned.")
+            return True, f"Office '{office.name}' was deactivated because {user_count} staff user(s) are assigned."
+        else:
+            off_name = office.name
+            office.delete()
+            logger.info(f"OFFICE_HARD_DELETE | Office '{off_name}' permanently deleted.")
+            return True, f"Office '{off_name}' was permanently deleted."
+
+    @staticmethod
+    def toggle_status(office: Office) -> bool:
+        office.is_active = not office.is_active
+        office.save(update_fields=['is_active'])
+        logger.info(f"OFFICE_STATUS_TOGGLE | Office '{office.code}' active status set to {office.is_active}.")
+        return office.is_active
 from apps.accounts.models import CustomUser
 
 logger = logging.getLogger('django')

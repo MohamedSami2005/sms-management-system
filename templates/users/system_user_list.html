@@ -86,12 +86,9 @@
                         </td>
 
                         <td>
-                            <div class="d-flex align-items-center gap-2">
-                                <div class="table-avatar">{{ user_obj.first_name|default:user_obj.username|slice:":2"|upper }}</div>
-                                <div>
-                                    <div class="fw-semibold text-dark" style="font-size:0.9rem;">{{ user_obj.get_full_name|default:user_obj.username }}</div>
-                                    <div class="text-muted" style="font-size:0.75rem;">{{ user_obj.email }}</div>
-                                </div>
+                            <div>
+                                <div class="fw-semibold text-dark" style="font-size:0.9rem;">{{ user_obj.get_full_name|default:user_obj.username }}</div>
+                                <div class="text-muted" style="font-size:0.75rem;">{{ user_obj.email }}</div>
                             </div>
                         </td>
 

@@ -2,27 +2,27 @@ from django import forms
 from django.forms import inlineformset_factory
 from django.utils.translation import gettext_lazy as _
 from apps.common.scopes import is_global_admin
-from apps.users.models import Department
+from apps.users.models import Office, Department
 from .models import DLTTemplate, TemplateVariable, TemplateCategoryChoices
 
 
 class DLTTemplateForm(forms.ModelForm):
     """
     Form for creating and editing DLT registered content templates.
-    Allows selecting multiple allowed Offices (optional) during template registration/editing.
+    Template creator selects single Office. Permission Matrix manages allowed offices scope.
     """
-    allowed_offices = forms.ModelMultipleChoiceField(
-        queryset=Department.objects.filter(is_active=True).order_by('name'),
-        widget=forms.CheckboxSelectMultiple(attrs={'class': 'form-check-input'}),
+    office = forms.ModelChoiceField(
+        queryset=Office.objects.filter(is_active=True).order_by('name'),
         required=False,
-        label=_("Allowed Offices Scope (Multiple Optional)")
+        widget=forms.Select(attrs={'class': 'form-select'}),
+        label=_("Office")
     )
 
     class Meta:
         model = DLTTemplate
         fields = [
             'name', 'dlt_template_id', 'entity_id', 'header_sender_id',
-            'category', 'department', 'allowed_offices', 'template_content', 'is_active'
+            'category', 'office', 'template_content', 'is_active'
         ]
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g. Semester Exam Fee Notice'}),
@@ -30,7 +30,6 @@ class DLTTemplateForm(forms.ModelForm):
             'entity_id': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '1001999988887777666'}),
             'header_sender_id': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'CLGEXM'}),
             'category': forms.Select(attrs={'class': 'form-select'}),
-            'department': forms.Select(attrs={'class': 'form-select'}),
             'template_content': forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': 'Dear {#var#}, your exam is on {#var#}. Regards, College.'}),
             'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
@@ -38,18 +37,13 @@ class DLTTemplateForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
-        self.fields['department'].label = _("Office (Optional)")
-        self.fields['department'].required = False
-
-        if self.instance and self.instance.pk:
-            self.fields['allowed_offices'].initial = self.instance.allowed_offices.all()
 
         if self.user and not is_global_admin(self.user):
-            user_office = getattr(self.user, 'department', None)
+            user_office = getattr(self.user, 'office', None)
             if user_office:
-                self.fields['department'].queryset = Department.objects.filter(pk=user_office.pk)
-                self.fields['department'].initial = user_office
-                self.fields['department'].widget.attrs['readonly'] = True
+                self.fields['office'].queryset = Office.objects.filter(pk=user_office.pk)
+                self.fields['office'].initial = user_office
+                self.fields['office'].widget.attrs['readonly'] = True
 
     def clean_dlt_template_id(self):
         dlt_id = self.cleaned_data.get('dlt_template_id', '').strip()
@@ -64,13 +58,13 @@ class DLTTemplateForm(forms.ModelForm):
         header = self.cleaned_data.get('header_sender_id', '').strip().upper()
         return header
 
-    def clean_department(self):
-        dept = self.cleaned_data.get('department')
+    def clean_office(self):
+        off = self.cleaned_data.get('office')
         if self.user and not is_global_admin(self.user):
-            user_office = getattr(self.user, 'department', None)
+            user_office = getattr(self.user, 'office', None)
             if user_office:
                 return user_office
-        return dept
+        return off
 
 
 class TemplateVariableForm(forms.ModelForm):

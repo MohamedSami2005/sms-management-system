@@ -1,18 +1,18 @@
 {% extends 'base.html' %}
 
-{% block title %}Departments Management - Campus Communication Management System{% endblock %}
+{% block title %}Offices Management - Campus Communication Management System{% endblock %}
 
 {% block content %}
 
 <!-- Page Header -->
 <div class="page-header mb-4">
     <div>
-        <h4 class="page-header-title"><i class="bi bi-building text-primary"></i> College Departments</h5>
-        <p class="page-header-sub">Manage college departments and staff assignments.</p>
+        <h4 class="page-header-title"><i class="bi bi-building-gear text-primary"></i> Administrative Offices</h5>
+        <p class="page-header-sub">Manage system administrative offices, access permissions, and scope boundaries.</p>
     </div>
     <div>
-        <a href="{% url 'users:department_create' %}" class="btn btn-primary">
-            <i class="bi bi-plus-circle"></i> Add Department
+        <a href="{% url 'users:office_create' %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Add Office
         </a>
     </div>
 </div>
@@ -24,19 +24,19 @@
             <label class="form-label text-uppercase text-muted fw-semibold small mb-1">Search</label>
             <div class="input-group">
                 <span class="input-group-text"><i class="bi bi-search"></i></span>
-                <input type="text" name="q" class="form-control border-start-0" placeholder="Search department name or code..." value="{{ search_query }}">
+                <input type="text" name="q" class="form-control border-start-0" placeholder="Search office name or code..." value="{{ search_query }}">
             </div>
         </div>
         <div class="col-12 col-md-3 d-flex gap-2">
             <button type="submit" class="btn btn-primary w-100 fw-semibold"><i class="bi bi-funnel"></i> Filter</button>
             {% if search_query %}
-                <a href="{% url 'users:department_list' %}" class="btn btn-outline-secondary" title="Clear"><i class="bi bi-x-lg"></i></a>
+                <a href="{% url 'users:office_list' %}" class="btn btn-outline-secondary" title="Clear"><i class="bi bi-x-lg"></i></a>
             {% endif %}
         </div>
     </form>
 </div>
 
-<!-- Departments Table -->
+<!-- Offices Table -->
 <div class="card overflow-hidden">
     <div class="card-body p-0">
         <div class="table-responsive">
@@ -44,22 +44,24 @@
                 <thead>
                     <tr>
                         <th>Code</th>
-                        <th>Department Name</th>
+                        <th>Office Name</th>
                         <th>Description</th>
-                        <th>Assigned Staff</th>
+                        <th>Assigned Users</th>
+                        <th>Permitted Templates</th>
                         <th>Status</th>
                         <th class="actions-header">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for dept in departments %}
+                    {% for off in offices %}
                     <tr>
-                        <td><code class="text-primary fw-bold" style="font-size: 0.85rem;">{{ dept.code }}</code></td>
-                        <td class="fw-semibold">{{ dept.name }}</td>
-                        <td class="text-muted" style="font-size: 0.85rem;">{{ dept.description|default:"—" }}</td>
-                        <td><span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill">{{ dept.user_count }} staff</span></td>
+                        <td><code class="text-primary fw-bold" style="font-size: 0.85rem;">{{ off.code }}</code></td>
+                        <td class="fw-semibold">{{ off.name }}</td>
+                        <td class="text-muted" style="font-size: 0.85rem;">{{ off.description|default:"—" }}</td>
+                        <td><span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill">{{ off.user_count }} users</span></td>
+                        <td><span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill">{{ off.template_count }} templates</span></td>
                         <td>
-                            {% if dept.is_active %}
+                            {% if off.is_active %}
                                 <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill"><i class="bi bi-check-circle-fill me-1"></i>Active</span>
                             {% else %}
                                 <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill"><i class="bi bi-x-circle me-1"></i>Inactive</span>
@@ -67,41 +69,41 @@
                         </td>
                         <td class="actions-cell">
                             <div class="table-actions">
-                                <a href="{% url 'users:department_edit' dept.pk %}" class="btn-action btn-action-edit" title="Edit">
+                                <a href="{% url 'users:office_edit' off.pk %}" class="btn-action btn-action-edit" title="Edit">
                                     <i class="bi bi-pencil"></i>
                                 </a>
-                                <form method="post" action="{% url 'users:department_toggle_status' dept.pk %}" class="d-inline-flex m-0 p-0">
+                                <form method="post" action="{% url 'users:office_toggle_status' off.pk %}" class="d-inline-flex m-0 p-0">
                                     {% csrf_token %}
-                                    {% if dept.is_active %}
+                                    {% if off.is_active %}
                                         <button type="submit" class="btn-action btn-action-warning" title="Deactivate"><i class="bi bi-pause-circle"></i></button>
                                     {% else %}
                                         <button type="submit" class="btn-action btn-action-success" title="Activate"><i class="bi bi-play-circle"></i></button>
                                     {% endif %}
                                 </form>
-                                <button type="button" class="btn-action btn-action-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ dept.pk }}" title="Delete">
+                                <button type="button" class="btn-action btn-action-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ off.pk }}" title="Delete">
                                     <i class="bi bi-trash"></i>
                                 </button>
                             </div>
 
                             <!-- Delete Modal -->
-                            <div class="modal fade text-start" id="deleteModal{{ dept.pk }}" tabindex="-1" aria-hidden="true">
+                            <div class="modal fade text-start" id="deleteModal{{ off.pk }}" tabindex="-1" aria-hidden="true">
                                 <div class="modal-dialog modal-dialog-centered">
                                     <div class="modal-content">
                                         <div class="modal-header">
-                                            <h5 class="modal-title"><i class="bi bi-trash text-danger me-2"></i>Delete Department</h5>
+                                            <h5 class="modal-title"><i class="bi bi-trash text-danger me-2"></i>Delete Office</h5>
                                             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                         </div>
                                         <div class="modal-body">
-                                            <p class="mb-2">Are you sure you want to delete department <strong>{{ dept.name }}</strong>?</p>
-                                            {% if dept.user_count > 0 %}
+                                            <p class="mb-2">Are you sure you want to delete office <strong>{{ off.name }}</strong>?</p>
+                                            {% if off.user_count > 0 %}
                                                 <div class="alert alert-warning rounded-2 py-2 px-3 mb-0" style="font-size: 0.85rem;">
-                                                    <i class="bi bi-exclamation-triangle-fill me-1"></i> This department has {{ dept.user_count }} assigned user(s). It will be soft-deactivated instead of permanently deleted.
+                                                    <i class="bi bi-exclamation-triangle-fill me-1"></i> This office has {{ off.user_count }} assigned user(s). It will be soft-deactivated instead of permanently deleted.
                                                 </div>
                                             {% endif %}
                                         </div>
                                         <div class="modal-footer">
                                             <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-                                            <form method="post" action="{% url 'users:department_delete' dept.pk %}">
+                                            <form method="post" action="{% url 'users:office_delete' off.pk %}">
                                                 {% csrf_token %}
                                                 <button type="submit" class="btn btn-danger fw-semibold">Confirm Delete</button>
                                             </form>
@@ -113,9 +115,9 @@
                     </tr>
                     {% empty %}
                     <tr class="table-empty">
-                        <td colspan="6">
+                        <td colspan="7">
                             <i class="bi bi-building-x d-block fs-1 mb-2 opacity-25"></i>
-                            No departments found matching your criteria.
+                            No offices found matching your criteria.
                         </td>
                     </tr>
                     {% endfor %}

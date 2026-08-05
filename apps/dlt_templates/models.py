@@ -56,20 +56,30 @@ class DLTTemplate(AuditModel):
         db_index=True,
         verbose_name=_("Template Category")
     )
+    office = models.ForeignKey(
+        'users.Office',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='dlt_templates',
+        verbose_name=_("Office"),
+        help_text=_("Administrative office template belongs to.")
+    )
     department = models.ForeignKey(
         'users.Department',
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
         related_name='dlt_templates',
-        verbose_name=_("Primary Office"),
-        help_text=_("Primary department/office template belongs to.")
+        verbose_name=_("Legacy Primary Office"),
+        help_text=_("Legacy department/office template belongs to.")
     )
     allowed_offices = models.ManyToManyField(
-        'users.Department',
+        'users.Office',
         blank=True,
         related_name='allowed_dlt_templates',
-        verbose_name=_("Allowed Offices"),
+        db_table='dlt_template_office_scope',
+        verbose_name=_("Allowed Offices Scope"),
         help_text=_("Offices permitted to view and use this template.")
     )
     is_active = models.BooleanField(

@@ -1,8 +1,7 @@
 from django.urls import path
 from .views import (
     StaffListView, StaffCreateView, StaffUpdateView, StaffDeleteView,
-    DepartmentListView, DepartmentCreateView, DepartmentUpdateView,
-    DepartmentToggleStatusView, DepartmentDeleteView,
+    OfficeListView, OfficeCreateView, OfficeUpdateView, OfficeToggleStatusView, OfficeDeleteView,
     SystemUserListView, SystemUserCreateView, SystemUserUpdateView,
     SystemUserToggleStatusView, SystemUserToggleLockView, SystemUserDeleteView,
     SystemUserResetPasswordView
@@ -11,19 +10,19 @@ from .views import (
 app_name = 'users'
 
 urlpatterns = [
-    # Staff Directory (SMS Recipient Master) Endpoints
+    # Contacts Master Endpoints
     path('', StaffListView.as_view(), name='staff_list'),
     path('staff/', StaffListView.as_view(), name='staff_list'),
     path('staff/create/', StaffCreateView.as_view(), name='staff_create'),
     path('staff/<int:pk>/edit/', StaffUpdateView.as_view(), name='staff_edit'),
     path('staff/<int:pk>/delete/', StaffDeleteView.as_view(), name='staff_delete'),
 
-    # Department Management Endpoints
-    path('departments/', DepartmentListView.as_view(), name='department_list'),
-    path('departments/create/', DepartmentCreateView.as_view(), name='department_create'),
-    path('departments/<int:pk>/edit/', DepartmentUpdateView.as_view(), name='department_edit'),
-    path('departments/<int:pk>/toggle-status/', DepartmentToggleStatusView.as_view(), name='department_toggle_status'),
-    path('departments/<int:pk>/delete/', DepartmentDeleteView.as_view(), name='department_delete'),
+    # Office Management (Administrative Access Scope) Endpoints
+    path('offices/', OfficeListView.as_view(), name='office_list'),
+    path('offices/create/', OfficeCreateView.as_view(), name='office_create'),
+    path('offices/<int:pk>/edit/', OfficeUpdateView.as_view(), name='office_edit'),
+    path('offices/<int:pk>/toggle-status/', OfficeToggleStatusView.as_view(), name='office_toggle_status'),
+    path('offices/<int:pk>/delete/', OfficeDeleteView.as_view(), name='office_delete'),
 
     # System Users (Application Authentication Accounts) Endpoints
     path('system-users/', SystemUserListView.as_view(), name='system_user_list'),

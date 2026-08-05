@@ -16,9 +16,6 @@
         <p class="text-muted mb-0">Create and manage institutional staff accounts, system roles, data scopes, account security, and credentials.</p>
     </div>
     <div class="d-flex gap-2">
-        <a href="{% url 'users:department_list' %}" class="btn btn-outline-secondary shadow-sm">
-            <i class="bi bi-building me-1"></i> Manage Departments
-        </a>
         <a href="{% url 'users:user_create' %}" class="btn btn-primary fw-bold shadow-sm">
             <i class="bi bi-plus-circle me-1"></i> Add New User
         </a>
@@ -104,14 +101,9 @@
                     {% for user_obj in users %}
                     <tr>
                         <td class="ps-4">
-                            <div class="d-flex align-items-center gap-2">
-                                <div class="avatar-sm bg-primary-soft text-primary rounded-circle d-flex align-items-center justify-content-center fw-bold small" style="width:36px; height:36px;">
-                                    {{ user_obj.username|slice:":2"|upper }}
-                                </div>
-                                <div>
-                                    <div class="fw-bold text-dark mb-0">{{ user_obj.get_full_name|default:user_obj.username }}</div>
-                                    <small class="text-muted"><span class="font-monospace text-primary fw-semibold">{{ user_obj.employee_id|default:"N/A" }}</span> &bull; {{ user_obj.email }}</small>
-                                </div>
+                            <div>
+                                <div class="fw-bold text-dark mb-0">{{ user_obj.get_full_name|default:user_obj.username }}</div>
+                                <small class="text-muted"><span class="font-monospace text-primary fw-semibold">{{ user_obj.employee_id|default:"N/A" }}</span> &bull; {{ user_obj.email }}</small>
                             </div>
                         </td>
                         <td>

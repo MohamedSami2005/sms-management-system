@@ -73,10 +73,7 @@
                         </td>
                         <td class="font-monospace text-muted" style="font-size:0.78rem;">{{ forloop.counter0|add:page_obj.start_index }}</td>
                         <td>
-                            <div class="d-flex align-items-center gap-2">
-                                <div class="table-avatar">{{ staff.name|slice:":2"|upper }}</div>
-                                <span class="fw-semibold">{{ staff.name }}</span>
-                            </div>
+                            <span class="fw-semibold text-dark">{{ staff.name }}</span>
                         </td>
                         <td>
                             {% if staff.mobile_number %}

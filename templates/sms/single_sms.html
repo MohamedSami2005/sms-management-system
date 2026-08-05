@@ -183,19 +183,6 @@
         margin-top: 0.35rem;
     }
     .profile-meta span strong { color: #334155; }
-    .avatar-modern {
-        width: 36px;
-        height: 36px;
-        min-width: 36px;
-        border-radius: 8px;
-        background: linear-gradient(135deg, #dbeafe, #eff6ff);
-        color: #1d4ed8;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 700;
-        font-size: 0.85rem;
-    }
 
     /* ---- Form Field Groups ---- */
     .field-group {
@@ -647,8 +634,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         // Render Summary Card
-        const initials = staff.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
-        staffAvatar.innerText = initials || 'ST';
         cardStaffName.innerText = staff.name;
         cardStaffRole.innerText = staff.role || 'Staff';
         cardEmpId.innerText = staff.employee_id || 'STF';
