@@ -1,88 +1,192 @@
 {% extends 'base.html' %}
 
-{% block title %}Import DLT Templates{% endblock %}
+{% block title %}Import DLT Templates - Campus Communication Management System{% endblock %}
 
 {% block content %}
-<nav aria-label="breadcrumb" class="mb-3">
-    <ol class="breadcrumb">
-        <li class="breadcrumb-item"><a href="{% url 'dashboard:home' %}">Dashboard</a></li>
-        <li class="breadcrumb-item"><a href="{% url 'dlt_templates:list' %}">DLT Templates</a></li>
-        <li class="breadcrumb-item active" aria-current="page">Import</li>
-    </ol>
-</nav>
+<div class="row justify-content-center py-3">
+    <div class="col-md-10 col-lg-8">
+        <!-- Breadcrumb Navigation -->
+        <nav aria-label="breadcrumb" class="mb-3">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'dashboard:home' %}">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'dlt_templates:list' %}">SMS Templates</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Import Templates</li>
+            </ol>
+        </nav>
 
-<div class="row justify-content-center">
-    <div class="col-md-8">
-        <div class="card border-0 shadow-sm rounded-4 mb-4">
-            <div class="card-header">
-                <h5 class="card-title"><i class="bi bi-file-earmark-arrow-up text-primary me-2"></i>Bulk DLT Template Spreadsheet Import</h5>
-            </div>
-            <div class="card-body p-4">
-                <p class="text-muted">Upload an Excel (.xlsx, .xls) or CSV (.csv) file containing approved DLT content templates.</p>
+        {% if step == 'upload' %}
+            <!-- STEP 1: UPLOAD SCREEN -->
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-header bg-white border-bottom py-3">
+                    <h5 class="card-title fw-bold mb-1">
+                        <i class="bi bi-file-earmark-excel text-success me-2"></i>Import DLT Templates
+                    </h5>
+                    <p class="text-muted small mb-0">Upload the official DLT Template Excel received from your SMS Gateway provider.</p>
+                </div>
+                <div class="card-body p-4">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="parse">
 
-                <form method="post" enctype="multipart/form-data">
-                    {% csrf_token %}
-                    <div class="mb-4">
-                        <label class="form-label fw-semibold">Select Spreadsheet File</label>
-                        {{ form.file }}
-                        {% if form.file.errors %}<div class="text-danger small mt-1">{{ form.file.errors }}</div>{% endif %}
-                    </div>
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold">Choose File *</label>
+                            {{ form.file }}
+                            <div class="form-text text-muted small mt-1">
+                                Accepts <code>.xlsx</code> or <code>.xls</code> files.
+                            </div>
+                            {% if form.file.errors %}
+                                <div class="text-danger small mt-1">{{ form.file.errors }}</div>
+                            {% endif %}
+                        </div>
 
-                    <div class="d-grid gap-2">
-                        <button type="submit" class="btn btn-primary btn-lg rounded-3 fw-bold">
-                            <i class="bi bi-upload me-1"></i> Start Import Process
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-
-        <!-- Header Specification Guide -->
-        <div class="card border-0 shadow-sm rounded-4">
-            <div class="card-header bg-light py-3 border-0">
-                <h6 class="fw-bold mb-0"><i class="bi bi-info-circle me-2"></i>Required Column Header Specification</h6>
-            </div>
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-sm align-middle mb-0">
-                        <thead>
-                            <tr>
-                                <th>Header Name</th>
-                                <th>Description</th>
-                                <th>Example</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td><code>template_name</code></td>
-                                <td>Descriptive template title</td>
-                                <td>Exam Fee Reminder</td>
-                            </tr>
-                            <tr>
-                                <td><code>dlt_template_id</code></td>
-                                <td>11-19 digit numerical DLT ID</td>
-                                <td>1107160000000123456</td>
-                            </tr>
-                            <tr>
-                                <td><code>entity_id</code></td>
-                                <td>College DLT Entity ID</td>
-                                <td>1001999988887777666</td>
-                            </tr>
-                            <tr>
-                                <td><code>sender_id</code></td>
-                                <td>6-letter approved Header</td>
-                                <td>CLGEXM</td>
-                            </tr>
-                            <tr>
-                                <td><code>template_content</code></td>
-                                <td>DLT text with {#var#} placeholders</td>
-                                <td>Dear {#var#}, your exam fee is {#var#}.</td>
-                            </tr>
-                        </tbody>
-                    </table>
+                        <div class="d-flex justify-content-between pt-2">
+                            <a href="{% url 'dlt_templates:list' %}" class="btn btn-outline-secondary">Cancel</a>
+                            <button type="submit" class="btn btn-primary fw-bold px-4">
+                                <i class="bi bi-search me-1"></i> Parse Excel
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
-        </div>
+
+        {% elif step == 'preview' %}
+            <!-- STEP 2: PREVIEW SCREEN -->
+            <div class="card border-0 shadow-sm rounded-4 mb-4">
+                <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="card-title fw-bold mb-1">
+                            <i class="bi bi-clipboard-check text-primary me-2"></i>Import Preview & Summary
+                        </h5>
+                        <p class="text-muted small mb-0">Review extracted template details before importing into database.</p>
+                    </div>
+                </div>
+                <div class="card-body p-4">
+                    <!-- Summary Cards Row -->
+                    <div class="row g-3 mb-4">
+                        <div class="col-4">
+                            <div class="p-3 bg-light rounded-3 text-center border">
+                                <div class="text-muted extra-small uppercase fw-semibold">Templates Found</div>
+                                <div class="fs-4 fw-bold text-dark mt-1">{{ payload.templates_found }}</div>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="p-3 bg-success-subtle rounded-3 text-center border border-success-subtle">
+                                <div class="text-success extra-small uppercase fw-semibold">New Templates</div>
+                                <div class="fs-4 fw-bold text-success mt-1">{{ payload.new_templates }}</div>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="p-3 bg-warning-subtle rounded-3 text-center border border-warning-subtle">
+                                <div class="text-warning extra-small uppercase fw-semibold">Duplicates</div>
+                                <div class="fs-4 fw-bold text-warning mt-1">{{ payload.duplicates }}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Clean 4-Column Preview Table -->
+                    <div class="table-responsive border rounded-3 mb-4" style="max-height: 380px; overflow-y: auto;">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light sticky-top">
+                                <tr>
+                                    <th style="width: 70px;" class="text-center">S.No.</th>
+                                    <th>Template Name</th>
+                                    <th>Template ID</th>
+                                    <th style="width: 140px;" class="text-center">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for row in payload.rows %}
+                                    <tr>
+                                        <td class="text-center text-muted fw-medium">{{ row.s_no }}</td>
+                                        <td class="fw-semibold text-dark">{{ row.name }}</td>
+                                        <td><code class="font-monospace text-dark">{{ row.dlt_template_id }}</code></td>
+                                        <td class="text-center">
+                                            {% if row.is_duplicate %}
+                                                <span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill px-2.5 py-1">
+                                                    <i class="bi bi-exclamation-triangle-fill me-1"></i>Already Exists
+                                                </span>
+                                            {% else %}
+                                                <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2.5 py-1">
+                                                    <i class="bi bi-plus-circle-fill me-1"></i>New
+                                                </span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% empty %}
+                                    <tr>
+                                        <td colspan="4" class="text-center py-4 text-muted">No templates extracted.</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Confirmation Form -->
+                    <form method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="import">
+
+                        <div class="d-flex justify-content-between align-items-center pt-2">
+                            <a href="{% url 'dlt_templates:import' %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left me-1"></i> Re-upload Excel
+                            </a>
+                            <button type="submit" class="btn btn-success fw-bold px-4" {% if payload.new_templates == 0 %}disabled{% endif %}>
+                                <i class="bi bi-check-circle me-1"></i> Import Templates
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+        {% elif step == 'complete' %}
+            <!-- STEP 3: IMPORT COMPLETION SCREEN -->
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-header bg-white border-bottom py-3 text-center">
+                    <div class="text-success display-6 mb-2"><i class="bi bi-check-circle-fill"></i></div>
+                    <h5 class="card-title fw-bold text-dark mb-1">Import Completed Successfully</h5>
+                    <p class="text-muted small mb-0">DLT Templates have been imported into the repository.</p>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row g-3 mb-4">
+                        <div class="col-3">
+                            <div class="p-3 bg-light rounded-3 text-center border">
+                                <div class="text-muted extra-small font-normal fw-semibold">Templates Found</div>
+                                <div class="fs-4 fw-bold text-dark mt-1">{{ summary.templates_found }}</div>
+                            </div>
+                        </div>
+                        <div class="col-3">
+                            <div class="p-3 bg-success-subtle rounded-3 text-center border border-success-subtle">
+                                <div class="text-success extra-small font-normal fw-semibold">Imported</div>
+                                <div class="fs-4 fw-bold text-success mt-1">{{ summary.imported }}</div>
+                            </div>
+                        </div>
+                        <div class="col-3">
+                            <div class="p-3 bg-warning-subtle rounded-3 text-center border border-warning-subtle">
+                                <div class="text-warning extra-small font-normal fw-semibold">Duplicates Skipped</div>
+                                <div class="fs-4 fw-bold text-warning mt-1">{{ summary.duplicates_skipped }}</div>
+                            </div>
+                        </div>
+                        <div class="col-3">
+                            <div class="p-3 bg-light rounded-3 text-center border">
+                                <div class="text-muted extra-small font-normal fw-semibold">Errors</div>
+                                <div class="fs-4 fw-bold text-muted mt-1">{{ summary.errors }}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info border-0 rounded-3 mb-4">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Imported templates currently have <strong>No Office assigned (NULL)</strong>. You can edit any template later from the SMS Templates list to assign an Office when needed.
+                    </div>
+
+                    <div class="text-center pt-2">
+                        <a href="{% url 'dlt_templates:list' %}" class="btn btn-primary fw-bold px-4">
+                            Back to Templates
+                        </a>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
     </div>
 </div>
 {% endblock %}

@@ -14,15 +14,24 @@ def create_admin_management_office(apps, schema_editor):
 
     # Associate any existing users without a department to Admin Management office
     CustomUser = apps.get_model('accounts', 'CustomUser')
-    CustomUser.objects.filter(department__isnull=True).update(department=admin_office)
+    try:
+        CustomUser.objects.filter(department__isnull=True).update(department=admin_office)
+    except Exception:
+        pass
 
     # Associate any existing DLT templates without a department to Admin Management office
     DLTTemplate = apps.get_model('dlt_templates', 'DLTTemplate')
-    DLTTemplate.objects.filter(department__isnull=True).update(department=admin_office)
+    try:
+        DLTTemplate.objects.filter(department__isnull=True).update(department=admin_office)
+    except Exception:
+        pass
 
     # Associate any existing SMS logs without a department to Admin Management office
     SMSLog = apps.get_model('logs', 'SMSLog')
-    SMSLog.objects.filter(department__isnull=True).update(department=admin_office)
+    try:
+        SMSLog.objects.filter(department__isnull=True).update(department=admin_office)
+    except Exception:
+        pass
 
 
 def reverse_func(apps, schema_editor):

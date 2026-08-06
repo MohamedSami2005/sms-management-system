@@ -1,7 +1,7 @@
 from django.test import TestCase, Client
 from django.urls import reverse
 from apps.accounts.models import CustomUser, Role
-from apps.users.models import Department, Staff
+from apps.users.models import Department, Staff, Office
 from apps.users.forms import UserCreateForm, UserUpdateForm, StaffForm
 
 
@@ -33,7 +33,7 @@ class MobileValidationTestCase(TestCase):
             'email': 'newuser@college.edu',
             'phone_number': '1234567890',
             'role': 'Administrator',
-            'department': 'CSE',
+            'office': 'CSE',
             'password': 'password123',
             'confirm_password': 'password123'
         })
@@ -43,14 +43,14 @@ class MobileValidationTestCase(TestCase):
 
 class DynamicRoleAndOfficeComboboxTestCase(TestCase):
     def setUp(self):
-        self.admin_dept = Department.objects.create(name="Administration", code="ADMIN_DEPT")
+        self.admin_office, _ = Office.objects.get_or_create(code="ADMIN", defaults={'name': "Administration", 'is_active': True})
         self.admin = CustomUser.objects.create_superuser(
             username="admin_user",
             first_name="System",
             last_name="Admin",
             employee_id="ADM001",
             phone_number="9876543210",
-            department=self.admin_dept,
+            office=self.admin_office,
             role="ADMIN"
         )
         self.client = Client()
@@ -64,9 +64,9 @@ class DynamicRoleAndOfficeComboboxTestCase(TestCase):
             'employee_id': 'EMP101',
             'username': 'existuser',
             'email': 'exist@college.edu',
-            'phone_number': '9876543210',
+            'phone_number': '9876543288',
             'role': 'Administrator',
-            'department': 'Administration',
+            'office': 'Administration',
             'password': 'Password@123',
             'confirm_password': 'Password@123',
             'is_active': True
@@ -75,7 +75,7 @@ class DynamicRoleAndOfficeComboboxTestCase(TestCase):
         self.assertEqual(response.status_code, 302)
 
         user = CustomUser.objects.get(username='existuser')
-        self.assertEqual(user.department.name, 'Administration')
+        self.assertEqual(user.office.name, 'Administration')
         self.assertEqual(user.role, 'ADMIN')
 
     def test_create_user_with_new_role_and_new_office(self):
@@ -88,7 +88,7 @@ class DynamicRoleAndOfficeComboboxTestCase(TestCase):
             'email': 'newrole@college.edu',
             'phone_number': '8098778622',
             'role': 'Examination Controller',
-            'department': 'IQAC',
+            'office': 'IQAC',
             'password': 'Password@123',
             'confirm_password': 'Password@123',
             'is_active': True
@@ -101,20 +101,20 @@ class DynamicRoleAndOfficeComboboxTestCase(TestCase):
         self.assertIsNotNone(new_role)
         self.assertEqual(new_role.name, 'Examination Controller')
 
-        # Check Department created
-        new_dept = Department.objects.filter(name__iexact='IQAC').first()
-        self.assertIsNotNone(new_dept)
-        self.assertEqual(new_dept.name, 'IQAC')
+        # Check Office created
+        new_office = Office.objects.filter(name__iexact='IQAC').first()
+        self.assertIsNotNone(new_office)
+        self.assertEqual(new_office.name, 'IQAC')
 
         # Check User assigned
         user = CustomUser.objects.get(username='newroleuser')
         self.assertEqual(user.role_obj, new_role)
-        self.assertEqual(user.department, new_dept)
+        self.assertEqual(user.office, new_office)
 
     def test_case_insensitive_duplicate_prevention(self):
         """Verifies typing existing role or office in lowercase links to existing record without creating duplicate."""
         Role.objects.create(name="Accounts Officer", code="ACCOUNTS_OFFICER")
-        Department.objects.create(name="Placement Cell", code="PLACEMENT_CELL")
+        Office.objects.create(name="Placement Cell", code="PLACEMENT_CELL")
 
         url = reverse('users:system_user_create')
         post_data = {
@@ -124,7 +124,7 @@ class DynamicRoleAndOfficeComboboxTestCase(TestCase):
             'email': 'case@college.edu',
             'phone_number': '7010987654',
             'role': '  accounts officer  ',
-            'department': '  placement cell  ',
+            'office': '  placement cell  ',
             'password': 'Password@123',
             'confirm_password': 'Password@123',
             'is_active': True
@@ -132,6 +132,6 @@ class DynamicRoleAndOfficeComboboxTestCase(TestCase):
         response = self.client.post(url, post_data)
         self.assertEqual(response.status_code, 302)
 
-        # Confirm no duplicate Role or Department was created
+        # Confirm no duplicate Role or Office was created
         self.assertEqual(Role.objects.filter(name__iexact='Accounts Officer').count(), 1)
-        self.assertEqual(Department.objects.filter(name__iexact='Placement Cell').count(), 1)
+        self.assertEqual(Office.objects.filter(name__iexact='Placement Cell').count(), 1)

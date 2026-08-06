@@ -3,7 +3,8 @@ from django.views.generic import ListView, DetailView, CreateView, UpdateView, V
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse_lazy
 from django.contrib import messages
-from django.shortcuts import redirect, get_object_or_404
+from django.shortcuts import redirect, get_object_or_404, render
+from django.core.exceptions import PermissionDenied
 from django.http import JsonResponse, HttpResponse
 from django.db.models import Q
 
@@ -23,7 +24,7 @@ class TemplateListView(LoginRequiredMixin, RoleRequiredMixin, ListView):
     template_name = 'dlt_templates/template_list.html'
     context_object_name = 'templates'
     allowed_roles = ALLOWED_TEMPLATE_ROLES
-    paginate_by = 10
+    paginate_by = 50
 
     def get_queryset(self):
         queryset = get_scoped_queryset(
@@ -176,23 +177,81 @@ class TemplateDeleteView(LoginRequiredMixin, RoleRequiredMixin, View):
         return redirect('dlt_templates:list')
 
 
-class TemplateImportView(LoginRequiredMixin, RoleRequiredMixin, FormView):
-    form_class = TemplateImportForm
+class TemplateImportView(LoginRequiredMixin, RoleRequiredMixin, View):
+    """
+    Two-step Enterprise DLT Template Excel Import View:
+    1. Upload & Parse Screen: Validates 12 required DLT columns.
+    2. Preview Screen: Displays 4-column summary table (S.No, Template Name, Template ID, Status).
+    3. Import Confirmation & Execution: Bulk inserts new templates with office=NULL.
+    Restricted strictly to Global Administrators. Non-admins receive 403 Forbidden.
+    """
+    allowed_roles = ['ADMIN']
     template_name = 'dlt_templates/template_import.html'
-    success_url = reverse_lazy('dlt_templates:list')
-    allowed_roles = ALLOWED_TEMPLATE_ROLES
 
-    def form_valid(self, form):
-        file = form.cleaned_data['file']
-        imported_count, skipped_count, errors = TemplateImportService.import_from_file(file, user=self.request.user)
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return redirect('accounts:login')
+        if not is_global_admin(request.user):
+            raise PermissionDenied("Template import is restricted to Global Administrators.")
+        return super().dispatch(request, *args, **kwargs)
 
-        if imported_count > 0:
-            messages.success(self.request, f"Successfully imported {imported_count} DLT templates.")
-        if skipped_count > 0:
-            messages.warning(self.request, f"Skipped {skipped_count} row(s) during import due to duplicate IDs or errors.")
+    def get(self, request):
+        form = TemplateImportForm()
+        if 'dlt_import_payload' in request.session:
+            del request.session['dlt_import_payload']
+        return render(request, self.template_name, {
+            'form': form,
+            'step': 'upload'
+        })
 
-        self.request.session['import_errors'] = errors
-        return redirect('dlt_templates:list')
+    def post(self, request):
+        action = request.POST.get('action', 'parse')
+
+        if action == 'parse':
+            form = TemplateImportForm(request.POST, request.FILES)
+            if not form.is_valid():
+                return render(request, self.template_name, {
+                    'form': form,
+                    'step': 'upload'
+                })
+
+            excel_file = form.cleaned_data['file']
+            parsed_payload, errors = TemplateImportService.parse_excel(excel_file)
+
+            if errors:
+                for err in errors:
+                    messages.error(request, err)
+                return render(request, self.template_name, {
+                    'form': form,
+                    'step': 'upload'
+                })
+
+            # Save parsed summary into session for step 2 confirmation
+            request.session['dlt_import_payload'] = parsed_payload
+
+            return render(request, self.template_name, {
+                'step': 'preview',
+                'payload': parsed_payload
+            })
+
+        elif action == 'import':
+            parsed_payload = request.session.get('dlt_import_payload')
+            if not parsed_payload or not parsed_payload.get('rows'):
+                messages.error(request, "Import session expired or missing. Please upload the Excel file again.")
+                return redirect('dlt_templates:import')
+
+            summary = TemplateImportService.execute_import(parsed_payload['rows'], request.user)
+
+            # Clear session after successful import
+            if 'dlt_import_payload' in request.session:
+                del request.session['dlt_import_payload']
+
+            return render(request, self.template_name, {
+                'step': 'complete',
+                'summary': summary
+            })
+
+        return redirect('dlt_templates:import')
 
 
 class TemplateExportView(LoginRequiredMixin, RoleRequiredMixin, View):
@@ -309,6 +368,9 @@ class TemplateScopeToggleAjaxView(LoginRequiredMixin, RoleRequiredMixin, View):
 
             template = get_object_or_404(DLTTemplate, pk=template_id)
             office = get_object_or_404(Office, pk=office_id, is_active=True)
+
+            if office.code in ['ADMIN', 'ADMIN_MGMT'] or 'admin' in office.name.lower():
+                return JsonResponse({'success': False, 'error': 'Admin Management retains permanent global access to all templates.'}, status=400)
 
             if allowed:
                 template.allowed_offices.add(office)

@@ -11,12 +11,12 @@
         <p class="page-header-sub">Central repository of approved Telecom DLT content templates and headers.</p>
     </div>
     <div class="d-flex gap-2 flex-wrap">
-        <a href="{% url 'dlt_templates:import' %}" class="btn btn-outline-secondary">
-            <i class="bi bi-upload"></i> Import Excel/CSV
+        <a href="{% url 'dlt_templates:import' %}" class="btn btn-success fw-bold text-white shadow-sm">
+            <i class="bi bi-file-earmark-excel me-1"></i> Import Templates
         </a>
         <div class="dropdown">
             <button class="btn btn-outline-success dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                <i class="bi bi-download"></i> Export
+                <i class="bi bi-download me-1"></i> Export
             </button>
             <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3" style="font-size: 0.875rem;">
                 <li><a class="dropdown-item py-2" href="{% url 'dlt_templates:export' %}?format=excel"><i class="bi bi-file-earmark-excel text-success me-2"></i>Export to Excel (.xlsx)</a></li>
@@ -24,7 +24,7 @@
             </ul>
         </div>
         <a href="{% url 'dlt_templates:create' %}" class="btn btn-primary">
-            <i class="bi bi-plus-circle"></i> Add Template
+            <i class="bi bi-plus-circle me-1"></i> Add Template
         </a>
     </div>
 </div>

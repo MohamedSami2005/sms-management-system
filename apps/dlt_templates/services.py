@@ -1,7 +1,7 @@
 import csv
 import io
 import logging
-from typing import Tuple, List, Dict, Any
+from typing import Tuple, List, Dict, Any, Optional
 
 from django.http import HttpResponse
 from django.db import transaction
@@ -68,96 +68,189 @@ class TemplateService:
 
 class TemplateImportService:
     """
-    Service for importing bulk DLT templates from Excel spreadsheets or CSV files.
+    Service for parsing, validating, and importing official DLT Template Excel files (.xlsx, .xls).
     """
 
-    REQUIRED_COLUMNS = ['template_name', 'dlt_template_id', 'entity_id', 'sender_id', 'template_content']
+    REQUIRED_COLUMNS = [
+        'HEADER', 'TEMPLATE_ID', 'TEMPLATE_NAME', 'CONSENT_ID',
+        'TEMPLATE_TYPE', 'CATEGORY', 'TEMPLATE_CONTENT', 'SAMPLE_CONTENT',
+        'JIO_STATUS', 'REGISTERED_BY', 'VARIABLE_COUNT', 'APPROVAL_DATE'
+    ]
 
     @classmethod
-    def import_from_file(cls, file, user: CustomUser) -> Tuple[int, int, List[str]]:
+    def parse_excel(cls, file) -> Tuple[Optional[Dict[str, Any]], List[str]]:
+        """
+        Parses uploaded Excel file, validates 12 required DLT columns, and checks for duplicates.
+        Returns (parsed_summary_dict, list_of_errors).
+        """
         filename = file.name.lower()
-        errors = []
-        imported_count = 0
-        skipped_count = 0
+        if not filename.endswith(('.xlsx', '.xls')):
+            return None, ["Invalid file format. Please upload an Excel file (.xlsx or .xls)."]
 
         try:
-            if filename.endswith('.csv'):
-                df = pd.read_csv(file)
-            elif filename.endswith(('.xlsx', '.xls')):
-                df = pd.read_excel(file)
-            else:
-                return 0, 0, ["Unsupported file format. Please upload .xlsx, .xls, or .csv file."]
+            df = pd.read_excel(file)
         except Exception as e:
-            return 0, 0, [f"Failed to parse file: {str(e)}"]
+            return None, [f"Failed to read Excel file: {str(e)}"]
 
-        # Clean column names
-        df.columns = [str(c).strip().lower().replace(' ', '_') for c in df.columns]
+        if df.empty:
+            return None, ["The uploaded Excel file contains no data rows."]
 
-        # Validate required columns exist
-        missing_cols = [col for col in cls.REQUIRED_COLUMNS if col not in df.columns]
-        if missing_cols:
-            return 0, 0, [f"Missing required columns in header: {', '.join(missing_cols)}"]
+        # Clean & normalize header names to uppercase with underscores
+        header_map = {}
+        for col in df.columns:
+            cleaned = str(col).strip().upper().replace(' ', '_')
+            header_map[cleaned] = col
 
+        # Check required columns
+        for req_col in cls.REQUIRED_COLUMNS:
+            if req_col not in header_map:
+                return None, [f"Missing Required Column: {req_col}"]
+
+        # Get existing DLT Template IDs from DB for duplicate checking
         existing_dlt_ids = set(DLTTemplate.objects.values_list('dlt_template_id', flat=True))
         seen_in_file = set()
 
+        rows = []
+        new_count = 0
+        duplicate_count = 0
+
         for idx, row in df.iterrows():
-            row_num = idx + 2  # Excel 1-indexed row matching
+            def get_val(key_name):
+                col_orig = header_map.get(key_name)
+                val = row.get(col_orig)
+                if pd.isna(val) or val is None:
+                    return ""
+                return str(val).strip()
 
-            tmpl_name = str(row.get('template_name', '')).strip()
-            dlt_id = str(row.get('dlt_template_id', '')).strip()
-            entity_id = str(row.get('entity_id', '')).strip()
-            sender_id = str(row.get('sender_id', '')).strip().upper()
-            content = str(row.get('template_content', '')).strip()
-            category_raw = str(row.get('category', 'SERVICE_IMPLICIT')).strip().upper()
+            header = get_val('HEADER')
+            raw_dlt_id = get_val('TEMPLATE_ID')
 
-            # Validation checks
-            if not tmpl_name or not dlt_id or not content:
-                errors.append(f"Row {row_num}: Missing required template name, DLT ID, or content.")
-                skipped_count += 1
-                continue
+            # Standardize numeric float IDs (e.g., 1.20045e+15 -> string)
+            if raw_dlt_id.endswith('.0'):
+                raw_dlt_id = raw_dlt_id[:-2]
+            dlt_id = raw_dlt_id
 
-            if not dlt_id.isdigit() or not (11 <= len(dlt_id) <= 19):
-                errors.append(f"Row {row_num}: Invalid DLT Template ID '{dlt_id}'. Must be 11-19 digits.")
-                skipped_count += 1
-                continue
+            tmpl_name = get_val('TEMPLATE_NAME')
+            consent_id = get_val('CONSENT_ID')
+            template_type = get_val('TEMPLATE_TYPE')
+            category_raw = get_val('CATEGORY')
+            template_content = get_val('TEMPLATE_CONTENT')
+            sample_content = get_val('SAMPLE_CONTENT')
+            jio_status = get_val('JIO_STATUS')
+            registered_by = get_val('REGISTERED_BY')
+            variable_count_raw = get_val('VARIABLE_COUNT')
+            approval_date = get_val('APPROVAL_DATE')
 
+            is_duplicate = False
             if dlt_id in existing_dlt_ids or dlt_id in seen_in_file:
-                errors.append(f"Row {row_num}: Duplicate DLT Template ID '{dlt_id}' skipped.")
-                skipped_count += 1
-                continue
+                is_duplicate = True
+                duplicate_count += 1
+                status_str = "Already Exists"
+            else:
+                seen_in_file.add(dlt_id)
+                new_count += 1
+                status_str = "New"
 
-            seen_in_file.add(dlt_id)
+            # Parse integer variable count
+            var_cnt = 0
+            try:
+                if variable_count_raw:
+                    var_cnt = int(float(variable_count_raw))
+            except ValueError:
+                var_cnt = 0
 
+            rows.append({
+                's_no': idx + 1,
+                'name': tmpl_name or f"Template_{idx+1}",
+                'dlt_template_id': dlt_id,
+                'header_sender_id': header[:10] if header else 'CLGEXM',
+                'consent_id': consent_id,
+                'template_type': template_type,
+                'category_raw': category_raw,
+                'template_content': template_content,
+                'sample_content': sample_content,
+                'jio_status': jio_status,
+                'registered_by': registered_by,
+                'variable_count': var_cnt,
+                'approval_date': approval_date,
+                'status': status_str,
+                'is_duplicate': is_duplicate
+            })
+
+        parsed_payload = {
+            'templates_found': len(rows),
+            'new_templates': new_count,
+            'duplicates': duplicate_count,
+            'rows': rows
+        }
+        return parsed_payload, []
+
+    @classmethod
+    def execute_import(cls, rows: List[Dict[str, Any]], user: CustomUser) -> Dict[str, int]:
+        """
+        Imports new non-duplicate templates into database in bulk with office=NULL.
+        Returns execution metrics dict.
+        """
+        new_rows = [r for r in rows if not r.get('is_duplicate')]
+        if not new_rows:
+            return {
+                'templates_found': len(rows),
+                'imported': 0,
+                'duplicates_skipped': len(rows),
+                'errors': 0
+            }
+
+        # Build model objects
+        templates_to_create = []
+        for r in new_rows:
             # Map category
+            cat_raw = str(r.get('category_raw', '')).strip().upper()
             category = TemplateCategoryChoices.SERVICE_IMPLICIT
             for choice_code, _ in TemplateCategoryChoices.choices:
-                if choice_code in category_raw:
+                if choice_code in cat_raw:
                     category = choice_code
                     break
 
-            try:
-                tmpl = DLTTemplate.objects.create(
-                    name=tmpl_name,
-                    dlt_template_id=dlt_id,
-                    entity_id=entity_id or '1001999988887777666',
-                    header_sender_id=sender_id[:6] or 'CLGEXM',
-                    template_content=content,
-                    category=category,
-                    department=getattr(user, 'department', None),
-                    is_active=True,
-                    created_by=user,
-                    updated_by=user
-                )
-                tmpl.sync_variables()
-                tmpl.ensure_primary_office_in_allowed()
-                imported_count += 1
-            except Exception as e:
-                errors.append(f"Row {row_num}: Error creating template '{tmpl_name}': {str(e)}")
-                skipped_count += 1
+            tmpl = DLTTemplate(
+                name=r.get('name')[:150],
+                dlt_template_id=r.get('dlt_template_id')[:50],
+                entity_id='1001999988887777666',
+                header_sender_id=r.get('header_sender_id')[:10] or 'CLGEXM',
+                template_content=r.get('template_content') or '',
+                category=category,
+                consent_id=r.get('consent_id')[:50] if r.get('consent_id') else None,
+                template_type=r.get('template_type')[:50] if r.get('template_type') else None,
+                sample_content=r.get('sample_content'),
+                jio_status=r.get('jio_status')[:50] if r.get('jio_status') else None,
+                registered_by=r.get('registered_by')[:150] if r.get('registered_by') else None,
+                approval_date=r.get('approval_date')[:50] if r.get('approval_date') else None,
+                office=None,  # Deferred Office Assignment (Intentionally NULL)
+                department=None,
+                is_active=True,
+                created_by=user,
+                updated_by=user
+            )
+            templates_to_create.append(tmpl)
 
-        logger.info(f"TEMPLATE_IMPORT | User '{user.username}' imported {imported_count} templates ({skipped_count} skipped).")
-        return imported_count, skipped_count, errors
+        with transaction.atomic():
+            DLTTemplate.objects.bulk_create(templates_to_create, batch_size=500)
+
+            # Fetch created templates to synchronize template variable placeholders
+            created_ids = [t.dlt_template_id for t in templates_to_create]
+            created_objs = DLTTemplate.objects.filter(dlt_template_id__in=created_ids)
+            for t in created_objs:
+                t.sync_variables()
+
+        imported_count = len(templates_to_create)
+        skipped_count = len(rows) - imported_count
+        logger.info(f"ENTERPRISE_DLT_IMPORT | User '{user.username}' imported {imported_count} templates ({skipped_count} skipped).")
+
+        return {
+            'templates_found': len(rows),
+            'imported': imported_count,
+            'duplicates_skipped': skipped_count,
+            'errors': 0
+        }
 
 
 class TemplateExportService:

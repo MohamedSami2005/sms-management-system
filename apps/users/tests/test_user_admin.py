@@ -47,11 +47,10 @@ class WebUserAdministrationTestCase(TestCase):
         data = {
             'employee_id': 'EMP5001',
             'username': 'staff_john',
-            'first_name': 'John',
-            'last_name': 'Doe',
+            'name': 'John Doe',
             'email': 'john@college.edu',
-            'phone_number': '9876543210',
-            'department': self.dept.pk,
+            'phone_number': '9876543299',
+            'office': self.dept.name,
             'designation': 'Assistant Registrar',
             'role': RoleChoices.COE,
             'password': 'InitialPass@123',
@@ -70,7 +69,7 @@ class WebUserAdministrationTestCase(TestCase):
         self.assertEqual(user.created_by, self.admin)
 
     def test_system_user_update(self):
-        """Verifies Administrator can edit an existing user's role and department."""
+        """Verifies Administrator can edit an existing user's role and office."""
         staff = CustomUser.objects.create_user(
             username='staff_edit',
             employee_id='EMP5002',
@@ -81,11 +80,10 @@ class WebUserAdministrationTestCase(TestCase):
         data = {
             'employee_id': 'EMP5002',
             'username': 'staff_edit',
-            'first_name': 'Updated',
-            'last_name': 'Name',
+            'name': 'Updated Name',
             'email': 'updated@college.edu',
             'phone_number': '9876543211',
-            'department': self.dept.pk,
+            'office': self.dept.name,
             'designation': 'HOD Computer Science',
             'role': RoleChoices.HOD,
             'is_active': True,
@@ -97,7 +95,7 @@ class WebUserAdministrationTestCase(TestCase):
 
         staff.refresh_from_db()
         self.assertEqual(staff.role, RoleChoices.HOD)
-        self.assertEqual(staff.designation, 'HOD Computer Science')
+        self.assertEqual(staff.office.name, self.dept.name)
 
     def test_admin_password_reset(self):
         """Verifies Administrator can reset another user's password directly from Web UI."""

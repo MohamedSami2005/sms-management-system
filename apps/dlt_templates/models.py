@@ -82,6 +82,41 @@ class DLTTemplate(AuditModel):
         verbose_name=_("Allowed Offices Scope"),
         help_text=_("Offices permitted to view and use this template.")
     )
+    consent_id = models.CharField(
+        max_length=50,
+        blank=True,
+        null=True,
+        verbose_name=_("Consent ID")
+    )
+    template_type = models.CharField(
+        max_length=50,
+        blank=True,
+        null=True,
+        verbose_name=_("Template Type")
+    )
+    sample_content = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name=_("Sample Content")
+    )
+    jio_status = models.CharField(
+        max_length=50,
+        blank=True,
+        null=True,
+        verbose_name=_("JIO Status")
+    )
+    registered_by = models.CharField(
+        max_length=150,
+        blank=True,
+        null=True,
+        verbose_name=_("Registered By")
+    )
+    approval_date = models.CharField(
+        max_length=50,
+        blank=True,
+        null=True,
+        verbose_name=_("Approval Date")
+    )
     is_active = models.BooleanField(
         default=True,
         db_index=True,
@@ -101,9 +136,10 @@ class DLTTemplate(AuditModel):
         return f"{self.name} ({self.dlt_template_id})"
 
     def ensure_primary_office_in_allowed(self):
-        """Initializes allowed_offices with primary department if allowed_offices is empty."""
-        if self.department and self.pk and not self.allowed_offices.exists():
-            self.allowed_offices.add(self.department)
+        """Initializes allowed_offices with primary office if allowed_offices is empty."""
+        target_office = self.office
+        if target_office and self.pk and not self.allowed_offices.exists():
+            self.allowed_offices.add(target_office)
 
     def get_allowed_offices_display(self) -> str:
         """Returns comma-separated string of allowed office codes/names."""

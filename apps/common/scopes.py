@@ -1,5 +1,5 @@
 from typing import Optional
-from django.db.models import QuerySet
+from django.db.models import QuerySet, Q
 from apps.users.models import Office
 
 
@@ -36,7 +36,7 @@ def get_scoped_queryset(user, queryset: QuerySet, field_name: str = 'office') ->
         return queryset.none()
 
     if hasattr(queryset.model, 'allowed_offices'):
-        return queryset.filter(allowed_offices=user_office).distinct()
+        return queryset.filter(Q(allowed_offices=user_office) | Q(office=user_office)).distinct()
 
     if hasattr(queryset.model, 'office'):
         return queryset.filter(office=user_office)

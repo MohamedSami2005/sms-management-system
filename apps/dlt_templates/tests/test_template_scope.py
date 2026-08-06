@@ -1,7 +1,7 @@
 from django.test import TestCase
 from django.urls import reverse
 from apps.accounts.models import CustomUser, Role
-from apps.users.models import Department, Staff
+from apps.users.models import Office, Department, Staff
 from apps.dlt_templates.models import DLTTemplate
 from apps.logs.models import SMSLog
 
@@ -9,51 +9,52 @@ from apps.logs.models import SMSLog
 class TemplateScopeTestCase(TestCase):
     def setUp(self):
         # Create Offices
-        self.admin_office, _ = Department.objects.get_or_create(name="Admin Management", code="ADMIN_MGMT")
-        self.coe_office, _ = Department.objects.get_or_create(name="COE", code="COE")
-        self.erp_office, _ = Department.objects.get_or_create(name="ERP", code="ERP")
-        self.accounts_office, _ = Department.objects.get_or_create(name="Accounts", code="ACCOUNTS")
+        self.admin_office, _ = Office.objects.get_or_create(code="ADMIN", defaults={'name': "Admin Management"})
+        self.coe_office, _ = Office.objects.get_or_create(code="COE", defaults={'name': "COE"})
+        self.erp_office, _ = Office.objects.get_or_create(code="ERP", defaults={'name': "ERP"})
+        self.accounts_office, _ = Office.objects.get_or_create(code="ACCTS", defaults={'name': "Accounts"})
 
         # Create Roles
-        self.admin_role = Role.objects.create(code='ADMIN', name='System Admin')
-        self.staff_role = Role.objects.create(code='STAFF', name='College Staff')
+        self.admin_role, _ = Role.objects.get_or_create(code='ADMIN', defaults={'name': 'System Admin'})
+        self.staff_role, _ = Role.objects.get_or_create(code='STAFF', defaults={'name': 'College Staff'})
 
         # Create Users
         self.global_admin = CustomUser.objects.create_superuser(
             username="global_admin",
             email="admin@college.edu",
             password="adminpassword123",
-            department=self.admin_office,
+            office=self.admin_office,
             role_obj=self.admin_role,
             role='ADMIN'
         )
         self.coe_user = CustomUser.objects.create_user(
             username="coe_user",
             password="userpassword123",
-            department=self.coe_office,
+            office=self.coe_office,
             role_obj=self.staff_role,
             role='STAFF'
         )
         self.erp_user = CustomUser.objects.create_user(
             username="erp_user",
             password="userpassword123",
-            department=self.erp_office,
+            office=self.erp_office,
             role_obj=self.staff_role,
             role='STAFF'
         )
         self.accounts_user = CustomUser.objects.create_user(
             username="accounts_user",
             password="userpassword123",
-            department=self.accounts_office,
+            office=self.accounts_office,
             role_obj=self.staff_role,
             role='STAFF'
         )
 
         # Create Staff Recipients
+        self.staff_dept, _ = Department.objects.get_or_create(name="CSE", code="CSE")
         self.staff_recipient = Staff.objects.create(
             name="Supplier Sami",
             mobile_number="8098778622",
-            department=self.erp_office,
+            department=self.staff_dept,
             is_active=True
         )
 
@@ -64,7 +65,7 @@ class TemplateScopeTestCase(TestCase):
             entity_id="1001999988887777666",
             header_sender_id="CLGEXM",
             template_content="Dear {#var#}, your exam is on {#var#}.",
-            department=self.coe_office,
+            office=self.coe_office,
             is_active=True
         )
         self.coe_template.ensure_primary_office_in_allowed()
@@ -75,7 +76,7 @@ class TemplateScopeTestCase(TestCase):
             entity_id="1001999988887777666",
             header_sender_id="CLGERP",
             template_content="Dear {#var#}, fee of Rs.{#var#} received.",
-            department=self.erp_office,
+            office=self.erp_office,
             is_active=True
         )
         self.erp_template.ensure_primary_office_in_allowed()
@@ -100,7 +101,7 @@ class TemplateScopeTestCase(TestCase):
             entity_id="1001999988887777666",
             header_sender_id="CLGADM",
             template_content="Welcome to college {#var#}.",
-            department=self.coe_office,
+            office=self.coe_office,
             is_active=True
         )
         new_tmpl.ensure_primary_office_in_allowed()
@@ -245,7 +246,7 @@ class TemplateScopeTestCase(TestCase):
         })
         self.assertEqual(response.status_code, 302)
         log = SMSLog.objects.latest('id')
-        self.assertEqual(log.department, self.erp_office)
+        self.assertEqual(log.office, self.erp_office)
 
     def test_15_existing_sms_functionality_continues_working(self):
         """15. Existing SMS functionality continues working."""
@@ -261,15 +262,15 @@ class TemplateScopeTestCase(TestCase):
         self.assertEqual(response.status_code, 302)
         log = SMSLog.objects.latest('id')
         self.assertEqual(log.template, self.erp_template)
-        self.assertEqual(log.department, self.erp_office)
+        self.assertEqual(log.office, self.erp_office)
 
     def test_16_new_office_automatically_appears_in_matrix_columns(self):
         """16. Newly created Office automatically appears as a matrix column."""
         self.client.force_login(self.global_admin)
-        Department.objects.create(name="Library Office", code="LIBRARY")
+        Office.objects.create(name="Library Test Office", code="LIB_TEST")
         response = self.client.get(reverse('dlt_templates:scope_list'))
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "LIBRARY")
+        self.assertContains(response, "LIB_TEST")
 
     def test_17_unauthorized_user_cannot_toggle_scope_ajax(self):
         """17. Non-admin user cannot invoke AJAX toggle endpoint."""

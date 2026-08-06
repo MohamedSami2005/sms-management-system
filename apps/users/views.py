@@ -26,7 +26,7 @@ class StaffListView(LoginRequiredMixin, RoleRequiredMixin, ListView):
     template_name = 'users/staff_list.html'
     context_object_name = 'staff_members'
     allowed_roles = ALLOWED_STAFF_MANAGEMENT_ROLES
-    paginate_by = 15
+    paginate_by = 50
 
     def get_queryset(self):
         queryset = super().get_queryset().filter(is_active=True).select_related('department').order_by('name')

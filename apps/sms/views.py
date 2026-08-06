@@ -93,7 +93,7 @@ class SingleSMSView(LoginRequiredMixin, RoleRequiredMixin, FormView):
             mobile_number=mobile_number,
             template=template,
             variable_values=variable_values,
-            department=self.request.user.department
+            department=getattr(self.request.user, 'department', None)
         )
 
         if success:

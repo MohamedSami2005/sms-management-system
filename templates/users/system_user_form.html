@@ -41,23 +41,12 @@
 {% endblock %}
 
 {% block content %}
-<<<<<<< HEAD
-<nav aria-label="breadcrumb" class="mb-3">
-    <ol class="breadcrumb">
-        <li class="breadcrumb-item"><a href="{% url 'dashboard:home' %}">Dashboard</a></li>
-        <li class="breadcrumb-item"><a href="{% url 'users:system_user_list' %}">Users &amp; Roles</a></li>
-        <li class="breadcrumb-item active" aria-current="page">{% if object %}Edit User{% else %}New User{% endif %}</li>
-    </ol>
-</nav>
-
-=======
->>>>>>> d50edb9f5c6ae329a75b465bb64b71e24d0aa1f2
 <div class="row justify-content-center">
     <div class="col-md-10 col-lg-8">
         <nav aria-label="breadcrumb" class="mb-3">
             <ol class="breadcrumb">
                 <li class="breadcrumb-item"><a href="{% url 'dashboard:home' %}">Dashboard</a></li>
-                <li class="breadcrumb-item"><a href="{% url 'users:system_user_list' %}">Users & Roles</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'users:system_user_list' %}">Users &amp; Roles</a></li>
                 <li class="breadcrumb-item active" aria-current="page">{% if object %}Edit User{% else %}New User{% endif %}</li>
             </ol>
         </nav>
@@ -129,18 +118,18 @@
                             {% if form.role.errors %}<div class="text-danger small mt-1">{{ form.role.errors }}</div>{% endif %}
                         </div>
 
-                        <!-- Office Combobox (Renamed from Department) -->
+                        <!-- Office Combobox -->
                         <div class="col-md-6 position-relative" id="officeComboboxWrapper">
                             <label class="form-label fw-semibold">Office *</label>
                             <div class="input-group">
-                                {{ form.department }}
+                                {{ form.office }}
                                 <button class="btn btn-outline-secondary dropdown-toggle combobox-toggle" type="button" tabindex="-1" id="officeToggleBtn"></button>
                             </div>
                             <div class="combobox-menu dropdown-menu w-100 shadow-sm border-0 rounded-3 mt-1 p-0 overflow-hidden" id="officeDropdownMenu" style="max-height: 220px; overflow-y: auto;">
                                 <!-- Options dynamically rendered -->
                             </div>
                             <small class="form-text text-muted">Select an existing office or type a new office directly.</small>
-                            {% if form.department.errors %}<div class="text-danger small mt-1">{{ form.department.errors }}</div>{% endif %}
+                            {% if form.office.errors %}<div class="text-danger small mt-1">{{ form.office.errors }}</div>{% endif %}
                         </div>
 
                         {% if not object %}
@@ -335,7 +324,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     attachCombobox('roleComboboxWrapper', 'id_role', 'roleToggleBtn', 'roleDropdownMenu', rolesList, 'role');
-    attachCombobox('officeComboboxWrapper', 'id_department', 'officeToggleBtn', 'officeDropdownMenu', officesList, 'office');
+    attachCombobox('officeComboboxWrapper', 'id_office', 'officeToggleBtn', 'officeDropdownMenu', officesList, 'office');
 });
 </script>
 {% endblock %}

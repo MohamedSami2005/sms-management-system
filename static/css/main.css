@@ -891,12 +891,45 @@ textarea.form-control {
     opacity: 1;
 }
 
+.input-group {
+    display: flex;
+    align-items: stretch;
+}
+
+.input-group .form-control,
+.input-group .input-group-text,
+.input-group .btn {
+    height: 38px;
+    margin: 0;
+    box-sizing: border-box;
+}
+
 .input-group-text {
-    background-color: var(--bg-hover);
+    background-color: var(--white);
     border: 1px solid var(--border-color);
     color: var(--slate-500);
     font-weight: 500;
-    padding: 0.6rem 1rem;
+    padding: 0.45rem 0.85rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Bold Emerald / Green Button Styling */
+.btn-success {
+    background-color: #10B981 !important;
+    border-color: #10B981 !important;
+    color: #FFFFFF !important;
+    font-weight: 700 !important;
+    box-shadow: 0 2px 4px rgba(16, 185, 129, 0.25);
+}
+
+.btn-success:hover, .btn-success:focus {
+    background-color: #059669 !important;
+    border-color: #059669 !important;
+    color: #FFFFFF !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(16, 185, 129, 0.35);
 }
 
 .form-check-input {

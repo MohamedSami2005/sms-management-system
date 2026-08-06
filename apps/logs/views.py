@@ -15,7 +15,7 @@ class SMSLogListView(LoginRequiredMixin, ListView):
     model = SMSLog
     template_name = 'logs/log_list.html'
     context_object_name = 'logs'
-    paginate_by = 25
+    paginate_by = 50
 
     def get_paginate_by(self, queryset):
         per_page = self.request.GET.get('per_page', '').strip()

@@ -1,20 +1,20 @@
 from django.test import TestCase, Client
 from django.urls import reverse
 from apps.accounts.models import CustomUser, Role
-from apps.users.models import Department, Staff
+from apps.users.models import Department, Staff, Office
 from apps.dlt_templates.models import DLTTemplate
 from apps.logs.models import SMSLog
 
 
 class OfficeAccessScopeTestCase(TestCase):
     def setUp(self):
-        # 1. Setup Offices / Departments
-        self.admin_office, _ = Department.objects.get_or_create(
-            name="Admin Management",
-            defaults={'code': 'ADMIN_MGMT', 'is_active': True}
+        # 1. Setup Offices
+        self.admin_office, _ = Office.objects.get_or_create(
+            code='ADMIN',
+            defaults={'name': "Admin Management", 'is_active': True}
         )
-        self.erp_office = Department.objects.create(name="ERP Office", code="ERP", is_active=True)
-        self.coe_office = Department.objects.create(name="COE Office", code="COE", is_active=True)
+        self.erp_office, _ = Office.objects.get_or_create(code="ERP", defaults={'name': "ERP Office", 'is_active': True})
+        self.coe_office, _ = Office.objects.get_or_create(code="COE", defaults={'name': "COE Office", 'is_active': True})
 
         # 2. Setup Roles
         self.admin_role = Role.objects.create(code='ADMIN', name='System Admin')
@@ -28,7 +28,7 @@ class OfficeAccessScopeTestCase(TestCase):
             last_name="Admin",
             employee_id="ADM001",
             phone_number="9876543210",
-            department=self.admin_office,
+            office=self.admin_office,
             role="ADMIN",
             role_obj=self.admin_role
         )
@@ -40,7 +40,7 @@ class OfficeAccessScopeTestCase(TestCase):
             last_name="Staff",
             employee_id="ERP001",
             phone_number="9876543211",
-            department=self.erp_office,
+            office=self.erp_office,
             role="STAFF",
             role_obj=self.staff_role
         )
@@ -52,7 +52,7 @@ class OfficeAccessScopeTestCase(TestCase):
             last_name="Staff",
             employee_id="COE001",
             phone_number="9876543212",
-            department=self.coe_office,
+            office=self.coe_office,
             role="STAFF",
             role_obj=self.staff_role
         )
@@ -63,7 +63,7 @@ class OfficeAccessScopeTestCase(TestCase):
             dlt_template_id="1107160000000100001",
             header_sender_id="CLGERP",
             template_content="Dear {#var#}, ERP fee notice.",
-            department=self.erp_office,
+            office=self.erp_office,
             is_active=True
         )
 
@@ -72,14 +72,14 @@ class OfficeAccessScopeTestCase(TestCase):
             dlt_template_id="1107160000000100002",
             header_sender_id="CLGCOE",
             template_content="Dear {#var#}, COE exam schedule.",
-            department=self.coe_office,
+            office=self.coe_office,
             is_active=True
         )
 
         # 5. Setup SMS Logs
         self.erp_log = SMSLog.objects.create(
             user=self.erp_user,
-            department=self.erp_office,
+            office=self.erp_office,
             template=self.erp_template,
             mobile_number="9876543211",
             message_content="ERP Test Log",
@@ -88,7 +88,7 @@ class OfficeAccessScopeTestCase(TestCase):
 
         self.coe_log = SMSLog.objects.create(
             user=self.coe_user,
-            department=self.coe_office,
+            office=self.coe_office,
             template=self.coe_template,
             mobile_number="9876543212",
             message_content="COE Test Log",
@@ -99,7 +99,6 @@ class OfficeAccessScopeTestCase(TestCase):
         self.staff_recipient = Staff.objects.create(
             name="Mohamed Sami",
             mobile_number="8098778622",
-            department=self.erp_office,
             is_active=True
         )
 
@@ -218,7 +217,7 @@ class OfficeAccessScopeTestCase(TestCase):
 
             new_log = SMSLog.objects.filter(gateway_message_id="GW_TEST_SCOPE_100").first()
             self.assertIsNotNone(new_log)
-            self.assertEqual(new_log.department, self.erp_office)
+            self.assertEqual(new_log.office, self.erp_office)
 
     def test_12_bulk_sms_continues_working_with_personalized_variables(self):
         """12. Bulk SMS continues working with personalized variables under Office scope."""
@@ -243,7 +242,7 @@ class OfficeAccessScopeTestCase(TestCase):
             self.assertIsNotNone(batch_id)
             log = SMSLog.objects.filter(batch_id=batch_id).first()
             self.assertIsNotNone(log)
-            self.assertEqual(log.department, self.erp_office)
+            self.assertEqual(log.office, self.erp_office)
 
     def test_13_existing_sms_functionality_remains_unaffected(self):
         """13. Staff recipient search and preview endpoints function properly."""

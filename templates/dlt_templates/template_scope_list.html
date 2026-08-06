@@ -85,13 +85,21 @@
                                 {% for office in offices %}
                                     <td class="text-center px-2 py-3 cell-container" data-template-id="{{ template.pk }}" data-office-id="{{ office.pk }}">
                                         <div class="d-inline-flex align-items-center justify-content-center cell-inner">
-                                            <input class="form-check-input scope-checkbox shadow-none" 
-                                                   type="checkbox" 
-                                                   data-template-id="{{ template.pk }}" 
-                                                   data-office-id="{{ office.pk }}" 
-                                                   data-template-name="{{ template.name }}"
-                                                   data-office-name="{{ office.code|default:office.name }}"
-                                                   {% if office in template.allowed_offices.all %}checked{% endif %}>
+                                            {% if office.code == 'ADMIN' or office.code == 'ADMIN_MGMT' or 'admin' in office.name.lower %}
+                                                <input class="form-check-input scope-checkbox shadow-none" 
+                                                       type="checkbox" 
+                                                       checked 
+                                                       disabled 
+                                                       title="Admin Management has global access to all templates">
+                                            {% else %}
+                                                <input class="form-check-input scope-checkbox shadow-none" 
+                                                       type="checkbox" 
+                                                       data-template-id="{{ template.pk }}" 
+                                                       data-office-id="{{ office.pk }}" 
+                                                       data-template-name="{{ template.name }}"
+                                                       data-office-name="{{ office.code|default:office.name }}"
+                                                       {% if office in template.allowed_offices.all %}checked{% endif %}>
+                                            {% endif %}
                                             <div class="spinner-border spinner-border-sm text-primary d-none cell-spinner" role="status" style="width: 1.1rem; height: 1.1rem;">
                                                 <span class="visually-hidden">Saving...</span>
                                             </div>

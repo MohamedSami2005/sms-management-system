@@ -29,11 +29,12 @@ class SingleSMSService:
         department: Department = None
     ) -> Tuple[bool, SMSLog, GatewayResult]:
 
-        dept = department or user.department
+        user_office = getattr(user, 'office', None)
+        dept = department if isinstance(department, Department) else None
 
         # 1. Render final interpolated text message
         final_message_text = template.preview_message(variable_values)
-        
+
         # 2. Calculate SMS credit units
         credit_units = DLTTemplate.calculate_sms_credits(final_message_text)
 
@@ -56,6 +57,7 @@ class SingleSMSService:
         # 6. Save immutable SMSLog entry
         log_entry = SMSLog.objects.create(
             user=user,
+            office=user_office,
             department=dept,
             template=template,
             mobile_number=mobile_number,

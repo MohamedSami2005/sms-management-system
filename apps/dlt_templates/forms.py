@@ -89,13 +89,22 @@ TemplateVariableFormSet = inlineformset_factory(
 
 class TemplateImportForm(forms.Form):
     """
-    Form for uploading Excel or CSV file containing bulk DLT templates.
+    Form for uploading official DLT Template Excel files (.xlsx, .xls).
     """
     file = forms.FileField(
-        widget=forms.FileInput(attrs={'class': 'form-control', 'accept': '.xlsx, .xls, .csv'}),
-        label=_("Select Excel/CSV Template File"),
-        help_text=_("Required columns: template_name, dlt_template_id, entity_id, sender_id, template_content, category")
+        widget=forms.FileInput(attrs={'class': 'form-control shadow-none', 'accept': '.xlsx, .xls', 'id': 'dltExcelFile'}),
+        label=_("Select Excel Template File"),
+        help_text=_("Accepted formats: .xlsx, .xls")
     )
+
+    def clean_file(self):
+        f = self.cleaned_data.get('file')
+        if not f:
+            raise forms.ValidationError(_("Please select an Excel file to upload."))
+        ext = f.name.split('.')[-1].lower()
+        if ext not in ['xlsx', 'xls']:
+            raise forms.ValidationError(_("Invalid file format. Please upload an Excel file (.xlsx or .xls)."))
+        return f
 
 
 class TemplateScopeForm(forms.ModelForm):
