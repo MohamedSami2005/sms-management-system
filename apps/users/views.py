@@ -2,7 +2,8 @@ from django.views.generic import ListView, CreateView, UpdateView, View
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse_lazy
 from django.contrib import messages
-from django.shortcuts import redirect, get_object_or_404
+from django.shortcuts import redirect, get_object_or_404, render
+from django.core.exceptions import PermissionDenied
 from django.db.models import Q
 import json
 
@@ -11,6 +12,7 @@ from apps.accounts.models import CustomUser, Role, RoleChoices, ScopeChoices
 from .models import Department, Staff, Office
 from .forms import StaffForm, OfficeForm, UserCreateForm, UserUpdateForm, AdminResetPasswordForm
 from .services import DepartmentService, OfficeService, UserService
+from .contact_import_service import ContactImportService
 
 ALLOWED_STAFF_MANAGEMENT_ROLES = []
 
@@ -367,3 +369,74 @@ class SystemUserResetPasswordView(LoginRequiredMixin, RoleRequiredMixin, View):
         else:
             messages.error(request, "Password reset failed. Please ensure both passwords match.")
         return redirect('users:system_user_list')
+
+
+class ContactImportView(LoginRequiredMixin, View):
+    """
+    Enterprise Contact Excel Import View supporting preview, validation, and bulk creation.
+    """
+    template_name = 'users/import_contacts.html'
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return redirect('accounts:login')
+        if not (request.user.is_superuser or getattr(request.user, 'role', '') in ['ADMIN', 'COE', 'ADMISSION', 'ACCOUNTS', 'PLACEMENT'] or request.user.is_staff):
+            raise PermissionDenied("Contact import is restricted to authorized personnel.")
+        return super().dispatch(request, *args, **kwargs)
+
+    def get(self, request):
+        if 'contact_import_preview' in request.session:
+            del request.session['contact_import_preview']
+        if 'contact_import_summary' in request.session:
+            del request.session['contact_import_summary']
+        return render(request, self.template_name, {
+            'step': 'upload'
+        })
+
+    def post(self, request):
+        action = request.POST.get('action', 'parse')
+
+        if action == 'parse':
+            excel_file = request.FILES.get('excel_file')
+            if not excel_file:
+                messages.error(request, "Please select an Excel file to upload.")
+                return render(request, self.template_name, {'step': 'upload'})
+
+            preview_rows, summary, errors = ContactImportService.parse_excel(excel_file)
+
+            if errors:
+                for err in errors:
+                    messages.error(request, err)
+                return render(request, self.template_name, {'step': 'upload', 'errors': errors})
+
+            # Save parsed preview & summary into session
+            request.session['contact_import_preview'] = preview_rows
+            request.session['contact_import_summary'] = summary
+
+            return render(request, self.template_name, {
+                'step': 'preview',
+                'preview_rows': preview_rows,
+                'summary': summary
+            })
+
+        elif action == 'confirm':
+            preview_rows = request.session.get('contact_import_preview')
+            if not preview_rows:
+                messages.error(request, "Import session expired or invalid. Please upload the Excel file again.")
+                return redirect('users:contact_import')
+
+            result = ContactImportService.execute_import(preview_rows, request.user)
+
+            # Clear session after successful import
+            if 'contact_import_preview' in request.session:
+                del request.session['contact_import_preview']
+            if 'contact_import_summary' in request.session:
+                del request.session['contact_import_summary']
+
+            return render(request, self.template_name, {
+                'step': 'complete',
+                'result': result
+            })
+
+        return redirect('users:contact_import')
+

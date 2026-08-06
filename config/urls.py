@@ -4,6 +4,8 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.shortcuts import redirect
 
+from apps.users.views import ContactImportView
+
 def root_redirect(request):
     if request.user.is_authenticated:
         return redirect('dashboard:home')
@@ -15,6 +17,7 @@ urlpatterns = [
     path('accounts/', include('apps.accounts.urls', namespace='accounts')),
     path('dashboard/', include('apps.dashboard.urls', namespace='dashboard')),
     path('users/', include('apps.users.urls', namespace='users')),
+    path('contacts/import/', ContactImportView.as_view(), name='contact_import'),
     path('templates/', include('apps.dlt_templates.urls', namespace='dlt_templates')),
     path('sms/', include('apps.sms.urls', namespace='sms')),
     path('logs/', include('apps.logs.urls', namespace='logs')),

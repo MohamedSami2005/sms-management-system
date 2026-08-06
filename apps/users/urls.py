@@ -4,7 +4,7 @@ from .views import (
     OfficeListView, OfficeCreateView, OfficeUpdateView, OfficeToggleStatusView, OfficeDeleteView,
     SystemUserListView, SystemUserCreateView, SystemUserUpdateView,
     SystemUserToggleStatusView, SystemUserToggleLockView, SystemUserDeleteView,
-    SystemUserResetPasswordView
+    SystemUserResetPasswordView, ContactImportView
 )
 
 app_name = 'users'
@@ -14,6 +14,8 @@ urlpatterns = [
     path('', StaffListView.as_view(), name='staff_list'),
     path('staff/', StaffListView.as_view(), name='staff_list'),
     path('staff/create/', StaffCreateView.as_view(), name='staff_create'),
+    path('staff/import/', ContactImportView.as_view(), name='staff_import'),
+    path('contacts/import/', ContactImportView.as_view(), name='contact_import'),
     path('staff/<int:pk>/edit/', StaffUpdateView.as_view(), name='staff_edit'),
     path('staff/<int:pk>/delete/', StaffDeleteView.as_view(), name='staff_delete'),
 
