@@ -71,7 +71,26 @@
         </div>
     </div>
 
-    <!-- 5. Active Staff -->
+    <!-- 5. Balance SMS -->
+    <div class="col-12 col-sm-6 col-lg-3">
+        <div class="premium-kpi-card kpi-warning">
+            <div class="kpi-icon-wrapper">
+                <i class="bi bi-wallet2 kpi-icon"></i>
+            </div>
+            <div class="kpi-content">
+                <h6 class="kpi-label">Balance SMS</h6>
+                <h3 class="kpi-value">
+                    {% if active_config %}
+                        {{ balance_sms|default:"N/A" }}
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </h3>
+            </div>
+        </div>
+    </div>
+
+    <!-- 6. Active Staff -->
     <div class="col-12 col-sm-6 col-lg-3">
         <div class="premium-kpi-card">
             <div class="kpi-icon-wrapper">
@@ -84,7 +103,7 @@
         </div>
     </div>
 
-    <!-- 6. Offices -->
+    <!-- 7. Departments -->
     <div class="col-12 col-sm-6 col-lg-3">
         <div class="premium-kpi-card">
             <div class="kpi-icon-wrapper">
@@ -97,7 +116,7 @@
         </div>
     </div>
 
-    <!-- 7. SMS Templates -->
+    <!-- 8. SMS Templates -->
     <div class="col-12 col-sm-6 col-lg-3">
         <div class="premium-kpi-card">
             <div class="kpi-icon-wrapper">
@@ -106,25 +125,6 @@
             <div class="kpi-content">
                 <h6 class="kpi-label">SMS Templates</h6>
                 <h3 class="kpi-value">{{ active_templates|default:"0" }}</h3>
-            </div>
-        </div>
-    </div>
-
-    <!-- 8. Balance SMS -->
-    <div class="col-12 col-sm-6 col-lg-3">
-        <div class="premium-kpi-card kpi-warning">
-            <div class="kpi-icon-wrapper">
-                <i class="bi bi-wallet2 kpi-icon"></i>
-            </div>
-            <div class="kpi-content">
-                <h6 class="kpi-label">Balance SMS</h6>
-                <h3 class="kpi-value">
-                    {% if active_config %}
-                        {{ credit_balance|default:"0" }}
-                    {% else %}
-                        N/A
-                    {% endif %}
-                </h3>
             </div>
         </div>
     </div>

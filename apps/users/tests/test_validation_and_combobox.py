@@ -41,9 +41,12 @@ class MobileValidationTestCase(TestCase):
         self.assertIn('phone_number', form.errors)
 
 
-class DynamicRoleAndOfficeComboboxTestCase(TestCase):
+class StrictOfficeSelectionTestCase(TestCase):
     def setUp(self):
         self.admin_office, _ = Office.objects.get_or_create(code="ADMIN", defaults={'name': "Administration", 'is_active': True})
+        self.coe_office, _ = Office.objects.get_or_create(code="COE", defaults={'name': "Controller of Examinations", 'is_active': True})
+        self.inactive_office, _ = Office.objects.get_or_create(code="LEGACY", defaults={'name': "Legacy Department", 'is_active': False})
+
         self.admin = CustomUser.objects.create_superuser(
             username="admin_user",
             first_name="System",
@@ -56,17 +59,18 @@ class DynamicRoleAndOfficeComboboxTestCase(TestCase):
         self.client = Client()
         self.client.force_login(self.admin)
 
-    def test_create_user_with_existing_role_and_office(self):
-        """Verifies selecting existing role and office links to existing records."""
+    def test_1_create_user_with_existing_active_office_success(self):
+        """1. Existing active Office can be selected when creating a user."""
+        initial_office_count = Office.objects.count()
         url = reverse('users:system_user_create')
         post_data = {
-            'name': 'Existing Role User',
+            'name': 'Active Office User',
             'employee_id': 'EMP101',
-            'username': 'existuser',
-            'email': 'exist@college.edu',
+            'username': 'activeuser',
+            'email': 'active@college.edu',
             'phone_number': '9876543288',
             'role': 'Administrator',
-            'office': 'Administration',
+            'office': str(self.coe_office.pk),
             'password': 'Password@123',
             'confirm_password': 'Password@123',
             'is_active': True
@@ -74,64 +78,101 @@ class DynamicRoleAndOfficeComboboxTestCase(TestCase):
         response = self.client.post(url, post_data)
         self.assertEqual(response.status_code, 302)
 
-        user = CustomUser.objects.get(username='existuser')
-        self.assertEqual(user.office.name, 'Administration')
-        self.assertEqual(user.role, 'ADMIN')
+        user = CustomUser.objects.get(username='activeuser')
+        self.assertEqual(user.office, self.coe_office)
 
-    def test_create_user_with_new_role_and_new_office(self):
-        """Verifies typing new role and new office automatically creates database records without errors."""
-        url = reverse('users:system_user_create')
+        # 5. User creation does NOT create a new Office
+        self.assertEqual(Office.objects.count(), initial_office_count)
+
+    def test_2_update_user_with_existing_active_office_success(self):
+        """2. Existing active Office can be selected when editing a user."""
+        user = CustomUser.objects.create_user(
+            username="edituser",
+            email="edituser@college.edu",
+            employee_id="EMP102",
+            office=self.admin_office,
+            role="STAFF"
+        )
+        initial_office_count = Office.objects.count()
+        url = reverse('users:system_user_edit', kwargs={'pk': user.pk})
         post_data = {
-            'name': 'New Role User',
+            'name': 'Edited User',
             'employee_id': 'EMP102',
-            'username': 'newroleuser',
-            'email': 'newrole@college.edu',
+            'username': 'edituser',
+            'email': 'edituser@college.edu',
             'phone_number': '8098778622',
-            'role': 'Examination Controller',
-            'office': 'IQAC',
-            'password': 'Password@123',
-            'confirm_password': 'Password@123',
+            'role': 'Administrator',
+            'office': str(self.coe_office.pk),
             'is_active': True
         }
         response = self.client.post(url, post_data)
         self.assertEqual(response.status_code, 302)
 
-        # Check Role created
-        new_role = Role.objects.filter(name__iexact='Examination Controller').first()
-        self.assertIsNotNone(new_role)
-        self.assertEqual(new_role.name, 'Examination Controller')
+        user.refresh_from_db()
+        self.assertEqual(user.office, self.coe_office)
 
-        # Check Office created
-        new_office = Office.objects.filter(name__iexact='IQAC').first()
-        self.assertIsNotNone(new_office)
-        self.assertEqual(new_office.name, 'IQAC')
+        # 6. User update does NOT create a new Office
+        self.assertEqual(Office.objects.count(), initial_office_count)
 
-        # Check User assigned
-        user = CustomUser.objects.get(username='newroleuser')
-        self.assertEqual(user.role_obj, new_role)
-        self.assertEqual(user.office, new_office)
+    def test_3_non_existent_office_submission_rejected(self):
+        """3. Non-existent Office ID cannot be submitted."""
+        url = reverse('users:system_user_create')
+        post_data = {
+            'name': 'Fake Office User',
+            'employee_id': 'EMP103',
+            'username': 'fakeuser',
+            'email': 'fake@college.edu',
+            'phone_number': '7010987654',
+            'role': 'Administrator',
+            'office': '99999',
+            'password': 'Password@123',
+            'confirm_password': 'Password@123',
+            'is_active': True
+        }
+        response = self.client.post(url, post_data)
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context['form'].errors)
+        self.assertIn('office', response.context['form'].errors)
 
-    def test_case_insensitive_duplicate_prevention(self):
-        """Verifies typing existing role or office in lowercase links to existing record without creating duplicate."""
-        Role.objects.create(name="Accounts Officer", code="ACCOUNTS_OFFICER")
-        Office.objects.create(name="Placement Cell", code="PLACEMENT_CELL")
+    def test_4_inactive_office_submission_rejected(self):
+        """4. Inactive Office cannot be selected or submitted."""
+        url = reverse('users:system_user_create')
+        post_data = {
+            'name': 'Inactive Office User',
+            'employee_id': 'EMP104',
+            'username': 'inactiveuser',
+            'email': 'inactive@college.edu',
+            'phone_number': '6380123456',
+            'role': 'Administrator',
+            'office': str(self.inactive_office.pk),
+            'password': 'Password@123',
+            'confirm_password': 'Password@123',
+            'is_active': True
+        }
+        response = self.client.post(url, post_data)
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context['form'].errors)
+        self.assertIn('office', response.context['form'].errors)
+
+    def test_7_existing_office_records_remain_unchanged(self):
+        """7. Existing Office records remain unchanged after user creation."""
+        coe_name_before = self.coe_office.name
+        coe_code_before = self.coe_office.code
 
         url = reverse('users:system_user_create')
         post_data = {
-            'name': 'Case User',
-            'employee_id': 'EMP103',
-            'username': 'caseuser',
-            'email': 'case@college.edu',
-            'phone_number': '7010987654',
-            'role': '  accounts officer  ',
-            'office': '  placement cell  ',
+            'name': 'Office Check User',
+            'employee_id': 'EMP105',
+            'username': 'officeuser',
+            'email': 'officeuser@college.edu',
+            'role': 'Administrator',
+            'office': str(self.coe_office.pk),
             'password': 'Password@123',
             'confirm_password': 'Password@123',
             'is_active': True
         }
-        response = self.client.post(url, post_data)
-        self.assertEqual(response.status_code, 302)
+        self.client.post(url, post_data)
 
-        # Confirm no duplicate Role or Office was created
-        self.assertEqual(Role.objects.filter(name__iexact='Accounts Officer').count(), 1)
-        self.assertEqual(Office.objects.filter(name__iexact='Placement Cell').count(), 1)
+        self.coe_office.refresh_from_db()
+        self.assertEqual(self.coe_office.name, coe_name_before)
+        self.assertEqual(self.coe_office.code, coe_code_before)

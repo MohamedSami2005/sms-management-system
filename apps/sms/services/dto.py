@@ -28,6 +28,7 @@ class GatewayResult:
 class BalanceResult:
     success: bool
     balance: str = "N/A"
+    total_sms_allowed: str = "N/A"
     gateway_name: str = ""
     response_time_ms: float = 0.0
     raw_response: Optional[str] = None

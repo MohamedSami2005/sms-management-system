@@ -20,24 +20,51 @@
     <!-- Live Search & Filter Bar -->
     <div class="card border-0 shadow-sm rounded-3 mb-4">
         <div class="card-body p-3">
-            <div class="row align-items-center">
-                <div class="col-md-6 col-lg-5">
-                    <div class="input-group">
-                        <span class="input-group-text bg-white border-end-0 text-muted">
-                            <i class="bi bi-search"></i>
+            <form method="get" action="{% url 'dlt_templates:scope_list' %}" id="scopeFilterForm">
+                <div class="row align-items-center g-2">
+                    <!-- Search Input -->
+                    <div class="col-12 col-md-5 col-lg-5">
+                        <div class="input-group">
+                            <span class="input-group-text bg-white border-end-0 text-muted">
+                                <i class="bi bi-search"></i>
+                            </span>
+                            <input type="text" name="q" value="{{ search_query }}" id="templateSearchInput" class="form-control border-start-0 ps-0" placeholder="Search Template by name or ID..." autocomplete="off">
+                        </div>
+                    </div>
+
+                    <!-- Office Filter Dropdown -->
+                    <div class="col-12 col-md-4 col-lg-4">
+                        <div class="input-group">
+                            <label class="input-group-text bg-light text-dark border-end-0 fw-semibold" for="officeSelect">
+                                <i class="bi bi-building me-1 text-primary"></i> Office
+                            </label>
+                            <select name="office" id="officeSelect" class="form-select border-start-0 fw-medium" onchange="document.getElementById('scopeFilterForm').submit();">
+                                <option value="">All Offices</option>
+                                {% for off in all_offices %}
+                                    <option value="{{ off.pk }}" {% if selected_office_id == off.pk|stringformat:"s" %}selected{% endif %}>
+                                        {{ off.name }} {% if off.code %}({{ off.code }}){% endif %}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Badges & Clear Filter Button -->
+                    <div class="col-12 col-md-3 col-lg-3 text-end text-muted small d-flex align-items-center justify-content-end">
+                        {% if selected_office_id or search_query %}
+                            <a href="{% url 'dlt_templates:scope_list' %}" class="btn btn-outline-secondary btn-sm rounded-2 me-2">
+                                <i class="bi bi-x-circle me-1"></i> Clear
+                            </a>
+                        {% endif %}
+                        <span id="templateCountBadge" class="badge bg-light text-dark border me-2 py-1.5 px-2.5">
+                            <i class="bi bi-file-earmark-text me-1 text-primary"></i>{{ templates|length }} Templates
                         </span>
-                        <input type="text" id="templateSearchInput" class="form-control border-start-0 ps-0" placeholder="Search Template by name or ID..." autocomplete="off">
+                        <span class="badge bg-light text-dark border py-1.5 px-2.5">
+                            <i class="bi bi-building me-1 text-primary"></i>{{ offices|length }} Offices
+                        </span>
                     </div>
                 </div>
-                <div class="col-md-6 col-lg-7 text-end text-muted small">
-                    <span id="templateCountBadge" class="badge bg-light text-dark border me-2 py-1.5 px-2.5">
-                        <i class="bi bi-file-earmark-text me-1"></i>{{ templates|length }} Templates
-                    </span>
-                    <span class="badge bg-light text-dark border py-1.5 px-2.5">
-                        <i class="bi bi-building me-1"></i>{{ offices|length }} Offices
-                    </span>
-                </div>
-            </div>
+            </form>
         </div>
     </div>
 

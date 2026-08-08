@@ -217,20 +217,23 @@ class SMSGatewayService:
                 params_or_data=data
             )
 
-            balance_val, error_msg = self._parse_balance_response(raw_response)
+            balance_val, total_val, error_msg = self._parse_balance_response(raw_response, config=config)
             return BalanceResult(
                 success=balance_val != "N/A",
                 balance=balance_val,
+                total_sms_allowed=total_val,
                 gateway_name=config.provider_name,
                 response_time_ms=exec_time,
                 raw_response=raw_response,
                 error_message=error_msg
             )
         except SMSGatewayException as e:
+            config_total = str(config.total_sms_allowed).strip() if config and getattr(config, 'total_sms_allowed', '') else "N/A"
             return BalanceResult(
                 success=False,
                 balance="N/A",
-                gateway_name=config.provider_name,
+                total_sms_allowed=config_total or "N/A",
+                gateway_name=config.provider_name if config else "",
                 error_message=e.message
             )
 
@@ -340,22 +343,32 @@ class SMSGatewayService:
             return {'success': False, 'messageid': None, 'totnumber': 0, 'totalcredit': 0, 'error_message': f"Invalid provider response: {raw_response[:200]}"}
 
     @staticmethod
-    def _parse_balance_response(raw_response: str) -> Tuple[str, Optional[str]]:
-        """Parses Draft4SMS Balance API response."""
+    def _parse_balance_response(raw_response: str, config: Optional[SMSGatewayConfig] = None) -> Tuple[str, str, Optional[str]]:
+        """
+        Parses Draft4SMS Balance API response.
+        Returns (balance_val, total_allowed_val, error_message).
+        """
+        config_total = str(config.total_sms_allowed).strip() if config and getattr(config, 'total_sms_allowed', '') else ""
         try:
             data = json.loads(raw_response)
+            balance_val = "N/A"
             if 'balance' in data:
-                return str(data['balance']), None
+                balance_val = str(data['balance'])
             elif 'credits' in data:
-                return str(data['credits']), None
+                balance_val = str(data['credits'])
             elif data.get('status', '').lower() == 'success':
-                return str(data.get('credit', '10000')), None
-            
+                balance_val = str(data.get('credit', '10000'))
+
+            total_val = str(data.get('total_allowed') or data.get('total_credits') or data.get('total') or data.get('allocated') or config_total or "N/A")
+
+            if balance_val != "N/A":
+                return balance_val, total_val, None
+
             code = str(data.get('code', ''))
             desc = DRAFT4SMS_ERROR_CODES.get(code, data.get('description', 'Failed to fetch balance'))
-            return "N/A", f"Code [{code}]: {desc}"
+            return "N/A", config_total or "N/A", f"Code [{code}]: {desc}"
         except Exception:
-            return "N/A", "Failed to parse balance response"
+            return "N/A", config_total or "N/A", "Failed to parse balance response"
 
     @staticmethod
     def _parse_dlr_response(raw_response: str) -> str:

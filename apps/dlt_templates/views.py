@@ -330,11 +330,40 @@ class TemplateScopeListView(LoginRequiredMixin, RoleRequiredMixin, ListView):
         return super().dispatch(request, *args, **kwargs)
 
     def get_queryset(self):
-        return DLTTemplate.objects.all().prefetch_related('allowed_offices').order_by('name')
+        qs = DLTTemplate.objects.all().prefetch_related('allowed_offices').order_by('name')
+        office_id = self.request.GET.get('office', '').strip()
+        search_q = self.request.GET.get('q', '').strip()
+
+        if office_id and office_id.isdigit():
+            qs = qs.filter(allowed_offices__id=int(office_id)).distinct()
+
+        if search_q:
+            qs = qs.filter(
+                Q(name__icontains=search_q) | Q(dlt_template_id__icontains=search_q)
+            ).distinct()
+
+        return qs
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['offices'] = Office.objects.filter(is_active=True).order_by('name')
+        all_offices = Office.objects.filter(is_active=True).order_by('name')
+        context['all_offices'] = all_offices
+        
+        office_id = self.request.GET.get('office', '').strip()
+        if office_id and office_id.isdigit():
+            selected_office = all_offices.filter(pk=int(office_id)).first()
+            if selected_office:
+                context['offices'] = all_offices.filter(pk=selected_office.pk)
+                context['selected_office_id'] = str(selected_office.pk)
+                context['selected_office'] = selected_office
+            else:
+                context['offices'] = all_offices
+                context['selected_office_id'] = ''
+        else:
+            context['offices'] = all_offices
+            context['selected_office_id'] = ''
+
+        context['search_query'] = self.request.GET.get('q', '').strip()
         return context
 
 

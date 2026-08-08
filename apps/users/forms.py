@@ -54,43 +54,7 @@ def resolve_or_create_role(role_raw: str) -> Tuple[str, Optional[Role]]:
     return (r_obj.code, r_obj)
 
 
-def resolve_or_create_office(office_raw: str) -> Optional[Office]:
-    """
-    Case-insensitive lookup or automatic creation of administrative Office.
-    Trims leading/trailing whitespace and prevents duplicates.
-    Returns Office instance.
-    """
-    off_str = office_raw.strip()
-    if not off_str:
-        return None
 
-    if off_str.isdigit():
-        o_obj = Office.objects.filter(pk=int(off_str)).first()
-        if o_obj:
-            return o_obj
-
-    o_obj = Office.objects.filter(name__iexact=off_str).first() or Office.objects.filter(code__iexact=off_str).first()
-    if o_obj:
-        return o_obj
-
-    clean_code = ''.join(c if c.isalnum() else '_' for c in off_str.upper()).strip('_')
-    clean_code = clean_code[:20]
-    if not clean_code:
-        clean_code = "OFFICE"
-
-    existing_code_off = Office.objects.filter(code=clean_code).first()
-    if existing_code_off and existing_code_off.name.lower() != off_str.lower():
-        suffix = 1
-        base_code = clean_code[:14]
-        while Office.objects.filter(code=f"{base_code}_{suffix}").exists():
-            suffix += 1
-        clean_code = f"{base_code}_{suffix}"
-
-    o_obj, _ = Office.objects.get_or_create(
-        name=off_str,
-        defaults={'code': clean_code, 'is_active': True}
-    )
-    return o_obj
 
 
 def resolve_or_create_department(dept_raw: str) -> Optional[Department]:
@@ -273,10 +237,11 @@ class UserCreateForm(forms.ModelForm):
         widget=forms.TextInput(attrs={'class': 'form-control', 'id': 'id_role', 'placeholder': 'Select or type role...'}),
         label=_("Role")
     )
-    office = forms.CharField(
-        max_length=100,
+    office = forms.ModelChoiceField(
+        queryset=Office.objects.filter(is_active=True).order_by('name'),
         required=True,
-        widget=forms.TextInput(attrs={'class': 'form-control', 'id': 'id_office', 'placeholder': 'Select or type office...'}),
+        empty_label=_("Select Office"),
+        widget=forms.Select(attrs={'class': 'form-select', 'id': 'id_office'}),
         label=_("Office")
     )
     password = forms.CharField(
@@ -350,13 +315,10 @@ class UserCreateForm(forms.ModelForm):
         return role_code
 
     def clean_office(self):
-        office_raw = self.cleaned_data.get('office', '').strip()
-        if not office_raw:
-            raise forms.ValidationError(_("Office is required."))
-        o_obj = resolve_or_create_office(office_raw)
-        if not o_obj:
-            raise forms.ValidationError(_("Invalid Office selected."))
-        return o_obj
+        office_obj = self.cleaned_data.get('office')
+        if not office_obj or not Office.objects.filter(pk=office_obj.pk, is_active=True).exists():
+            raise forms.ValidationError(_("Please select a valid existing active Office from the master list."))
+        return office_obj
 
     def clean(self):
         cleaned_data = super().clean()
@@ -420,10 +382,11 @@ class UserUpdateForm(forms.ModelForm):
         widget=forms.TextInput(attrs={'class': 'form-control', 'id': 'id_role', 'placeholder': 'Select or type role...'}),
         label=_("Role")
     )
-    office = forms.CharField(
-        max_length=100,
+    office = forms.ModelChoiceField(
+        queryset=Office.objects.filter(is_active=True).order_by('name'),
         required=True,
-        widget=forms.TextInput(attrs={'class': 'form-control', 'id': 'id_office', 'placeholder': 'Select or type office...'}),
+        empty_label=_("Select Office"),
+        widget=forms.Select(attrs={'class': 'form-select', 'id': 'id_office'}),
         label=_("Office")
     )
 
@@ -452,9 +415,7 @@ class UserUpdateForm(forms.ModelForm):
                 self.fields['role'].initial = self.instance.display_role
 
             if self.instance.office:
-                self.fields['office'].initial = self.instance.office.name
-            elif self.instance.department:
-                self.fields['office'].initial = self.instance.department.name
+                self.fields['office'].initial = self.instance.office.pk
 
     def clean_username(self):
         username = self.cleaned_data.get('username', '').strip()
@@ -497,13 +458,10 @@ class UserUpdateForm(forms.ModelForm):
         return role_code
 
     def clean_office(self):
-        office_raw = self.cleaned_data.get('office', '').strip()
-        if not office_raw:
-            raise forms.ValidationError(_("Office is required."))
-        o_obj = resolve_or_create_office(office_raw)
-        if not o_obj:
-            raise forms.ValidationError(_("Invalid Office selected."))
-        return o_obj
+        office_obj = self.cleaned_data.get('office')
+        if not office_obj or not Office.objects.filter(pk=office_obj.pk, is_active=True).exists():
+            raise forms.ValidationError(_("Please select a valid existing active Office from the master list."))
+        return office_obj
 
     def save(self, commit=True):
         user = super().save(commit=False)

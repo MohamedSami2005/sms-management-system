@@ -111,6 +111,37 @@ class StaffDeleteView(LoginRequiredMixin, RoleRequiredMixin, View):
         return redirect('users:staff_list')
 
 
+class StaffBulkDeleteView(LoginRequiredMixin, RoleRequiredMixin, View):
+    """
+    Deletes multiple selected recipient contact records in bulk.
+    """
+    allowed_roles = ALLOWED_STAFF_MANAGEMENT_ROLES
+
+    def post(self, request):
+        raw_ids = request.POST.getlist('selected_contacts') or request.POST.getlist('selected_ids')
+        
+        valid_ids = []
+        for item in raw_ids:
+            item_str = str(item).strip()
+            if item_str.isdigit():
+                valid_ids.append(int(item_str))
+
+        if not valid_ids:
+            messages.warning(request, "No contacts were selected for deletion.")
+            return redirect('users:staff_list')
+
+        queryset = Staff.objects.filter(pk__in=valid_ids)
+        deleted_count = queryset.count()
+
+        if deleted_count == 0:
+            messages.warning(request, "No valid contacts were found for deletion.")
+            return redirect('users:staff_list')
+
+        queryset.delete()
+        messages.success(request, f"Successfully deleted {deleted_count} contact(s) from directory.")
+        return redirect('users:staff_list')
+
+
 # --- Office Management Views (Users & Roles -> Offices) ---
 
 class OfficeListView(LoginRequiredMixin, RoleRequiredMixin, ListView):

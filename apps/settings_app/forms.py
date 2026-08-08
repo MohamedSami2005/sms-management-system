@@ -23,7 +23,7 @@ class SMSGatewayConfigForm(forms.ModelForm):
         fields = [
             'provider_name', 'api_url', 'balance_api_url', 'dlr_api_url',
             'api_key', 'default_sender_id', 'default_entity_id', 'route_id',
-            'request_method', 'timeout', 'response_format', 'is_active'
+            'request_method', 'total_sms_allowed', 'timeout', 'response_format', 'is_active'
         ]
         widgets = {
             'provider_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Draft4SMS Provider'}),
@@ -34,6 +34,7 @@ class SMSGatewayConfigForm(forms.ModelForm):
             'default_entity_id': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '1001999988887777666'}),
             'route_id': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '1'}),
             'request_method': forms.Select(attrs={'class': 'form-select'}),
+            'total_sms_allowed': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '50000'}),
             'timeout': forms.NumberInput(attrs={'class': 'form-control', 'min': '1', 'max': '60'}),
             'response_format': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'json'}),
             'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),

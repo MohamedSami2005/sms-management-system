@@ -99,9 +99,18 @@ class DashboardService:
             last_used=Max('created_at')
         ).order_by('-times_used')[:5]
 
+        # Helper for numeric formatting
+        def format_metric_val(val: str) -> str:
+            if not val or val == "N/A" or val == "Balance not available":
+                return "N/A"
+            if val.isdigit():
+                return f"{int(val):,}"
+            return val
+
         # 7. Gateway Status & Balance
         active_config = SMSGatewayConfig.objects.filter(is_active=True).first()
-        credit_balance = "N/A"
+        balance_sms = "N/A"
+        total_sms_allowed = "N/A"
         gateway_status = "Disconnected"
 
         if active_config:
@@ -109,13 +118,20 @@ class DashboardService:
             try:
                 gw_service = SMSGatewayService(active_config)
                 bal_resp = gw_service.get_balance()
-                if bal_resp.success and bal_resp.balance:
-                    credit_balance = str(bal_resp.balance)
+                if bal_resp.success:
+                    balance_sms = format_metric_val(bal_resp.balance)
+                    total_sms_allowed = format_metric_val(bal_resp.total_sms_allowed)
                 else:
-                    credit_balance = "Balance not available"
+                    balance_sms = "Balance not available"
+                    config_total = str(active_config.total_sms_allowed).strip() if getattr(active_config, 'total_sms_allowed', '') else "N/A"
+                    total_sms_allowed = format_metric_val(config_total)
             except Exception as e:
                 logger.warning(f"DASHBOARD_GW_BALANCE_ERR | {str(e)}")
-                credit_balance = "Balance not available"
+                balance_sms = "Balance not available"
+                config_total = str(active_config.total_sms_allowed).strip() if getattr(active_config, 'total_sms_allowed', '') else "N/A"
+                total_sms_allowed = format_metric_val(config_total)
+
+        credit_balance = balance_sms
 
         # 8. Recent Login Activity (Latest 5)
         recent_logins_qs = CustomUser.objects.filter(last_login__isnull=False)
@@ -158,6 +174,8 @@ class DashboardService:
             'delivered_count': delivered_count,
             'failed_count': failed_count,
             'pending_count': pending_count,
+            'balance_sms': balance_sms,
+            'total_sms_allowed': total_sms_allowed,
             'credit_balance': credit_balance,
             'active_config': active_config,
             'gateway_status': gateway_status,

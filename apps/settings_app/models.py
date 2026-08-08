@@ -98,6 +98,13 @@ class SMSGatewayConfig(AuditModel):
         verbose_name=_("API Parameter Mapping JSON"),
         help_text=_("JSON key mapping (e.g. {\"mobile\": \"number\", \"text\": \"msg\", \"template_id\": \"dlt_id\"})")
     )
+    total_sms_allowed = models.CharField(
+        max_length=50,
+        blank=True,
+        default='',
+        verbose_name=_("Total SMS Allowed / Allocated Quota"),
+        help_text=_("Optional total SMS quota allocated for this account (e.g. 50000). Leave blank if provider only exposes balance.")
+    )
     is_active = models.BooleanField(
         default=True,
         db_index=True,

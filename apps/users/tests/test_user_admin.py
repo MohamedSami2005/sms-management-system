@@ -1,12 +1,13 @@
 from django.test import TestCase, Client
 from django.urls import reverse
 from apps.accounts.models import CustomUser, RoleChoices
-from apps.users.models import Department, Staff
+from apps.users.models import Department, Staff, Office
 
 
 class WebUserAdministrationTestCase(TestCase):
     def setUp(self):
-        self.dept = Department.objects.create(name="Controller of Examinations", code="COE")
+        self.dept = Department.objects.create(name="Computer Science", code="CSE")
+        self.office, _ = Office.objects.get_or_create(code="COE", defaults={'name': "Controller of Examinations", 'is_active': True})
 
         self.admin = CustomUser.objects.create_superuser(
             username="admin_sys",
@@ -14,7 +15,7 @@ class WebUserAdministrationTestCase(TestCase):
             last_name="Administrator",
             employee_id="ADM001",
             role=RoleChoices.ADMIN,
-            department=self.dept
+            office=self.office
         )
 
         self.client = Client()
@@ -50,7 +51,7 @@ class WebUserAdministrationTestCase(TestCase):
             'name': 'John Doe',
             'email': 'john@college.edu',
             'phone_number': '9876543299',
-            'office': self.dept.name,
+            'office': self.office.pk,
             'designation': 'Assistant Registrar',
             'role': RoleChoices.COE,
             'password': 'InitialPass@123',
@@ -73,7 +74,8 @@ class WebUserAdministrationTestCase(TestCase):
         staff = CustomUser.objects.create_user(
             username='staff_edit',
             employee_id='EMP5002',
-            role=RoleChoices.STAFF
+            role=RoleChoices.STAFF,
+            office=self.office
         )
 
         url = reverse('users:system_user_edit', kwargs={'pk': staff.pk})
@@ -83,7 +85,7 @@ class WebUserAdministrationTestCase(TestCase):
             'name': 'Updated Name',
             'email': 'updated@college.edu',
             'phone_number': '9876543211',
-            'office': self.dept.name,
+            'office': self.office.pk,
             'designation': 'HOD Computer Science',
             'role': RoleChoices.HOD,
             'is_active': True,
@@ -95,7 +97,7 @@ class WebUserAdministrationTestCase(TestCase):
 
         staff.refresh_from_db()
         self.assertEqual(staff.role, RoleChoices.HOD)
-        self.assertEqual(staff.office.name, self.dept.name)
+        self.assertEqual(staff.office, self.office)
 
     def test_admin_password_reset(self):
         """Verifies Administrator can reset another user's password directly from Web UI."""

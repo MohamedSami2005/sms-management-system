@@ -74,8 +74,7 @@
                         <th>Template Name</th>
                         <th>DLT Content ID</th>
                         <th>Sender ID</th>
-                        <th>Category</th>
-                        <th>Variables</th>
+                        <th>Office</th>
                         <th>Status</th>
                         <th class="actions-header">Actions</th>
                     </tr>
@@ -87,14 +86,16 @@
                             <a href="{% url 'dlt_templates:detail' tmpl.pk %}" class="fw-semibold text-dark text-decoration-none hover-primary">
                                 {{ tmpl.name }}
                             </a>
-                            {% if tmpl.department %}
-                                <div><small class="text-muted"><i class="bi bi-building me-1"></i>{{ tmpl.department.name }}</small></div>
-                            {% endif %}
                         </td>
                         <td><code style="font-size: 0.8rem;">{{ tmpl.dlt_template_id }}</code></td>
                         <td><span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle font-monospace">{{ tmpl.header_sender_id }}</span></td>
-                        <td><span class="text-muted" style="font-size: 0.85rem;">{{ tmpl.get_category_display }}</span></td>
-                        <td><span class="badge bg-info-subtle text-info border border-info-subtle rounded-pill">{{ tmpl.variable_count }} vars</span></td>
+                        <td>
+                            {% if tmpl.office %}
+                                <span class="badge bg-light text-dark border">{{ tmpl.office.name }}</span>
+                            {% else %}
+                                <span class="text-muted" style="font-size: 0.8rem;">Not Assigned</span>
+                            {% endif %}
+                        </td>
                         <td>
                             {% if tmpl.is_active %}
                                 <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill"><i class="bi bi-check-circle-fill me-1"></i>Active</span>
@@ -153,7 +154,7 @@
                     </tr>
                     {% empty %}
                     <tr class="table-empty">
-                        <td colspan="7">
+                        <td colspan="6">
                             <i class="bi bi-file-earmark-x d-block fs-1 mb-2 opacity-25"></i>
                             No DLT templates registered matching your search criteria.
                         </td>

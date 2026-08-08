@@ -280,3 +280,125 @@ class TemplateScopeTestCase(TestCase):
             data={'template_id': self.coe_template.pk, 'office_id': self.erp_office.pk, 'allowed': 'true'}
         )
         self.assertEqual(response.status_code, 403)
+
+    def test_18_scope_page_without_filter_shows_all_templates(self):
+        """18. Scope page without Office filter shows all templates."""
+        self.client.force_login(self.global_admin)
+        response = self.client.get(reverse('dlt_templates:scope_list'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "COE Exam Notice")
+        self.assertContains(response, "ERP Fee Notice")
+
+    def test_19_office_filter_lists_only_active_offices(self):
+        """19. Office filter lists only active Offices."""
+        inactive_off = Office.objects.create(name="Archived Office", code="ARCH", is_active=False)
+        self.client.force_login(self.global_admin)
+        response = self.client.get(reverse('dlt_templates:scope_list'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "COE")
+        self.assertContains(response, "ERP")
+        self.assertNotContains(response, "Archived Office")
+
+    def test_20_selecting_erp_shows_only_templates_allowed_for_erp(self):
+        """20. Selecting ERP shows only templates allowed for ERP."""
+        self.client.force_login(self.global_admin)
+        response = self.client.get(reverse('dlt_templates:scope_list'), {'office': str(self.erp_office.pk)})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "ERP Fee Notice")
+        self.assertNotContains(response, "COE Exam Notice")
+
+    def test_21_selecting_coe_shows_only_templates_allowed_for_coe(self):
+        """21. Selecting COE shows only templates allowed for COE."""
+        self.client.force_login(self.global_admin)
+        response = self.client.get(reverse('dlt_templates:scope_list'), {'office': str(self.coe_office.pk)})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "COE Exam Notice")
+        self.assertNotContains(response, "ERP Fee Notice")
+
+    def test_22_template_allowed_for_erp_and_coe_appears_in_both_filters(self):
+        """22. A template allowed for ERP + COE appears under both filters."""
+        self.coe_template.allowed_offices.add(self.erp_office)
+        self.client.force_login(self.global_admin)
+
+        resp_erp = self.client.get(reverse('dlt_templates:scope_list'), {'office': str(self.erp_office.pk)})
+        self.assertContains(resp_erp, "COE Exam Notice")
+
+        resp_coe = self.client.get(reverse('dlt_templates:scope_list'), {'office': str(self.coe_office.pk)})
+        self.assertContains(resp_coe, "COE Exam Notice")
+
+    def test_23_coe_only_template_does_not_appear_when_erp_selected(self):
+        """23. A COE-only template does not appear when ERP is selected."""
+        self.coe_template.allowed_offices.set([self.coe_office])
+        self.client.force_login(self.global_admin)
+        response = self.client.get(reverse('dlt_templates:scope_list'), {'office': str(self.erp_office.pk)})
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "COE Exam Notice")
+
+    def test_24_search_and_office_filter_work_together(self):
+        """24. Search + Office filter work together using AND logic."""
+        self.client.force_login(self.global_admin)
+        response = self.client.get(reverse('dlt_templates:scope_list'), {
+            'office': str(self.erp_office.pk),
+            'q': 'Fee'
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "ERP Fee Notice")
+
+        # Search for non-matching string
+        response_empty = self.client.get(reverse('dlt_templates:scope_list'), {
+            'office': str(self.erp_office.pk),
+            'q': 'Exam'
+        })
+        self.assertNotContains(response_empty, "ERP Fee Notice")
+        self.assertNotContains(response_empty, "COE Exam Notice")
+
+    def test_25_existing_ajax_checkbox_permission_updates_continue_working(self):
+        """25. Existing AJAX checkbox permission updates continue working."""
+        self.client.force_login(self.global_admin)
+        response = self.client.post(
+            reverse('dlt_templates:scope_toggle_ajax'),
+            data={'template_id': self.erp_template.pk, 'office_id': self.coe_office.pk, 'allowed': 'true'}
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json()['success'])
+        self.assertTrue(self.erp_template.allowed_offices.filter(pk=self.coe_office.pk).exists())
+
+    def test_26_inactive_offices_do_not_appear_in_filter(self):
+        """26. Inactive Offices do not appear in the filter."""
+        Office.objects.create(name="Obsolete Dept", code="OBS", is_active=False)
+        self.client.force_login(self.global_admin)
+        response = self.client.get(reverse('dlt_templates:scope_list'))
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "Obsolete Dept")
+
+    def test_27_unauthorized_users_still_cannot_access_scope_with_office_filter(self):
+        """27. Unauthorized users still cannot access Scope page even with office parameter."""
+        self.client.force_login(self.erp_user)
+        response = self.client.get(reverse('dlt_templates:scope_list'), {'office': str(self.erp_office.pk)})
+        self.assertEqual(response.status_code, 403)
+
+    def test_28_template_list_displays_associated_office_and_not_assigned(self):
+        """28. Template list displays assigned Office name or Not Assigned when office is NULL."""
+        unassigned_tmpl = DLTTemplate.objects.create(
+            name="Unassigned DLT Notice",
+            dlt_template_id="1107160000000999999",
+            entity_id="1001999988887777666",
+            header_sender_id="CLGGEN",
+            template_content="General notification {#var#}.",
+            office=None,
+            is_active=True
+        )
+
+        self.client.force_login(self.global_admin)
+        response = self.client.get(reverse('dlt_templates:list'))
+        self.assertEqual(response.status_code, 200)
+
+        # Check Office header is present
+        self.assertContains(response, "<th>Office</th>")
+
+        # Check assigned office names are rendered
+        self.assertContains(response, "COE")
+        self.assertContains(response, "ERP")
+
+        # Check unassigned template renders Not Assigned
+        self.assertContains(response, "Not Assigned")

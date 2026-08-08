@@ -10,7 +10,10 @@
         <h4 class="page-header-title"><i class="bi bi-person-badge text-primary"></i> Contacts</h4>
         <p class="page-header-sub">Recipient directory for institutional SMS communication and notifications.</p>
     </div>
-    <div class="d-flex gap-2 flex-wrap">
+    <div class="d-flex gap-2 flex-wrap align-items-center">
+        <button type="button" id="btnBulkDelete" class="btn btn-outline-danger fw-bold text-nowrap d-none" data-bs-toggle="modal" data-bs-target="#bulkDeleteModal">
+            <i class="bi bi-trash me-1"></i> Delete Selected (<span id="selectedCount">0</span>)
+        </button>
         <a href="{% url 'users:contact_import' %}" class="btn btn-success fw-bold text-white shadow-sm">
             <i class="bi bi-file-earmark-excel me-1"></i> Import Contacts
         </a>
@@ -46,78 +49,106 @@
     </form>
 </div>
 
-<!-- Contacts Table -->
-<div class="card overflow-hidden">
-    <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead>
-                    <tr>
-                        <th style="width: 60px;">#</th>
-                        <th>Contact Name</th>
-                        <th>Mobile Number</th>
-                        <th>Department</th>
-                        <th class="actions-header">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for staff in staff_members %}
-                    <tr>
-                        <td class="text-muted font-monospace" style="font-size: 0.78rem;">{{ forloop.counter0|add:page_obj.start_index }}</td>
-                        <td>
-                            <span class="fw-semibold text-dark">{{ staff.name }}</span>
-                        </td>
-                        <td><span class="font-monospace fw-semibold">{{ staff.mobile_number }}</span></td>
-                        <td>
-                            {% if staff.department %}
-                                <span class="badge bg-light text-dark border">{{ staff.department.name }}</span>
-                            {% else %}
-                                <span class="text-muted" style="font-size: 0.8rem;">General</span>
-                            {% endif %}
-                        </td>
-                        <td class="actions-cell">
-                            <div class="table-actions">
-                                <a href="{% url 'users:staff_edit' staff.pk %}" class="btn-action btn-action-edit" title="Edit">
-                                    <i class="bi bi-pencil"></i>
-                                </a>
-                                <button type="button" class="btn-action btn-action-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ staff.pk }}" title="Delete">
-                                    <i class="bi bi-trash"></i>
-                                </button>
-                            </div>
+<!-- Contacts Table Form -->
+<form method="post" action="{% url 'users:staff_bulk_delete' %}" id="bulkDeleteForm">
+    {% csrf_token %}
+    <div class="card overflow-hidden">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th style="width: 40px;" class="text-center">
+                                <input type="checkbox" id="selectAllContacts" class="form-check-input" title="Select All">
+                            </th>
+                            <th style="width: 60px;">#</th>
+                            <th>Contact Name</th>
+                            <th>Mobile Number</th>
+                            <th>Department</th>
+                            <th class="actions-header">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for staff in staff_members %}
+                        <tr>
+                            <td class="text-center">
+                                <input type="checkbox" name="selected_contacts" value="{{ staff.pk }}" class="form-check-input contact-checkbox">
+                            </td>
+                            <td class="text-muted font-monospace" style="font-size: 0.78rem;">{{ forloop.counter0|add:page_obj.start_index }}</td>
+                            <td>
+                                <span class="fw-semibold text-dark">{{ staff.name }}</span>
+                            </td>
+                            <td><span class="font-monospace fw-semibold">{{ staff.mobile_number }}</span></td>
+                            <td>
+                                {% if staff.department %}
+                                    <span class="badge bg-light text-dark border">{{ staff.department.name }}</span>
+                                {% else %}
+                                    <span class="text-muted" style="font-size: 0.8rem;">General</span>
+                                {% endif %}
+                            </td>
+                            <td class="actions-cell">
+                                <div class="table-actions">
+                                    <a href="{% url 'users:staff_edit' staff.pk %}" class="btn-action btn-action-edit" title="Edit">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <button type="button" class="btn-action btn-action-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ staff.pk }}" title="Delete">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
 
-                            <!-- Delete Modal -->
-                            <div class="modal fade text-start" id="deleteModal{{ staff.pk }}" tabindex="-1" aria-hidden="true">
-                                <div class="modal-dialog modal-dialog-centered">
-                                    <div class="modal-content">
-                                        <div class="modal-header">
-                                            <h5 class="modal-title"><i class="bi bi-trash text-danger me-2"></i>Remove Contact</h5>
-                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                        </div>
-                                        <div class="modal-body">
-                                            Are you sure you want to remove <strong>{{ staff.name }}</strong> ({{ staff.mobile_number }}) from Contacts?
-                                        </div>
-                                        <div class="modal-footer">
-                                            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-                                            <form method="post" action="{% url 'users:staff_delete' staff.pk %}">
-                                                {% csrf_token %}
-                                                <button type="submit" class="btn btn-danger fw-semibold">Confirm Delete</button>
-                                            </form>
+                                <!-- Delete Modal -->
+                                <div class="modal fade text-start" id="deleteModal{{ staff.pk }}" tabindex="-1" aria-hidden="true">
+                                    <div class="modal-dialog modal-dialog-centered">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title"><i class="bi bi-trash text-danger me-2"></i>Remove Contact</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                Are you sure you want to remove <strong>{{ staff.name }}</strong> ({{ staff.mobile_number }}) from Contacts?
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                <form method="post" action="{% url 'users:staff_delete' staff.pk %}">
+                                                    {% csrf_token %}
+                                                    <button type="submit" class="btn btn-danger fw-semibold">Confirm Delete</button>
+                                                </form>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr class="table-empty">
-                        <td colspan="5">
-                            <i class="bi bi-person-x d-block fs-1 mb-2 opacity-25"></i>
-                            No contact records found matching your filter.
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr class="table-empty">
+                            <td colspan="6">
+                                <i class="bi bi-person-x d-block fs-1 mb-2 opacity-25"></i>
+                                No contact records found matching your filter.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</form>
+
+<!-- Bulk Delete Modal -->
+<div class="modal fade text-start" id="bulkDeleteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-trash text-danger me-2"></i>Bulk Delete Contacts</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                Are you sure you want to delete the <strong id="modalSelectedCount">0</strong> selected contact(s)? This action cannot be undone.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger fw-semibold" id="confirmBulkDeleteBtn">Confirm Delete</button>
+            </div>
         </div>
     </div>
 </div>
@@ -139,4 +170,60 @@
 </div>
 {% endif %}
 
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const selectAllHeader = document.getElementById('selectAllContacts');
+    const contactCheckboxes = document.querySelectorAll('.contact-checkbox');
+    const btnBulkDelete = document.getElementById('btnBulkDelete');
+    const selectedCountSpan = document.getElementById('selectedCount');
+    const modalSelectedCountSpan = document.getElementById('modalSelectedCount');
+    const confirmBulkDeleteBtn = document.getElementById('confirmBulkDeleteBtn');
+    const bulkDeleteForm = document.getElementById('bulkDeleteForm');
+
+    function updateSelectionState() {
+        const checkedBoxes = document.querySelectorAll('.contact-checkbox:checked');
+        const count = checkedBoxes.length;
+
+        if (selectedCountSpan) selectedCountSpan.textContent = count;
+        if (modalSelectedCountSpan) modalSelectedCountSpan.textContent = count;
+
+        if (btnBulkDelete) {
+            if (count > 0) {
+                btnBulkDelete.classList.remove('d-none');
+            } else {
+                btnBulkDelete.classList.add('d-none');
+            }
+        }
+
+        if (selectAllHeader && contactCheckboxes.length > 0) {
+            selectAllHeader.checked = (count === contactCheckboxes.length);
+            selectAllHeader.indeterminate = (count > 0 && count < contactCheckboxes.length);
+        }
+    }
+
+    if (selectAllHeader) {
+        selectAllHeader.addEventListener('change', function() {
+            contactCheckboxes.forEach(cb => {
+                cb.checked = selectAllHeader.checked;
+            });
+            updateSelectionState();
+        });
+    }
+
+    contactCheckboxes.forEach(cb => {
+        cb.addEventListener('change', updateSelectionState);
+    });
+
+    if (confirmBulkDeleteBtn && bulkDeleteForm) {
+        confirmBulkDeleteBtn.addEventListener('click', function() {
+            bulkDeleteForm.submit();
+        });
+    }
+
+    updateSelectionState();
+});
+</script>
 {% endblock %}
