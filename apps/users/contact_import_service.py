@@ -1,9 +1,12 @@
+import io
 import re
 import logging
 from typing import Tuple, List, Dict, Any, Optional
 
 import pandas as pd
+import openpyxl
 from django.db import transaction
+from django.http import HttpResponse
 
 from .models import Staff, Department
 from apps.accounts.models import CustomUser
@@ -16,6 +19,38 @@ class ContactImportService:
     Service layer for parsing, validating, and bulk importing Enterprise Contact Excel files (.xlsx, .xls).
     Supports optional department assignment, automatic department creation, and Indian mobile number validation.
     """
+
+    @classmethod
+    def generate_sample_excel(cls) -> HttpResponse:
+        """
+        Generates and returns an HttpResponse streaming a sample .xlsx file containing
+        the required columns (name, number, department) and 2 sample rows.
+        """
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Contacts Sample"
+
+        headers = ['name', 'number', 'department']
+        ws.append(headers)
+
+        sample_rows = [
+            ['John Doe', '9876500001', 'Computer Science'],
+            ['Jane Smith', '9876500002', '']
+        ]
+
+        for r in sample_rows:
+            ws.append(r)
+
+        output = io.BytesIO()
+        wb.save(output)
+        output.seek(0)
+
+        response = HttpResponse(
+            output.getvalue(),
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response['Content-Disposition'] = 'attachment; filename="contacts_sample.xlsx"'
+        return response
 
     @staticmethod
     def validate_mobile_number(val: Any) -> Optional[str]:

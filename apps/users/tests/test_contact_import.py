@@ -169,3 +169,25 @@ class ContactImportTestCase(TestCase):
 
         staff_d = Staff.objects.get(mobile_number='9876543223')
         self.assertIsNone(staff_d.department)
+
+    def test_contact_sample_excel_download_and_parse_validity(self):
+        """Verify Contact import sample Excel download returns valid downloadable .xlsx and parses successfully."""
+        from apps.users.contact_import_service import ContactImportService
+
+        self.client.login(username='admin_import', password='password123')
+        response = self.client.get(reverse('users:contact_sample_download'))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['Content-Type'], 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        self.assertIn('contacts_sample.xlsx', response['Content-Disposition'])
+
+        # Verify downloaded sample file parses cleanly with ContactImportService
+        sample_file = SimpleUploadedFile(
+            "contacts_sample.xlsx",
+            response.content,
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+        preview_rows, summary, errors = ContactImportService.parse_excel(sample_file)
+        self.assertEqual(errors, [])
+        self.assertIsNotNone(summary)
+        self.assertEqual(summary['contacts_found'], 2)
+        self.assertEqual(summary['new_contacts'], 2)

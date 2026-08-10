@@ -254,6 +254,18 @@ class TemplateImportView(LoginRequiredMixin, RoleRequiredMixin, View):
         return redirect('dlt_templates:import')
 
 
+class TemplateSampleDownloadView(LoginRequiredMixin, RoleRequiredMixin, View):
+    """
+    Downloads a sample Excel file (.xlsx) containing required column headers and sample data for DLT template import.
+    """
+    allowed_roles = ALLOWED_TEMPLATE_ROLES
+
+    def get(self, request):
+        if not is_global_admin(request.user):
+            raise PermissionDenied("Template import sample download is restricted to Global Administrators.")
+        return TemplateImportService.generate_sample_excel()
+
+
 class TemplateExportView(LoginRequiredMixin, RoleRequiredMixin, View):
     allowed_roles = ALLOWED_TEMPLATE_ROLES
 

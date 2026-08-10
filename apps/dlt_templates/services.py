@@ -78,6 +78,63 @@ class TemplateImportService:
     ]
 
     @classmethod
+    def generate_sample_excel(cls) -> HttpResponse:
+        """
+        Generates and returns an HttpResponse streaming a sample .xlsx file containing
+        the 12 required DLT Template column headers and 2 sample rows.
+        """
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "DLT Templates Sample"
+
+        ws.append(cls.REQUIRED_COLUMNS)
+
+        sample_rows = [
+            [
+                'CLGEXM',
+                '1107160000000100001',
+                'Exam Schedule Announcement',
+                '1002345',
+                'Service Implicit',
+                'Service Implicit',
+                'Dear {#var#}, your semester exam for {#var#} is scheduled on {#var#}.',
+                'Dear Student, your semester exam for Data Structures is scheduled on 15-May-2026.',
+                'Approved',
+                'Campus Admin',
+                '3',
+                '2026-01-10'
+            ],
+            [
+                'CLGERP',
+                '1107160000000100002',
+                'Fee Receipt Notification',
+                '1002346',
+                'Service Implicit',
+                'Service Implicit',
+                'Dear {#var#}, fee payment of Rs.{#var#} received successfully. Receipt No: {#var#}.',
+                'Dear Student, fee payment of Rs.25000 received successfully. Receipt No: REC-9921.',
+                'Approved',
+                'Campus Admin',
+                '3',
+                '2026-01-12'
+            ]
+        ]
+
+        for r in sample_rows:
+            ws.append(r)
+
+        output = io.BytesIO()
+        wb.save(output)
+        output.seek(0)
+
+        response = HttpResponse(
+            output.getvalue(),
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response['Content-Disposition'] = 'attachment; filename="dlt_template_sample.xlsx"'
+        return response
+
+    @classmethod
     def parse_excel(cls, file) -> Tuple[Optional[Dict[str, Any]], List[str]]:
         """
         Parses uploaded Excel file, validates 12 required DLT columns, and checks for duplicates.

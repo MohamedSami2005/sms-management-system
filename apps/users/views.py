@@ -402,6 +402,22 @@ class SystemUserResetPasswordView(LoginRequiredMixin, RoleRequiredMixin, View):
         return redirect('users:system_user_list')
 
 
+class ContactSampleDownloadView(LoginRequiredMixin, View):
+    """
+    Downloads a sample Excel file (.xlsx) containing required column headers and sample data for Contact import.
+    """
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return redirect('accounts:login')
+        if not (request.user.is_superuser or getattr(request.user, 'role', '') in ['ADMIN', 'COE', 'ADMISSION', 'ACCOUNTS', 'PLACEMENT'] or request.user.is_staff):
+            raise PermissionDenied("Contact import sample download is restricted to authorized personnel.")
+        return super().dispatch(request, *args, **kwargs)
+
+    def get(self, request):
+        return ContactImportService.generate_sample_excel()
+
+
 class ContactImportView(LoginRequiredMixin, View):
     """
     Enterprise Contact Excel Import View supporting preview, validation, and bulk creation.

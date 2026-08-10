@@ -173,3 +173,22 @@ class EnterpriseDLTImportTestCase(TestCase):
         self.assertEqual(response.status_code, 302)
         tmpl.refresh_from_db()
         self.assertEqual(tmpl.office, self.coe_office)
+
+    def test_dlt_sample_excel_download_and_parse_validity(self):
+        """Verify DLT Template import sample Excel download returns valid downloadable .xlsx and parses successfully."""
+        self.client.login(username="admin_import", password="adminpassword123")
+        response = self.client.get(reverse('dlt_templates:sample_download'))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['Content-Type'], 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        self.assertIn('dlt_template_sample.xlsx', response['Content-Disposition'])
+
+        # Verify downloaded sample file parses cleanly with TemplateImportService
+        sample_file = SimpleUploadedFile(
+            "dlt_template_sample.xlsx",
+            response.content,
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+        payload, errors = TemplateImportService.parse_excel(sample_file)
+        self.assertEqual(errors, [])
+        self.assertIsNotNone(payload)
+        self.assertEqual(payload['templates_found'], 2)

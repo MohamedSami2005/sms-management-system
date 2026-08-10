@@ -1,7 +1,7 @@
 from django.urls import path
 from .views import (
     TemplateListView, TemplateDetailView, TemplateCreateView, TemplateUpdateView,
-    TemplateToggleStatusView, TemplateDeleteView, TemplateImportView,
+    TemplateToggleStatusView, TemplateDeleteView, TemplateImportView, TemplateSampleDownloadView,
     TemplateExportView, TemplatePreviewAjaxView, TemplateVariableSchemaAjaxView,
     TemplateScopeListView, TemplateScopeToggleAjaxView
 )
@@ -20,6 +20,7 @@ urlpatterns = [
     
     # Import & Export
     path('import/', TemplateImportView.as_view(), name='import'),
+    path('import/sample/', TemplateSampleDownloadView.as_view(), name='sample_download'),
     path('export/', TemplateExportView.as_view(), name='export'),
     
     # AJAX Live Preview & Schema APIs
