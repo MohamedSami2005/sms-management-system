@@ -160,7 +160,7 @@ class BulkSMSStaffSelectionView(LoginRequiredMixin, RoleRequiredMixin, ListView)
     template_name = 'sms/bulk_staff_select.html'
     context_object_name = 'staff_list'
     allowed_roles = ALLOWED_SMS_ROLES
-    paginate_by = 15
+    paginate_by = 500
 
     def get_queryset(self):
         qs = Staff.objects.filter(is_active=True).select_related('department').order_by('name')
