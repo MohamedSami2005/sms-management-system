@@ -51,12 +51,22 @@
                 <form method="post" id="bulkComposeForm">
                     {% csrf_token %}
 
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Filter by Office</label>
+                        <select id="officeFilterSelect" class="form-select">
+                            <option value="">All Offices</option>
+                            {% for off in offices %}
+                                <option value="{{ off.pk }}">{{ off.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
                     <div class="mb-4">
                         <label class="form-label fw-semibold">Select Approved DLT Template *</label>
                         <select name="template" id="dltTemplateSelect" class="form-select form-select-lg" required>
                             <option value="">-- Choose Approved DLT Template --</option>
                             {% for tmpl in dlt_templates %}
-                                <option value="{{ tmpl.pk }}">{{ tmpl.name }} (ID: {{ tmpl.dlt_template_id }} - Header: {{ tmpl.header_sender_id }})</option>
+                                <option value="{{ tmpl.pk }}" data-office-id="{{ tmpl.office_id|default:'' }}">{{ tmpl.name }} (ID: {{ tmpl.dlt_template_id }} - Header: {{ tmpl.header_sender_id }})</option>
                             {% endfor %}
                         </select>
                     </div>
@@ -176,7 +186,35 @@
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    const officeFilterSelect = document.getElementById('officeFilterSelect');
     const templateSelect = document.getElementById('dltTemplateSelect');
+
+    if (officeFilterSelect && templateSelect) {
+        officeFilterSelect.addEventListener('change', function() {
+            const selectedOfficeId = this.value;
+            const options = templateSelect.querySelectorAll('option');
+
+            options.forEach(option => {
+                if (!option.value) return; // Keep default prompt option visible
+                const tmplOfficeId = option.getAttribute('data-office-id') || '';
+                if (!selectedOfficeId || tmplOfficeId === selectedOfficeId) {
+                    option.hidden = false;
+                    option.disabled = false;
+                    option.style.display = '';
+                } else {
+                    option.hidden = true;
+                    option.disabled = true;
+                    option.style.display = 'none';
+                }
+            });
+
+            const currentSelectedOpt = templateSelect.options[templateSelect.selectedIndex];
+            if (currentSelectedOpt && currentSelectedOpt.hidden) {
+                templateSelect.value = '';
+                templateSelect.dispatchEvent(new Event('change'));
+            }
+        });
+    }
     const mappingCard = document.getElementById('mappingCard');
     const mappingContainer = document.getElementById('dynamicMappingContainer');
     const noTemplateNotice = document.getElementById('noTemplateNotice');

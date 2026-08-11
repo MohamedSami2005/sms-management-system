@@ -44,7 +44,12 @@ class SingleSMSView(LoginRequiredMixin, RoleRequiredMixin, FormView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        from apps.common.scopes import get_scoped_queryset
+        from apps.users.models import Office
+        scoped_templates = get_scoped_queryset(self.request.user, DLTTemplate.objects.filter(is_active=True)).select_related('office')
         context['db_fields'] = json.dumps(StaffFieldMapper.get_supported_fields())
+        context['dlt_templates'] = scoped_templates
+        context['offices'] = Office.objects.filter(is_active=True).order_by('name')
         return context
 
     def form_valid(self, form):
@@ -217,13 +222,16 @@ class BulkSMSComposeView(LoginRequiredMixin, RoleRequiredMixin, TemplateView):
         if not staff_members.exists():
             staff_members = CustomUser.objects.filter(id__in=staff_ids).select_related('department')
 
-        dlt_templates = get_scoped_queryset(request.user, DLTTemplate.objects.filter(is_active=True))
+        from apps.users.models import Office
+        dlt_templates = get_scoped_queryset(request.user, DLTTemplate.objects.filter(is_active=True)).select_related('office')
+        offices = Office.objects.filter(is_active=True).order_by('name')
         db_fields = StaffFieldMapper.get_supported_fields()
 
         context = self.get_context_data()
         context['staff_members'] = staff_members
         context['selected_count'] = len(staff_members)
         context['dlt_templates'] = dlt_templates
+        context['offices'] = offices
         context['db_fields'] = db_fields
         return self.render_to_response(context)
 
