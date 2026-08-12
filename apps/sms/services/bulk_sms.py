@@ -28,61 +28,75 @@ class BulkSMSService:
         staff_user_ids: List[int],
         template: DLTTemplate,
         mapping_config: Dict[str, Dict[str, str]],
-        department: Department = None
+        department: Department = None,
+        existing_batch: SMSBatch = None,
+        excel_rows: List[Dict[str, Any]] = None
     ) -> Tuple[SMSBatch, Dict[str, Any]]:
         """
-        Loops through all selected staff members, generates personalized interpolated text per recipient,
+        Loops through all selected staff members or imported Excel rows, generates personalized interpolated text per recipient,
         and dispatches via SingleSMSService.
         """
         start_time = time.time()
         dept = department or user.department
 
-        # Fetch staff recipient records efficiently with select_related
-        staff_members = list(Staff.objects.filter(id__in=staff_user_ids).select_related('department'))
-        if not staff_members:
-            staff_members = list(CustomUser.objects.filter(id__in=staff_user_ids).select_related('department'))
+        if excel_rows is not None:
+            recipients = excel_rows
+            total_count = len(excel_rows)
+        else:
+            recipients = list(Staff.objects.filter(id__in=staff_user_ids).select_related('department'))
+            if not recipients:
+                recipients = list(CustomUser.objects.filter(id__in=staff_user_ids).select_related('department'))
+            total_count = len(recipients)
 
-        total_count = len(staff_members)
-
-        # 1. Create SMSBatch tracking record
-        batch = SMSBatch.objects.create(
-            user=user,
-            department=dept,
-            template=template,
-            file_name=f"Personalized Bulk SMS - {template.name} ({total_count} Staff)",
-            total_records=total_count,
-            processed_records=0,
-            successful_count=0,
-            failed_count=0,
-            status=SMSStatusChoices.PROCESSING,
-            started_at=timezone.now()
-        )
+        # 1. Create or reuse SMSBatch tracking record
+        if existing_batch:
+            batch = existing_batch
+            if not batch.started_at:
+                batch.started_at = timezone.now()
+                batch.save(update_fields=['started_at'])
+        else:
+            file_label = f"Bulk Excel - {template.name}" if excel_rows is not None else f"Personalized Bulk SMS - {template.name}"
+            batch = SMSBatch.objects.create(
+                user=user,
+                department=dept,
+                template=template,
+                file_name=f"{file_label} ({total_count} Recipients)",
+                total_records=total_count,
+                processed_records=0,
+                successful_count=0,
+                failed_count=0,
+                status=SMSStatusChoices.PROCESSING,
+                started_at=timezone.now()
+            )
 
         logger.info(f"PERSONALIZED_BULK_START | Batch #{batch.id} | Initiator: '{user.username}' | Recipients: {total_count} | Template: '{template.name}'")
 
         failure_reasons = []
         total_credits_used = 0
 
-        # 2. Personalized Sequential Loop over Staff Members
-        for staff in staff_members:
-            if isinstance(staff, Staff):
-                mobile = (staff.mobile_number or '').strip()
-                staff_name = staff.name
+        # 2. Personalized Sequential Loop over Recipients (Staff or Excel Row Dicts)
+        for recipient in recipients:
+            if isinstance(recipient, dict):
+                mobile = (recipient.get('__normalized_mobile') or '').strip()
+                staff_name = recipient.get('__normalized_name', 'Excel Recipient')
+            elif isinstance(recipient, Staff):
+                mobile = (recipient.mobile_number or '').strip()
+                staff_name = recipient.name
             else:
-                mobile = (getattr(staff, 'phone_number', '') or '').strip()
-                staff_name = staff.get_full_name() or staff.username
+                mobile = (getattr(recipient, 'phone_number', '') or '').strip()
+                staff_name = recipient.get_full_name() or recipient.username
 
             if not mobile:
                 batch.failed_count += 1
                 batch.processed_records += 1
                 batch.save(update_fields=['failed_count', 'processed_records'])
                 failure_reasons.append(f"{staff_name}: Missing mobile number")
-                logger.warning(f"PERSONALIZED_SMS_SKIP | Staff '{staff_name}' missing phone number.")
+                logger.warning(f"PERSONALIZED_SMS_SKIP | Recipient '{staff_name}' missing phone number.")
                 continue
 
             try:
                 # Resolve recipient-specific personalized variables
-                personalized_vars = StaffFieldMapper.resolve_all_variables(staff, mapping_config)
+                personalized_vars = StaffFieldMapper.resolve_all_variables(recipient, mapping_config)
 
                 # Call SingleSMSService.process_and_send()
                 success, log_entry, gw_result = SingleSMSService.process_and_send(

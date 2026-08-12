@@ -34,6 +34,15 @@ class StaffFieldMapper:
         if not recipient or not field_key:
             return ""
 
+        if isinstance(recipient, dict):
+            if field_key in recipient:
+                return str(recipient[field_key] or '')
+            field_key_lower = field_key.lower()
+            for k, v in recipient.items():
+                if k.lower() == field_key_lower:
+                    return str(v or '')
+            return ""
+
         if isinstance(recipient, Staff):
             if field_key in ('name', 'full_name'):
                 return recipient.name

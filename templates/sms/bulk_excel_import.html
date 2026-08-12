@@ -1,0 +1,167 @@
+{% extends 'base.html' %}
+{% load custom_filters %}
+
+{% block title %}Import Bulk SMS Recipients from Excel - CCMS{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'dashboard:home' %}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'sms:bulk_select' %}">Bulk SMS Selection</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Direct Excel Import</li>
+    </ol>
+</nav>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="fw-bold mb-1"><i class="bi bi-file-earmark-excel text-success me-2"></i>Direct Bulk SMS Excel Import</h3>
+        <p class="text-muted mb-0">Upload any Excel sheet (.xlsx, .xls) to send Bulk SMS directly with dynamic column personalization.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{% url 'sms:bulk_select' %}" class="btn btn-outline-secondary fw-semibold">
+            <i class="bi bi-person-lines-fill me-1"></i> Select Registered Contacts
+        </a>
+    </div>
+</div>
+
+<!-- Important Notice Banner -->
+<div class="alert alert-info border border-info-subtle rounded-3 shadow-sm mb-4">
+    <div class="d-flex align-items-start gap-2">
+        <i class="bi bi-info-circle-fill fs-5 text-info mt-1"></i>
+        <div>
+            <strong class="d-block text-dark">Temporary Recipient Import</strong>
+            <span class="small text-secondary">
+                Recipients imported through this tool are <strong>temporary</strong> for this Bulk SMS dispatch and will <strong>NOT be saved as permanent contacts</strong> in the system database. Every column header in your Excel file will automatically become available for dynamic SMS template variable mapping!
+            </span>
+        </div>
+    </div>
+</div>
+
+<!-- Upload Card -->
+<div class="card border-0 shadow-sm rounded-4 mb-4">
+    <div class="card-header bg-white py-3">
+        <h5 class="fw-bold mb-0 text-dark"><i class="bi bi-upload me-2 text-primary"></i>Upload Excel Spreadsheet</h5>
+    </div>
+    <div class="card-body p-4">
+        <form method="post" enctype="multipart/form-data" class="row g-3 align-items-end">
+            {% csrf_token %}
+            <div class="col-md-9">
+                <label class="form-label fw-semibold text-muted small text-uppercase mb-1">Select Excel File (.xlsx, .xls)</label>
+                <input type="file" name="excel_file" class="form-control form-control-lg" accept=".xlsx, .xls" required>
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-primary btn-lg w-100 fw-bold">
+                    <i class="bi bi-file-earmark-arrow-up me-1"></i> Upload & Parse Excel
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if preview_data %}
+<!-- Excel Parse Results & Preview Section -->
+<div class="card border-0 shadow-sm rounded-4 mb-4 border-top border-success border-4">
+    <div class="card-header bg-white py-3">
+        <h5 class="fw-bold mb-0 text-success"><i class="bi bi-check-circle-fill me-2"></i>Excel Parse Summary & Preview</h5>
+    </div>
+    <div class="card-body p-4">
+        <!-- Summary Cards Row -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-3">
+                <div class="p-3 bg-light rounded-3 border text-center">
+                    <small class="text-muted d-block text-uppercase font-monospace">Total Rows Detected</small>
+                    <strong class="fs-3 text-dark">{{ preview_data.total_rows }}</strong>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="p-3 bg-success-subtle text-success rounded-3 border border-success-subtle text-center">
+                    <small class="d-block text-uppercase font-monospace">Valid Recipients</small>
+                    <strong class="fs-3">{{ preview_data.valid_count }}</strong>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="p-3 bg-light rounded-3 border text-center">
+                    <small class="text-muted d-block text-uppercase font-monospace">Auto-Identified Name</small>
+                    <strong class="fs-5 text-primary font-monospace">{{ preview_data.name_column }}</strong>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="p-3 bg-light rounded-3 border text-center">
+                    <small class="text-muted d-block text-uppercase font-monospace">Auto-Identified Mobile</small>
+                    <strong class="fs-5 text-primary font-monospace">{{ preview_data.number_column }}</strong>
+                </div>
+            </div>
+        </div>
+
+        <!-- Detected Headers Badges -->
+        <div class="mb-4">
+            <label class="form-label text-uppercase text-muted fw-bold small d-block mb-2">
+                <i class="bi bi-tags-fill me-1 text-primary"></i> Available Dynamic Excel Variable Sources ({{ preview_data.all_headers|length }} Columns Detected)
+            </label>
+            <div class="d-flex flex-wrap gap-2">
+                {% for header in preview_data.all_headers %}
+                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-2 fs-6">
+                        <i class="bi bi-code-square me-1"></i>{{ header }}
+                    </span>
+                {% endfor %}
+            </div>
+        </div>
+
+        {% if preview_data.invalid_details %}
+        <!-- Invalid Mobile Rows Notice -->
+        <div class="alert alert-warning border border-warning-subtle rounded-3 mb-4">
+            <h6 class="fw-bold text-warning-emphasis mb-2"><i class="bi bi-exclamation-triangle-fill me-2"></i>Skipped Invalid Rows ({{ preview_data.invalid_count }})</h6>
+            <ul class="mb-0 small font-monospace">
+                {% for inv in preview_data.invalid_details|slice:":5" %}
+                    <li>Row #{{ inv.row_num }}: {{ inv.name }} - Mobile: {{ inv.mobile_raw }} ({{ inv.reason }})</li>
+                {% endfor %}
+                {% if preview_data.invalid_details|length > 5 %}
+                    <li class="text-muted">... and {{ preview_data.invalid_details|length|add:"-5" }} more invalid row(s) skipped.</li>
+                {% endif %}
+            </ul>
+        </div>
+        {% endif %}
+
+        <!-- Recipient Rows Preview Table -->
+        <h6 class="fw-bold mb-3"><i class="bi bi-table me-2 text-secondary"></i>Recipient Preview (First 5 Rows)</h6>
+        <div class="table-responsive border rounded-3">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>#</th>
+                        {% for header in preview_data.all_headers %}
+                            <th>{{ header }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in preview_data.rows|slice:":5" %}
+                    <tr>
+                        <td class="font-monospace text-muted">{{ forloop.counter }}</td>
+                        {% for header in preview_data.all_headers %}
+                            <td class="font-monospace">
+                                {% if header == preview_data.number_column %}
+                                    <strong class="text-primary">{{ row|get_item:header }}</strong>
+                                {% elif header == preview_data.name_column %}
+                                    <strong>{{ row|get_item:header }}</strong>
+                                {% else %}
+                                    {{ row|get_item:header|default:"—" }}
+                                {% endif %}
+                            </td>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="mt-4 text-end">
+            <a href="{% url 'sms:bulk_compose' %}" class="btn btn-success btn-lg fw-bold px-5">
+                Proceed to DLT Template &amp; Variable Mapping <i class="bi bi-arrow-right ms-2"></i>
+            </a>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}

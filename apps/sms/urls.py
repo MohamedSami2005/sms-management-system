@@ -2,6 +2,7 @@ from django.urls import path
 from .views import (
     SingleSMSView, BulkSMSStaffSelectionView, BulkSMSComposeView,
     PersonalizedPreviewAjaxView, BulkSMSSummaryView, BulkSMSProgressAjaxView,
+    BulkSMSStartAjaxView, BulkSMSExecuteAjaxView, BulkSMSExcelImportView, BulkSMSExcelSampleView,
     SMSQueueListView, StaffSearchAjaxView
 )
 
@@ -13,7 +14,11 @@ urlpatterns = [
     
     # Bulk Staff SMS Workflow
     path('bulk/select/', BulkSMSStaffSelectionView.as_view(), name='bulk_select'),
+    path('bulk/import-excel/', BulkSMSExcelImportView.as_view(), name='bulk_excel_import'),
+    path('bulk/import-excel/sample/', BulkSMSExcelSampleView.as_view(), name='bulk_excel_sample'),
     path('bulk/compose/', BulkSMSComposeView.as_view(), name='bulk_compose'),
+    path('bulk/start-ajax/', BulkSMSStartAjaxView.as_view(), name='bulk_start_ajax'),
+    path('bulk/execute-ajax/<int:pk>/', BulkSMSExecuteAjaxView.as_view(), name='bulk_execute_ajax'),
     path('bulk/preview-personalized-ajax/', PersonalizedPreviewAjaxView.as_view(), name='bulk_preview_personalized_ajax'),
     path('bulk/summary/<int:pk>/', BulkSMSSummaryView.as_view(), name='bulk_summary'),
     path('bulk/progress-ajax/<int:pk>/', BulkSMSProgressAjaxView.as_view(), name='bulk_progress_ajax'),

@@ -6,7 +6,7 @@ from django.views.generic import FormView, ListView, TemplateView, View
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse_lazy
 from django.contrib import messages
-from django.shortcuts import redirect, get_object_or_404
+from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
 from django.db.models import Q
 
@@ -199,61 +199,149 @@ class BulkSMSStaffSelectionView(LoginRequiredMixin, RoleRequiredMixin, ListView)
             return redirect('sms:bulk_select')
 
         request.session['bulk_sms_staff_ids'] = [int(i) for i in selected_ids if i.isdigit()]
+        request.session['bulk_sms_source'] = 'database'
         return redirect('sms:bulk_compose')
+
+
+class BulkSMSExcelImportView(LoginRequiredMixin, RoleRequiredMixin, View):
+    """
+    Excel Upload view for Bulk SMS.
+    Parses dynamic Excel headers, validates mobile numbers, shows preview/validation errors,
+    and sets session temporary data for compose workflow without creating Contact records.
+    """
+    template_name = 'sms/bulk_excel_import.html'
+    allowed_roles = ALLOWED_SMS_ROLES
+
+    def get(self, request):
+        return render(request, self.template_name, {
+            'preview_data': request.session.get('bulk_excel_data')
+        })
+
+    def post(self, request):
+        from .services.excel_import import BulkExcelImportService
+        if 'excel_file' not in request.FILES:
+            messages.error(request, "Please select an Excel file (.xlsx or .xls) to upload.")
+            return render(request, self.template_name)
+
+        excel_file = request.FILES['excel_file']
+        parsed_data, errors = BulkExcelImportService.parse_excel(excel_file)
+
+        if errors:
+            for err in errors:
+                messages.error(request, err)
+            return render(request, self.template_name)
+
+        # Save temporary data to session
+        request.session['bulk_sms_source'] = 'excel'
+        request.session['bulk_excel_data'] = parsed_data
+        if 'bulk_sms_staff_ids' in request.session:
+            del request.session['bulk_sms_staff_ids']
+
+        messages.success(
+            request,
+            f"Excel file parsed successfully! Found {parsed_data['valid_count']} valid recipient(s) across {len(parsed_data['all_headers'])} columns."
+        )
+
+        return render(request, self.template_name, {
+            'preview_data': parsed_data
+        })
+
+
+class BulkSMSExcelSampleView(LoginRequiredMixin, RoleRequiredMixin, View):
+    """
+    Downloads sample Excel template for Bulk SMS Excel import.
+    """
+    allowed_roles = ALLOWED_SMS_ROLES
+
+    def get(self, request):
+        from .services.excel_import import BulkExcelImportService
+        return BulkExcelImportService.generate_sample_excel()
 
 
 class BulkSMSComposeView(LoginRequiredMixin, RoleRequiredMixin, TemplateView):
     """
-    Step 2: Personalized Bulk SMS Compose Screen.
-    Displays selected recipients, DLT Template dropdown (scoped to user's Office), Variable Mapping UI,
-    and live recipient sandbox.
+    Step 2: Dynamic Variable Mapping & Live Preview Sandbox Screen.
+    Supports both database Contact recipients and temporary dynamic Excel recipients.
     """
     template_name = 'sms/bulk_sms_compose.html'
     allowed_roles = ALLOWED_SMS_ROLES
 
     def get(self, request, *args, **kwargs):
         from apps.common.scopes import get_scoped_queryset
-        staff_ids = request.session.get('bulk_sms_staff_ids', [])
-        if not staff_ids:
-            messages.warning(request, "No staff members selected. Please select recipients first.")
-            return redirect('sms:bulk_select')
+        source = request.session.get('bulk_sms_source', 'database')
 
-        staff_members = Staff.objects.filter(id__in=staff_ids, is_active=True).select_related('department')
-        if not staff_members.exists():
-            staff_members = CustomUser.objects.filter(id__in=staff_ids).select_related('department')
+        if source == 'excel':
+            excel_data = request.session.get('bulk_excel_data')
+            if not excel_data or not excel_data.get('rows'):
+                messages.warning(request, "No Excel recipients uploaded. Please upload an Excel file first.")
+                return redirect('sms:bulk_excel_import')
+
+            valid_rows = excel_data['rows']
+            headers = excel_data['all_headers']
+            selected_count = len(valid_rows)
+
+            staff_members = [
+                {
+                    'id': idx + 1,
+                    'name': r.get('__normalized_name'),
+                    'mobile_number': r.get('__normalized_mobile'),
+                    'department_name': r.get('Department') or r.get('dept') or '-'
+                }
+                for idx, r in enumerate(valid_rows)
+            ]
+            db_fields = [{'key': h, 'label': f"{h} (Excel Column)"} for h in headers]
+        else:
+            staff_ids = request.session.get('bulk_sms_staff_ids', [])
+            if not staff_ids:
+                messages.warning(request, "No staff members selected. Please select recipients first.")
+                return redirect('sms:bulk_select')
+
+            staff_members = Staff.objects.filter(id__in=staff_ids, is_active=True).select_related('department')
+            if not staff_members.exists():
+                staff_members = CustomUser.objects.filter(id__in=staff_ids).select_related('department')
+            selected_count = len(staff_members)
+            db_fields = StaffFieldMapper.get_supported_fields()
 
         from apps.users.models import Office
         dlt_templates = get_scoped_queryset(request.user, DLTTemplate.objects.filter(is_active=True)).select_related('office')
         offices = Office.objects.filter(is_active=True).order_by('name')
-        db_fields = StaffFieldMapper.get_supported_fields()
 
         context = self.get_context_data()
         context['staff_members'] = staff_members
-        context['selected_count'] = len(staff_members)
+        context['selected_count'] = selected_count
         context['dlt_templates'] = dlt_templates
         context['offices'] = offices
         context['db_fields'] = db_fields
+        context['bulk_sms_source'] = source
         return self.render_to_response(context)
 
     def post(self, request, *args, **kwargs):
         from apps.common.scopes import get_scoped_queryset
+        source = request.session.get('bulk_sms_source', 'database')
         staff_ids = request.session.get('bulk_sms_staff_ids', [])
-        if not staff_ids:
-            messages.error(request, "Session expired or no recipients selected.")
-            return redirect('sms:bulk_select')
+        excel_rows = None
+
+        if source == 'excel':
+            excel_data = request.session.get('bulk_excel_data', {})
+            excel_rows = excel_data.get('rows', [])
+            if not excel_rows:
+                messages.error(request, "Session expired or no Excel recipients found.")
+                return redirect('sms:bulk_excel_import')
+        else:
+            if not staff_ids:
+                messages.error(request, "Session expired or no recipients selected.")
+                return redirect('sms:bulk_select')
 
         template_id = request.POST.get('template')
         if not template_id or not template_id.isdigit():
             messages.error(request, "Please select a valid DLT Template.")
             return redirect('sms:bulk_compose')
 
-        # Validate backend Office scope: template MUST belong to user's accessible Office
         template = get_object_or_404(
             get_scoped_queryset(request.user, DLTTemplate.objects.filter(is_active=True)),
             pk=template_id
         )
 
-        # Build mapping_config for each variable (var_1, var_2...)
         mapping_config = {}
         for idx in range(1, template.variable_count + 1):
             key = f"var_{idx}"
@@ -264,29 +352,30 @@ class BulkSMSComposeView(LoginRequiredMixin, RoleRequiredMixin, TemplateView):
                 sval = request.POST.get(f"{key}_static_val", "")
             mapping_config[key] = {"type": stype, "value": sval}
 
-        # Execute Personalized Bulk Dispatch via BulkSMSService
         batch, summary = BulkSMSService.execute_bulk_dispatch(
             user=request.user,
-            staff_user_ids=staff_ids,
+            staff_user_ids=staff_ids if source != 'excel' else [],
             template=template,
             mapping_config=mapping_config,
-            department=request.user.department
+            department=request.user.department,
+            excel_rows=excel_rows
         )
 
         request.session['last_bulk_batch_id'] = batch.id
         request.session['last_bulk_summary'] = summary
 
-        # Clear session selection
         if 'bulk_sms_staff_ids' in request.session:
             del request.session['bulk_sms_staff_ids']
+        if 'bulk_excel_data' in request.session:
+            del request.session['bulk_excel_data']
 
-        messages.success(request, f"Personalized Bulk SMS dispatch complete. Sent: {batch.successful_count}/{batch.total_records}")
+        messages.success(request, f"Bulk SMS dispatch complete. Sent: {batch.successful_count}/{batch.total_records}")
         return redirect('sms:bulk_summary', pk=batch.id)
 
 
 class PersonalizedPreviewAjaxView(LoginRequiredMixin, RoleRequiredMixin, View):
     """
-    AJAX endpoint for dynamically generating personalized SMS text for a specific staff member
+    AJAX endpoint for dynamically generating personalized SMS text for a specific staff member or Excel row
     given a template ID and variable mapping config.
     """
     allowed_roles = ALLOWED_SMS_ROLES
@@ -305,21 +394,39 @@ class PersonalizedPreviewAjaxView(LoginRequiredMixin, RoleRequiredMixin, View):
         if not template_id:
             return JsonResponse({'success': False, 'error': 'Missing template_id'}, status=400)
 
-        staff = None
+        source = request.session.get('bulk_sms_source', 'database')
+        target_recipient = None
         staff_name = ""
-        if staff_id:
-            staff = Staff.objects.filter(pk=staff_id).first() or CustomUser.objects.filter(pk=staff_id).first()
-        elif mobile_number:
-            staff = Staff.objects.filter(mobile_number=mobile_number).first()
 
-        if staff:
-            staff_name = staff.name if isinstance(staff, Staff) else (staff.get_full_name() or staff.username)
+        if source == 'excel':
+            excel_data = request.session.get('bulk_excel_data', {})
+            rows = excel_data.get('rows', [])
+            if staff_id and str(staff_id).isdigit():
+                idx = int(staff_id) - 1
+                if 0 <= idx < len(rows):
+                    target_recipient = rows[idx]
+            if not target_recipient and mobile_number:
+                for r in rows:
+                    if r.get('__normalized_mobile') == mobile_number:
+                        target_recipient = r
+                        break
+            if not target_recipient and rows:
+                target_recipient = rows[0]
 
-        # Enforce Office scope on template preview
+            if target_recipient:
+                staff_name = target_recipient.get('__normalized_name', 'Excel Recipient')
+        else:
+            if staff_id:
+                target_recipient = Staff.objects.filter(pk=staff_id).first() or CustomUser.objects.filter(pk=staff_id).first()
+            elif mobile_number:
+                target_recipient = Staff.objects.filter(mobile_number=mobile_number).first()
+
+            if target_recipient:
+                staff_name = target_recipient.name if isinstance(target_recipient, Staff) else (target_recipient.get_full_name() or target_recipient.username)
+
         template = get_object_or_404(get_scoped_queryset(request.user, DLTTemplate.objects.all()), pk=template_id)
 
-        # Resolve personalized variable values for this staff recipient
-        personalized_vars = StaffFieldMapper.resolve_all_variables(staff, mapping_config)
+        personalized_vars = StaffFieldMapper.resolve_all_variables(target_recipient, mapping_config)
         rendered_text = template.preview_message(personalized_vars)
 
         char_count = len(rendered_text)
@@ -327,10 +434,11 @@ class PersonalizedPreviewAjaxView(LoginRequiredMixin, RoleRequiredMixin, View):
 
         return JsonResponse({
             'success': True,
-            'staff_id': staff.id if staff else None,
+            'staff_id': staff_id,
             'staff_name': staff_name,
             'rendered_text': rendered_text,
             'char_count': char_count,
+            'single_credits': single_credits
         })
 
 
@@ -343,15 +451,155 @@ class BulkSMSSummaryView(LoginRequiredMixin, RoleRequiredMixin, TemplateView):
     allowed_roles = ALLOWED_SMS_ROLES
 
     def get_context_data(self, **kwargs):
+        from django.db.models import Sum
         context = super().get_context_data(**kwargs)
         batch_id = self.kwargs.get('pk')
         batch = get_object_or_404(SMSBatch, pk=batch_id)
         summary = self.request.session.get('last_bulk_summary', {})
 
+        logs = SMSLog.objects.filter(batch=batch).select_related('department')
+        failed_logs = logs.filter(status=SMSStatusChoices.FAILED)
+
+        total_credits = summary.get('total_credits_used')
+        if total_credits is None:
+            total_credits = logs.aggregate(total=Sum('credit_units'))['total'] or 0
+
+        execution_time = summary.get('execution_time_seconds')
+        if execution_time is None:
+            if batch.started_at and batch.completed_at:
+                execution_time = round((batch.completed_at - batch.started_at).total_seconds(), 1)
+            else:
+                execution_time = 0.0
+        else:
+            execution_time = round(float(execution_time), 1)
+
+        if summary.get('success_percentage') is not None:
+            success_percentage = summary.get('success_percentage')
+        else:
+            success_percentage = round((batch.successful_count / batch.total_records * 100), 1) if batch.total_records > 0 else 0.0
+
         context['batch'] = batch
         context['summary'] = summary
-        context['logs'] = SMSLog.objects.filter(batch=batch).select_related('department')
+        context['logs'] = logs
+        context['failed_logs'] = failed_logs
+        context['total_credits'] = total_credits
+        context['execution_time'] = execution_time
+        context['success_percentage'] = success_percentage
         return context
+
+
+class BulkSMSStartAjaxView(LoginRequiredMixin, RoleRequiredMixin, View):
+    """
+    AJAX endpoint to initialize an SMSBatch record before starting dispatch.
+    Returns batch_id so client can poll real-time progress.
+    """
+    allowed_roles = ALLOWED_SMS_ROLES
+
+    def post(self, request):
+        from apps.common.scopes import get_scoped_queryset
+        from django.utils import timezone
+
+        template_id = request.POST.get('template')
+        if not template_id or not template_id.isdigit():
+            return JsonResponse({'success': False, 'error': "Please select a valid DLT Template."}, status=400)
+
+        template = get_object_or_404(
+            get_scoped_queryset(request.user, DLTTemplate.objects.filter(is_active=True)),
+            pk=template_id
+        )
+
+        source = request.session.get('bulk_sms_source', 'database')
+        if source == 'excel':
+            excel_data = request.session.get('bulk_excel_data', {})
+            excel_rows = excel_data.get('rows', [])
+            if not excel_rows:
+                return JsonResponse({'success': False, 'error': "Session expired or no Excel recipients found."}, status=400)
+            total_count = len(excel_rows)
+            file_label = f"Bulk Excel - {template.name}"
+        else:
+            staff_ids = request.session.get('bulk_sms_staff_ids', [])
+            if not staff_ids:
+                return JsonResponse({'success': False, 'error': "Session expired or no recipients selected."}, status=400)
+
+            staff_members = list(Staff.objects.filter(id__in=staff_ids).select_related('department'))
+            if not staff_members:
+                staff_members = list(CustomUser.objects.filter(id__in=staff_ids).select_related('department'))
+            total_count = len(staff_members)
+            file_label = f"Personalized Bulk SMS - {template.name}"
+
+        dept = request.user.department
+        batch = SMSBatch.objects.create(
+            user=request.user,
+            department=dept,
+            template=template,
+            file_name=f"{file_label} ({total_count} Recipients)",
+            total_records=total_count,
+            processed_records=0,
+            successful_count=0,
+            failed_count=0,
+            status=SMSStatusChoices.PROCESSING,
+            started_at=timezone.now()
+        )
+
+        return JsonResponse({'success': True, 'batch_id': batch.id, 'total_records': total_count})
+
+
+class BulkSMSExecuteAjaxView(LoginRequiredMixin, RoleRequiredMixin, View):
+    """
+    AJAX endpoint to execute personalized bulk SMS dispatch for an initialized SMSBatch.
+    """
+    allowed_roles = ALLOWED_SMS_ROLES
+
+    def post(self, request, pk):
+        batch = get_object_or_404(SMSBatch, pk=pk)
+        source = request.session.get('bulk_sms_source', 'database')
+        excel_rows = None
+        staff_ids = []
+
+        if source == 'excel':
+            excel_data = request.session.get('bulk_excel_data', {})
+            excel_rows = excel_data.get('rows', [])
+        else:
+            staff_ids = request.session.get('bulk_sms_staff_ids', [])
+            if not staff_ids:
+                staff_ids = list(Staff.objects.filter(is_active=True).values_list('id', flat=True))
+
+        template = batch.template
+
+        mapping_config = {}
+        for idx in range(1, template.variable_count + 1):
+            key = f"var_{idx}"
+            stype = request.POST.get(f"{key}_source_type", "static")
+            if stype == "field":
+                sval = request.POST.get(f"{key}_field_val", "")
+            else:
+                sval = request.POST.get(f"{key}_static_val", "")
+            mapping_config[key] = {"type": stype, "value": sval}
+
+        batch, summary = BulkSMSService.execute_bulk_dispatch(
+            user=request.user,
+            staff_user_ids=staff_ids,
+            template=template,
+            mapping_config=mapping_config,
+            department=request.user.department,
+            existing_batch=batch,
+            excel_rows=excel_rows
+        )
+
+        request.session['last_bulk_batch_id'] = batch.id
+        request.session['last_bulk_summary'] = summary
+
+        if 'bulk_sms_staff_ids' in request.session:
+            del request.session['bulk_sms_staff_ids']
+        if 'bulk_excel_data' in request.session:
+            del request.session['bulk_excel_data']
+
+        return JsonResponse({
+            'success': True,
+            'batch_id': batch.id,
+            'redirect_url': f"/sms/bulk/summary/{batch.id}/",
+            'summary': summary
+        })
 
 
 class BulkSMSProgressAjaxView(LoginRequiredMixin, RoleRequiredMixin, View):

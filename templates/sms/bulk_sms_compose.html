@@ -13,7 +13,7 @@
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h3 class="fw-bold mb-1">Personalized Bulk Staff SMS Engine</h3>
+        <h3 class="fw-bold mb-1">Bulk SMS Engine</h3>
         <p class="text-muted mb-0">Map DLT template variables to Staff Database fields or static values to generate individual personalized SMS messages.</p>
     </div>
     <div>
@@ -29,7 +29,7 @@
         <div class="card border-0 shadow-sm rounded-4 mb-4">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="card-title"><i class="bi bi-people text-primary me-2"></i>Selected Recipients</h5>
-                <span class="badge bg-primary fs-6">{{ selected_count }} Staff Members</span>
+                <span class="badge bg-primary fs-6">{{ selected_count }} {% if bulk_sms_source == 'excel' %}Excel Recipients{% else %}Staff Members{% endif %}</span>
             </div>
             <div class="card-body p-3">
                 <div class="d-flex flex-wrap gap-1" style="max-height: 100px; overflow-y: auto;">
@@ -81,7 +81,7 @@
 
                     <div class="d-grid gap-2">
                         <button type="button" class="btn btn-primary btn-lg rounded-3 fw-bold" id="confirmDispatchBtn" data-bs-toggle="modal" data-bs-target="#confirmModal" disabled>
-                            <i class="bi bi-send-fill me-1"></i> Review & Dispatch Personalized SMS
+                            <i class="bi bi-send-fill me-1"></i> Send Bulk SMS
                         </button>
                     </div>
 
@@ -90,14 +90,14 @@
                         <div class="modal-dialog modal-dialog-centered">
                             <div class="modal-content">
                                 <div class="modal-header">
-                                    <h5 class="modal-title fw-bold"><i class="bi bi-question-circle text-primary me-2"></i>Confirm Personalized Bulk SMS</h5>
+                                    <h5 class="modal-title fw-bold"><i class="bi bi-question-circle text-primary me-2"></i>Confirm Bulk SMS Dispatch</h5>
                                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                 </div>
                                 <div class="modal-body">
-                                    <p>Are you ready to generate and dispatch personalized SMS to <strong>{{ selected_count }}</strong> staff members?</p>
+                                    <p>Are you ready to send Bulk SMS to <strong>{{ selected_count }}</strong> recipients?</p>
                                     <ul class="list-group list-group-flush small mb-3">
                                         <li class="list-group-item d-flex justify-content-between">
-                                            <span>Recipient Count:</span> <strong>{{ selected_count }} Staff Members</strong>
+                                            <span>Recipient Count:</span> <strong>{{ selected_count }} Recipients</strong>
                                         </li>
                                         <li class="list-group-item d-flex justify-content-between">
                                             <span>Credits Per SMS:</span> <strong id="modalSingleCredits">1</strong>
@@ -109,7 +109,44 @@
                                 </div>
                                 <div class="modal-footer">
                                     <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
-                                    <button type="submit" class="btn btn-primary fw-bold px-4">Confirm & Launch Dispatch</button>
+                                    <button type="button" id="confirmLaunchBtn" class="btn btn-primary fw-bold px-4">Send Bulk SMS</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Real-Time Bulk SMS Dispatch Progress Modal -->
+                    <div class="modal fade" id="dispatchProgressModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden text-start">
+                                <div class="modal-header bg-primary text-white py-3">
+                                    <h5 class="modal-title fw-bold text-white mb-0">
+                                        <i class="bi bi-send-fill me-2"></i>Sending Bulk SMS...
+                                    </h5>
+                                </div>
+                                <div class="modal-body p-4 text-center">
+                                    <!-- Progress Counter Display -->
+                                    <div class="mb-3">
+                                        <div class="fs-2 fw-bold text-primary" id="progressCounterText">0 / {{ selected_count }} Sent</div>
+                                        <small class="text-muted fw-semibold" id="progressSubStatus">Processing recipient dispatch queue...</small>
+                                    </div>
+
+                                    <!-- Animated Progress Bar -->
+                                    <div class="progress rounded-pill mb-3" style="height: 22px;">
+                                        <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary font-monospace fw-bold" id="progressBarEl" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+                                            0%
+                                        </div>
+                                    </div>
+
+                                    <!-- Sent & Failed Stats Pills -->
+                                    <div class="d-flex justify-content-center gap-3">
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 fs-6">
+                                            <i class="bi bi-check-circle-fill me-1"></i><span id="progressSuccessCount">0</span> Sent
+                                        </span>
+                                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-3 py-2 fs-6">
+                                            <i class="bi bi-exclamation-triangle-fill me-1"></i><span id="progressFailedCount">0</span> Failed
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -140,7 +177,7 @@
                         <select id="previewRecipientSelect" class="form-select border-primary fw-semibold">
                             {% for staff in staff_members %}
                                 <option value="{{ staff.id }}" {% if forloop.first %}selected{% endif %}>
-                                    {{ staff.name }} ({% if staff.department %}{{ staff.department.name }}{% else %}Staff{% endif %})
+                                    {{ staff.name }} ({% if staff.department %}{{ staff.department.name }}{% elif staff.department_name %}{{ staff.department_name }}{% else %}Recipient{% endif %})
                                 </option>
                             {% endfor %}
                         </select>
@@ -383,6 +420,112 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (modalSingleCredits) modalSingleCredits.innerText = data.single_credits;
                 if (modalTotalCredits) modalTotalCredits.innerText = totalCredits;
             }
+        });
+    }
+
+    // --- Real-Time Bulk SMS Dispatch Progress & Polling Controller ---
+    const bulkComposeForm = document.getElementById('bulkComposeForm');
+    const confirmLaunchBtn = document.getElementById('confirmLaunchBtn');
+
+    if (confirmLaunchBtn && bulkComposeForm) {
+        confirmLaunchBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+
+            // Lock controls to prevent duplicate submission
+            confirmLaunchBtn.disabled = true;
+            confirmLaunchBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Initiating...';
+            document.getElementById('confirmDispatchBtn').disabled = true;
+
+            // Hide confirmation modal & show real-time progress modal
+            const confirmModalEl = document.getElementById('confirmModal');
+            const confirmModal = bootstrap.Modal.getInstance(confirmModalEl);
+            if (confirmModal) confirmModal.hide();
+
+            const progressModalEl = document.getElementById('dispatchProgressModal');
+            const progressModal = new bootstrap.Modal(progressModalEl, { backdrop: 'static', keyboard: false });
+            progressModal.show();
+
+            const formData = new FormData(bulkComposeForm);
+
+            // 1. Initialize SMSBatch via AJAX
+            fetch("{% url 'sms:bulk_start_ajax' %}", {
+                method: 'POST',
+                headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (!data.success) {
+                    alert(data.error || 'Failed to start bulk dispatch.');
+                    location.reload();
+                    return;
+                }
+
+                const batchId = data.batch_id;
+                const totalRecords = data.total_records || selectedCount;
+
+                // 2. Start polling interval (every 300ms)
+                let pollTimer = setInterval(function() {
+                    fetch(`/sms/bulk/progress-ajax/${batchId}/`)
+                        .then(res => res.json())
+                        .then(prog => {
+                            const processed = prog.processed_records || 0;
+                            const total = prog.total_records || totalRecords;
+                            const successCount = prog.successful_count || 0;
+                            const failedCount = prog.failed_count || 0;
+                            const pct = total > 0 ? Math.min(100, Math.round((processed / total) * 100)) : 0;
+
+                            // Display formatted status: "1 / 117 Sent"
+                            document.getElementById('progressCounterText').innerText = `${processed} / ${total} Sent`;
+                            document.getElementById('progressSuccessCount').innerText = successCount;
+                            document.getElementById('progressFailedCount').innerText = failedCount;
+
+                            // Update progress bar percentage
+                            const bar = document.getElementById('progressBarEl');
+                            bar.style.width = `${pct}%`;
+                            bar.innerText = `${pct}%`;
+
+                            if (prog.is_completed) {
+                                clearInterval(pollTimer);
+                            }
+                        })
+                        .catch(err => console.error('Progress poll error:', err));
+                }, 300);
+
+                // 3. Trigger batch execution via AJAX
+                fetch(`/sms/bulk/execute-ajax/${batchId}/`, {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+                    body: formData
+                })
+                .then(res => res.json())
+                .then(execData => {
+                    clearInterval(pollTimer);
+                    if (execData.success) {
+                        document.getElementById('progressCounterText').innerText = `${totalRecords} / ${totalRecords} Sent`;
+                        document.getElementById('progressBarEl').style.width = '100%';
+                        document.getElementById('progressBarEl').innerText = '100%';
+
+                        setTimeout(function() {
+                            window.location.href = execData.redirect_url;
+                        }, 500);
+                    } else {
+                        alert(execData.error || 'Bulk SMS dispatch encountered an error.');
+                        location.reload();
+                    }
+                })
+                .catch(err => {
+                    clearInterval(pollTimer);
+                    console.error('Execution error:', err);
+                    alert('An error occurred during bulk SMS dispatch.');
+                    location.reload();
+                });
+            })
+            .catch(err => {
+                console.error('Start batch error:', err);
+                alert('Failed to launch bulk SMS.');
+                location.reload();
+            });
         });
     }
 });
