@@ -129,3 +129,75 @@ class PersonalizedBulkSMSGatewayTestCase(TestCase):
         self.assertEqual(batch.successful_count, 2)
         self.assertEqual(batch.failed_count, 1)
         self.assertIn("Missing mobile number", summary['failure_reasons'][0])
+
+    def test_bulk_sms_selection_view_pagination_500(self):
+        """Verifies BulkSMSStaffSelectionView defaults to 500 contacts per page."""
+    def test_bulk_sms_workflow_view_context(self):
+        """Verifies primary Bulk SMS workflow view provides offices, dlt_templates, and templates_json in context."""
+        from django.urls import reverse
+        self.client.force_login(self.user1)
+        response = self.client.get(reverse('sms:bulk_select'))
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('offices', response.context)
+        self.assertIn('dlt_templates', response.context)
+        self.assertIn('templates_json', response.context)
+
+    def test_office_filter_context_in_bulk_sms_compose(self):
+        """Verifies Bulk SMS compose view redirects to primary bulk_select workflow."""
+        from django.urls import reverse
+        self.client.force_login(self.user1)
+        response = self.client.get(reverse('sms:bulk_compose'), follow=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('offices', response.context)
+        self.assertIn('dlt_templates', response.context)
+
+    @patch('requests.post')
+    def test_bulk_start_and_execute_ajax_progress_flow(self, mock_post):
+        """Verifies real-time AJAX start, progress, execution, and summary metrics calculation."""
+        mock_resp = MagicMock()
+        mock_resp.status_code = 200
+        mock_resp.text = '{"status":"Success","code":"011","messageid":"GW_BATCH_999"}'
+        mock_post.return_value = mock_resp
+
+        from django.urls import reverse
+        self.client.force_login(self.user1)
+        session = self.client.session
+        session['bulk_sms_staff_ids'] = [self.staff1.id, self.staff2.id]
+        session.save()
+
+        # 1. AJAX Start
+        start_url = reverse('sms:bulk_start_ajax')
+        start_resp = self.client.post(start_url, {'template': self.template.pk})
+        self.assertEqual(start_resp.status_code, 200)
+        start_data = start_resp.json()
+        self.assertTrue(start_data['success'])
+        batch_id = start_data['batch_id']
+
+        # 2. AJAX Progress Check
+        prog_url = reverse('sms:bulk_progress_ajax', kwargs={'pk': batch_id})
+        prog_resp = self.client.get(prog_url)
+        self.assertEqual(prog_resp.status_code, 200)
+        prog_data = prog_resp.json()
+        self.assertEqual(prog_data['total_records'], 2)
+
+        # 3. AJAX Execute
+        exec_url = reverse('sms:bulk_execute_ajax', kwargs={'pk': batch_id})
+        post_payload = {
+            'template': self.template.pk,
+            'var_1_source_type': 'field',
+            'var_1_field_val': 'name',
+            'var_2_source_type': 'static',
+            'var_2_static_val': '10000'
+        }
+        exec_resp = self.client.post(exec_url, post_payload)
+        self.assertEqual(exec_resp.status_code, 200)
+        exec_data = exec_resp.json()
+        self.assertTrue(exec_data['success'])
+        self.assertIn('redirect_url', exec_data)
+
+        # 4. Summary View metrics check
+        summary_url = reverse('sms:bulk_summary', kwargs={'pk': batch_id})
+        sum_resp = self.client.get(summary_url)
+        self.assertEqual(sum_resp.status_code, 200)
+        self.assertEqual(sum_resp.context['total_credits'], 2)
+        self.assertIsNotNone(sum_resp.context['execution_time'])

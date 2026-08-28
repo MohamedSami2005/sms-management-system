@@ -67,13 +67,20 @@ class BulkExcelImportService:
         Returns (parsed_data_dict, error_messages).
         """
         filename = file.name.lower()
-        if not filename.endswith(('.xlsx', '.xls')):
-            return None, ["Invalid file format. Please upload an Excel file (.xlsx or .xls)."]
+        if not filename.endswith(('.xlsx', '.xls', '.csv')):
+            return None, ["Invalid file format. Please upload an Excel or CSV file (.xlsx, .xls, or .csv)."]
 
         try:
-            df = pd.read_excel(file)
+            if filename.endswith('.csv'):
+                try:
+                    df = pd.read_csv(file)
+                except Exception:
+                    file.seek(0)
+                    df = pd.read_csv(file, encoding='latin1')
+            else:
+                df = pd.read_excel(file)
         except Exception as e:
-            return None, [f"Failed to read Excel file: {str(e)}"]
+            return None, [f"Failed to read spreadsheet file: {str(e)}"]
 
         if df.empty:
             return None, ["The uploaded Excel file contains no data rows."]

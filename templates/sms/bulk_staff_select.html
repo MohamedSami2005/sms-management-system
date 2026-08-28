@@ -1,159 +1,733 @@
 {% extends 'base.html' %}
+{% load custom_filters %}
 
-{% block title %}Personalized Bulk Staff SMS - Select Recipients{% endblock %}
+{% block title %}Personalized Bulk SMS — CCMS{% endblock %}
 
 {% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'dashboard:home' %}">Dashboard</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Personalized Bulk SMS</li>
+    </ol>
+</nav>
 
-<form method="post" id="staffSelectionForm">
-    {% csrf_token %}
-    
-    <div class="page-header mb-4">
-        <div>
-            <h4 class="page-header-title"><i class="bi bi-people text-primary"></i> Personalized Bulk Staff SMS</h5>
-            <p class="page-header-sub">Select staff recipients to dispatch personalized DLT-approved SMS notifications.</p>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="fw-bold mb-1"><i class="bi bi-send-fill text-primary me-2"></i>Personalized Bulk SMS</h3>
+        <p class="text-muted mb-0">Import Excel or CSV data, map DLT template variables, and dispatch personalized SMS notifications.</p>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- STEP 1 — SELECT SMS TEMPLATE                                             -->
+<!-- ========================================================================= -->
+<div class="card border-0 shadow-sm rounded-4 mb-4">
+    <div class="card-header bg-white py-3 border-bottom d-flex align-items-center justify-content-between">
+        <h5 class="fw-bold mb-0 text-dark">
+            <span class="badge bg-primary rounded-circle me-2 px-2.5 py-1.5" style="font-size:0.9rem;">1</span>
+            Step 1 — Select SMS Template
+        </h5>
+        <span class="badge bg-primary-subtle text-primary border border-primary-subtle fw-semibold px-3 py-1.5">
+            <i class="bi bi-shield-check me-1"></i> DLT Approved Templates
+        </span>
+    </div>
+    <div class="card-body p-4">
+        <div class="row g-3">
+            <div class="col-md-5">
+                <label class="form-label fw-semibold text-muted small text-uppercase mb-1">
+                    <i class="bi bi-building me-1"></i> Filter by Office
+                </label>
+                <select id="officeSelect" class="form-select form-select-lg">
+                    <option value="all">All Offices</option>
+                    {% for office in offices %}
+                        <option value="{{ office.id }}">{{ office.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-7">
+                <label class="form-label fw-semibold text-muted small text-uppercase mb-1">
+                    <i class="bi bi-file-earmark-text me-1"></i> SMS Template <span class="text-danger">*</span>
+                </label>
+                <select id="templateSelect" name="template" class="form-select form-select-lg" required>
+                    <option value="">-- Select DLT Template --</option>
+                    {% for tmpl in dlt_templates %}
+                        <option value="{{ tmpl.id }}" data-office="{{ tmpl.office_id|default:'all' }}">
+                            {{ tmpl.name }} ({{ tmpl.dlt_template_id }})
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
         </div>
-        <div class="d-flex gap-2 align-items-center">
-            <a href="{% url 'sms:bulk_excel_import' %}" class="btn btn-outline-success fw-semibold">
-                <i class="bi bi-file-earmark-excel me-1"></i> Import from Excel
-            </a>
-            <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3 py-2" id="selectedCountBadge" style="font-size: 0.82rem;">
-                <i class="bi bi-person-check me-1"></i> <span id="selectedCount">0</span> Selected
+
+        <!-- Selected Template Information Display Box -->
+        <div id="templateInfoCard" class="mt-4 p-4 bg-light rounded-4 border" style="display: none;">
+            <div class="d-flex justify-content-between align-items-start mb-3 flex-wrap gap-2">
+                <div>
+                    <h5 class="fw-bold text-dark mb-1" id="tmplName">—</h5>
+                    <span class="badge bg-secondary font-monospace" id="tmplId">DLT ID: —</span>
+                </div>
+                <div class="d-flex gap-2">
+                    <span class="badge bg-info-subtle text-info border border-info-subtle" id="tmplSender">Header: —</span>
+                    <span class="badge bg-light text-dark border" id="tmplCategory">Category: —</span>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-bold text-uppercase small text-muted mb-1">
+                    <i class="bi bi-chat-left-quote me-1"></i> Approved DLT Message Template
+                </label>
+                <div class="p-3 bg-white rounded-3 border font-monospace text-dark" id="tmplContentBox" style="white-space: pre-wrap; line-height: 1.6;">
+                    —
+                </div>
+            </div>
+
+            <div>
+                <label class="form-label fw-bold text-uppercase small text-muted mb-1">
+                    <i class="bi bi-braces me-1"></i> Template Required Fields (Variables)
+                </label>
+                <div id="tmplRequiredFieldsBadges" class="d-flex flex-wrap gap-2">
+                    <!-- Populated dynamically via JS -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- ========================================================================= -->
+<!-- STEP 2 — IMPORT DATA                                                     -->
+<!-- ========================================================================= -->
+<div class="card border-0 shadow-sm rounded-4 mb-4">
+    <div class="card-header bg-white py-3 border-bottom d-flex align-items-center justify-content-between">
+        <h5 class="fw-bold mb-0 text-dark">
+            <span class="badge bg-primary rounded-circle me-2 px-2.5 py-1.5" style="font-size:0.9rem;">2</span>
+            Step 2 — Import Data
+        </h5>
+        {% if preview_data %}
+            <span class="badge bg-success-subtle text-success border border-success-subtle fw-semibold px-3 py-1.5">
+                <i class="bi bi-check-circle-fill me-1"></i> Data Uploaded ({{ preview_data.valid_count }} Recipients)
             </span>
-            <button type="submit" class="btn btn-primary fw-semibold" id="nextButton" disabled>
-                Next: Configure Variables <i class="bi bi-arrow-right ms-1"></i>
+        {% else %}
+            <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle fw-semibold px-3 py-1.5">
+                <i class="bi bi-exclamation-circle me-1"></i> Upload Excel / CSV Required
+            </span>
+        {% endif %}
+    </div>
+    <div class="card-body p-4">
+        <!-- Upload Form -->
+        <form method="post" enctype="multipart/form-data" class="row g-3 align-items-end mb-3">
+            {% csrf_token %}
+            <div class="col-md-9">
+                <label class="form-label fw-semibold text-muted small text-uppercase mb-1">
+                    Select Excel / CSV Spreadsheet File (.xlsx, .xls, .csv)
+                </label>
+                <input type="file" name="excel_file" class="form-control form-control-lg" accept=".xlsx, .xls, .csv" required>
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-primary btn-lg w-100 fw-bold">
+                    <i class="bi bi-cloud-arrow-up me-1"></i> Upload &amp; Parse Data
+                </button>
+            </div>
+        </form>
+        <small class="text-muted d-block">
+            <i class="bi bi-info-circle me-1"></i> Note: Uploaded recipient rows are temporary for this dispatch operation and will <strong>NOT be created as permanent contacts</strong> in the system database.
+        </small>
+
+        {% if preview_data %}
+        <!-- Parse Summary Section -->
+        <div class="mt-4 pt-3 border-top">
+            <div class="row g-3 mb-4">
+                <div class="col-md-3">
+                    <div class="p-3 bg-light rounded-3 border text-center">
+                        <small class="text-muted d-block text-uppercase font-monospace">Total Rows Detected</small>
+                        <strong class="fs-4 text-dark">{{ preview_data.total_rows }}</strong>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="p-3 bg-success-subtle text-success rounded-3 border border-success-subtle text-center">
+                        <small class="d-block text-uppercase font-monospace">Valid Recipients</small>
+                        <strong class="fs-4">{{ preview_data.valid_count }}</strong>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="p-3 bg-light rounded-3 border text-center">
+                        <small class="text-muted d-block text-uppercase font-monospace">Auto-Identified Name</small>
+                        <strong class="fs-6 text-primary font-monospace">{{ preview_data.name_column }}</strong>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="p-3 bg-light rounded-3 border text-center">
+                        <small class="text-muted d-block text-uppercase font-monospace">Auto-Identified Mobile</small>
+                        <strong class="fs-6 text-primary font-monospace">{{ preview_data.number_column }}</strong>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Detected Headers Badges -->
+            <div class="mb-2">
+                <label class="form-label text-uppercase text-muted fw-bold small d-block mb-2">
+                    <i class="bi bi-tags-fill me-1 text-primary"></i> Available Excel/CSV Column Headers ({{ preview_data.all_headers|length }} Detected)
+                </label>
+                <div class="d-flex flex-wrap gap-2">
+                    {% for header in preview_data.all_headers %}
+                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-2 fs-6">
+                            <i class="bi bi-table me-1"></i>{{ header }}
+                        </span>
+                    {% endfor %}
+                </div>
+            </div>
+
+            {% if preview_data.invalid_details %}
+            <div class="alert alert-warning border border-warning-subtle rounded-3 mt-3 mb-0">
+                <h6 class="fw-bold text-warning-emphasis mb-2"><i class="bi bi-exclamation-triangle-fill me-2"></i>Skipped Invalid Rows ({{ preview_data.invalid_count }})</h6>
+                <ul class="mb-0 small font-monospace">
+                    {% for inv in preview_data.invalid_details|slice:":5" %}
+                        <li>Row #{{ inv.row_num }}: {{ inv.name }} - Mobile: {{ inv.mobile_raw }} ({{ inv.reason }})</li>
+                    {% endfor %}
+                    {% if preview_data.invalid_details|length > 5 %}
+                        <li class="text-muted">... and {{ preview_data.invalid_details|length|add:"-5" }} more invalid row(s) skipped.</li>
+                    {% endif %}
+                </ul>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+
+<!-- ========================================================================= -->
+<!-- STEP 3 — MAP EXCEL COLUMNS                                               -->
+<!-- ========================================================================= -->
+<div class="card border-0 shadow-sm rounded-4 mb-4">
+    <div class="card-header bg-white py-3 border-bottom d-flex align-items-center justify-content-between">
+        <h5 class="fw-bold mb-0 text-dark">
+            <span class="badge bg-primary rounded-circle me-2 px-2.5 py-1.5" style="font-size:0.9rem;">3</span>
+            Step 3 — Map Excel Columns to Template Variables
+        </h5>
+        <span id="mappingStatusBadge" class="badge bg-secondary fw-semibold px-3 py-1.5">
+            Select Template &amp; Upload Data First
+        </span>
+    </div>
+    <div class="card-body p-4">
+        <div id="mappingNoTemplateNotice" class="text-center py-4 text-muted">
+            <i class="bi bi-arrow-up-circle fs-2 d-block mb-2 text-primary opacity-50"></i>
+            Please select an SMS Template in Step 1 and upload an Excel/CSV file in Step 2 to configure column mappings.
+        </div>
+
+        <form id="dispatchForm" method="post">
+            {% csrf_token %}
+            <input type="hidden" name="template" id="hiddenTemplateId" value="">
+
+            <div id="mappingContainer" style="display: none;">
+                <div class="table-responsive border rounded-3 mb-3">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 35%;">Template Required Field</th>
+                                <th style="width: 15%;">Source Type</th>
+                                <th style="width: 50%;">Excel Column / Value</th>
+                            </tr>
+                        </thead>
+                        <tbody id="mappingTableBody">
+                            <!-- Populated dynamically via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+<!-- ========================================================================= -->
+<!-- STEP 4 — DATA PREVIEW                                                    -->
+<!-- ========================================================================= -->
+<div class="card border-0 shadow-sm rounded-4 mb-4">
+    <div class="card-header bg-white py-3 border-bottom d-flex align-items-center justify-content-between">
+        <h5 class="fw-bold mb-0 text-dark">
+            <span class="badge bg-primary rounded-circle me-2 px-2.5 py-1.5" style="font-size:0.9rem;">4</span>
+            Step 4 — Data Preview &amp; Review
+        </h5>
+        <span class="badge bg-light text-dark border fw-semibold px-3 py-1.5" id="previewMetricBadge">
+            Preview Ready
+        </span>
+    </div>
+    <div class="card-body p-4">
+        <div id="previewNoDataNotice" class="text-center py-4 text-muted">
+            <i class="bi bi-eye-slash fs-2 d-block mb-2 text-secondary opacity-50"></i>
+            Live message previews will appear here once a template is selected and data is uploaded.
+        </div>
+
+        <div id="previewContainer" style="display: none;">
+            <h6 class="fw-bold mb-3"><i class="bi bi-card-text text-primary me-2"></i>Personalized Message Samples (First 5 Recipients)</h6>
+            <div class="table-responsive border rounded-3 mb-0">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 50px;">#</th>
+                            <th style="width: 200px;">Recipient</th>
+                            <th style="width: 140px;">Mobile</th>
+                            <th>Personalized Message Text</th>
+                        </tr>
+                    </thead>
+                    <tbody id="previewTableBody">
+                        <!-- Populated dynamically via JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- ========================================================================= -->
+<!-- STEP 5 — SEND BULK SMS ACTION BAR                                         -->
+<!-- ========================================================================= -->
+<div class="card border-0 shadow-sm rounded-4 mb-5 bg-white border-top border-primary border-4">
+    <div class="card-body p-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
+        <div>
+            <h5 class="fw-bold mb-1 text-dark">Ready to Dispatch Bulk SMS</h5>
+            <p class="text-muted mb-0 small" id="sendSummaryText">Select a template and upload Excel/CSV data to enable SMS dispatch.</p>
+        </div>
+        <div>
+            <button type="button" id="sendBulkSmsBtn" class="btn btn-primary btn-lg fw-bold px-5 py-3 shadow" disabled>
+                <i class="bi bi-send-fill me-2"></i> Send Bulk SMS
             </button>
         </div>
     </div>
-</form>
-
-<!-- Filter Toolbar -->
-<div class="filter-toolbar">
-    <form method="get" class="row g-2 align-items-end">
-        <div class="col-md-6">
-            <label class="form-label">Search</label>
-            <div class="input-group">
-                <span class="input-group-text"><i class="bi bi-search"></i></span>
-                <input type="text" name="q" class="form-control border-start-0" placeholder="Search staff name or mobile number..." value="{{ search_query }}">
-            </div>
-        </div>
-        <div class="col-md-4">
-            <label class="form-label">Department</label>
-            <select name="department" class="form-select">
-                <option value="">All Departments</option>
-                {% for dept in departments %}
-                    <option value="{{ dept.pk }}" {% if selected_dept == dept.pk|stringformat:"s" %}selected{% endif %}>{{ dept.name }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="col-md-2 d-flex gap-1">
-            <button type="submit" class="btn btn-primary w-100"><i class="bi bi-funnel"></i> Filter</button>
-            <a href="{% url 'sms:bulk_select' %}" class="btn btn-outline-secondary" title="Clear"><i class="bi bi-x-lg"></i></a>
-        </div>
-    </form>
 </div>
 
-<!-- Staff Directory Table -->
-<div class="card overflow-hidden">
-    <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead>
-                    <tr>
-                        <th style="width:45px;" class="text-center">
-                            <input type="checkbox" class="form-check-input" id="selectAllCheckbox" title="Select All Visible">
-                        </th>
-                        <th style="width:60px;">#</th>
-                        <th>Staff Name</th>
-                        <th>Mobile Number</th>
-                        <th>Department</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for staff in staff_list %}
-                    <tr>
-                        <td class="text-center">
-                            <input type="checkbox" form="staffSelectionForm" name="selected_staff_ids" value="{{ staff.id }}" class="form-check-input staff-checkbox">
-                        </td>
-                        <td class="font-monospace text-muted" style="font-size:0.78rem;">{{ forloop.counter0|add:page_obj.start_index }}</td>
-                        <td>
-                            <span class="fw-semibold text-dark">{{ staff.name }}</span>
-                        </td>
-                        <td>
-                            {% if staff.mobile_number %}
-                                <span class="font-monospace fw-semibold">{{ staff.mobile_number }}</span>
-                            {% else %}
-                                <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle"><i class="bi bi-exclamation-triangle-fill me-1"></i>No Phone</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if staff.department %}
-                                <span class="badge bg-light text-dark border">{{ staff.department.name }}</span>
-                            {% else %}
-                                <span class="text-muted" style="font-size:0.8rem;">General</span>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr class="table-empty">
-                        <td colspan="5">
-                            <i class="bi bi-person-x d-block fs-1 mb-2 opacity-25"></i>
-                            No staff recipients found matching your criteria.
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+
+<!-- Progress & Dispatch Confirmation Modal -->
+<div class="modal fade" id="dispatchModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold" id="dispatchModalTitle"><i class="bi bi-send-check text-primary me-2"></i>Confirm Bulk SMS Dispatch</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" id="modalCloseBtn" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div id="dispatchConfirmState">
+                    <p class="lead fs-6 text-dark" id="modalConfirmText">Are you ready to send Bulk SMS?</p>
+                    <ul class="list-group list-group-flush border rounded-3 mb-4 small">
+                        <li class="list-group-item d-flex justify-content-between py-2.5">
+                            <span class="text-muted">Selected DLT Template:</span>
+                            <strong class="text-dark" id="modalTmplName">—</strong>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between py-2.5">
+                            <span class="text-muted">Total Recipients:</span>
+                            <strong class="text-primary" id="modalTotalRecipients">0</strong>
+                        </li>
+                    </ul>
+                    <div class="d-flex justify-content-end gap-2">
+                        <button type="button" class="btn btn-light fw-semibold px-4" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" id="startDispatchBtn" class="btn btn-primary fw-bold px-4 py-2">
+                            <i class="bi bi-rocket-takeoff me-1"></i> Launch Dispatch
+                        </button>
+                    </div>
+                </div>
+
+                <div id="dispatchProgressState" style="display: none;">
+                    <div class="text-center py-3">
+                        <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;" role="status">
+                            <span class="visually-hidden">Dispatching...</span>
+                        </div>
+                        <h5 class="fw-bold mb-1 text-dark" id="progressStatusText">Sending SMS...</h5>
+                        <p class="text-muted font-monospace mb-3" id="progressCounterText">0 / 0 Sent</p>
+
+                        <div class="progress rounded-pill mb-3" style="height: 12px;">
+                            <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" style="width: 0%;"></div>
+                        </div>
+                        <small class="text-muted">Please keep this window open while messages are being delivered.</small>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
 
-<!-- Pagination -->
-{% if is_paginated %}
-<div class="mt-4 d-flex justify-content-center">
-    <nav>
-        <ul class="pagination">
-            {% if page_obj.has_previous %}
-                <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ search_query }}&department={{ selected_dept }}">&laquo; Prev</a></li>
-            {% endif %}
-            <li class="page-item active"><span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span></li>
-            {% if page_obj.has_next %}
-                <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ search_query }}&department={{ selected_dept }}">Next &raquo;</a></li>
-            {% endif %}
-        </ul>
-    </nav>
-</div>
-{% endif %}
 {% endblock %}
+
 
 {% block extra_js %}
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const selectAllCb = document.getElementById('selectAllCheckbox');
-    const staffCbs = document.querySelectorAll('.staff-checkbox');
-    const selectedCountEl = document.getElementById('selectedCount');
-    const nextBtn = document.getElementById('nextButton');
+document.addEventListener('DOMContentLoaded', function () {
+    const templatesData = {{ templates_json|safe }};
+    const previewData = {{ preview_data_json|safe }};
 
-    function updateSelectedCount() {
-        let count = 0;
-        staffCbs.forEach(cb => {
-            if (cb.checked) count++;
+    const officeSelect = document.getElementById('officeSelect');
+    const templateSelect = document.getElementById('templateSelect');
+    const hiddenTemplateId = document.getElementById('hiddenTemplateId');
+
+    const templateInfoCard = document.getElementById('templateInfoCard');
+    const tmplName = document.getElementById('tmplName');
+    const tmplId = document.getElementById('tmplId');
+    const tmplSender = document.getElementById('tmplSender');
+    const tmplCategory = document.getElementById('tmplCategory');
+    const tmplContentBox = document.getElementById('tmplContentBox');
+    const tmplRequiredFieldsBadges = document.getElementById('tmplRequiredFieldsBadges');
+
+    const mappingNoTemplateNotice = document.getElementById('mappingNoTemplateNotice');
+    const mappingContainer = document.getElementById('mappingContainer');
+    const mappingTableBody = document.getElementById('mappingTableBody');
+    const mappingStatusBadge = document.getElementById('mappingStatusBadge');
+
+    const previewNoDataNotice = document.getElementById('previewNoDataNotice');
+    const previewContainer = document.getElementById('previewContainer');
+    const previewTableBody = document.getElementById('previewTableBody');
+    const sendSummaryText = document.getElementById('sendSummaryText');
+
+    const sendBulkSmsBtn = document.getElementById('sendBulkSmsBtn');
+    const dispatchModal = new bootstrap.Modal(document.getElementById('dispatchModal'));
+
+    let currentSelectedTemplate = null;
+
+    // Filter Templates by Office
+    officeSelect.addEventListener('change', function () {
+        const selectedOffice = this.value;
+        const options = templateSelect.querySelectorAll('option');
+
+        options.forEach(opt => {
+            if (!opt.value) return;
+            const optOffice = opt.getAttribute('data-office');
+            if (selectedOffice === 'all' || optOffice === 'all' || optOffice === selectedOffice) {
+                opt.style.display = '';
+            } else {
+                opt.style.display = 'none';
+            }
         });
-        selectedCountEl.innerText = count;
-        nextBtn.disabled = (count === 0);
-    }
 
-    if (selectAllCb) {
-        selectAllCb.addEventListener('change', function() {
-            staffCbs.forEach(cb => {
-                cb.checked = selectAllCb.checked;
-            });
-            updateSelectedCount();
-        });
-    }
-
-    staffCbs.forEach(cb => {
-        cb.addEventListener('change', updateSelectedCount);
+        // Reset template selection if hidden
+        const selectedOpt = templateSelect.options[templateSelect.selectedIndex];
+        if (selectedOpt && selectedOpt.style.display === 'none') {
+            templateSelect.value = '';
+            onTemplateChanged(null);
+        }
     });
+
+    // Handle Template Change
+    templateSelect.addEventListener('change', function () {
+        const tmplIdVal = this.value;
+        hiddenTemplateId.value = tmplIdVal;
+
+        if (!tmplIdVal) {
+            onTemplateChanged(null);
+            return;
+        }
+
+        const tmpl = templatesData.find(t => t.id == tmplIdVal);
+        onTemplateChanged(tmpl);
+    });
+
+    function onTemplateChanged(tmpl) {
+        currentSelectedTemplate = tmpl;
+
+        if (!tmpl) {
+            templateInfoCard.style.display = 'none';
+            mappingContainer.style.display = 'none';
+            mappingNoTemplateNotice.style.display = '';
+            mappingStatusBadge.className = 'badge bg-secondary fw-semibold px-3 py-1.5';
+            mappingStatusBadge.textContent = 'Select Template & Upload Data First';
+
+            previewContainer.style.display = 'none';
+            previewNoDataNotice.style.display = '';
+
+            updateSendButtonState();
+            return;
+        }
+
+        // Render Step 1 Template Info
+        tmplName.textContent = tmpl.name;
+        tmplId.textContent = 'DLT ID: ' + tmpl.dlt_template_id;
+        tmplSender.textContent = 'Header: ' + tmpl.header_sender_id;
+        tmplCategory.textContent = 'Category: ' + tmpl.category_display;
+        tmplContentBox.textContent = tmpl.template_content;
+
+        tmplRequiredFieldsBadges.innerHTML = '';
+        tmpl.variables.forEach(v => {
+            const badge = document.createElement('span');
+            badge.className = 'badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-2 fs-6';
+            badge.innerHTML = `<i class="bi bi-braces me-1"></i>Var ${v.position}: <strong>${v.name}</strong>`;
+            tmplRequiredFieldsBadges.appendChild(badge);
+        });
+
+        templateInfoCard.style.display = '';
+
+        // Render Step 3 Mapping
+        if (previewData && previewData.rows && previewData.rows.length > 0) {
+            renderMappingTable(tmpl, previewData.all_headers);
+            mappingNoTemplateNotice.style.display = 'none';
+            mappingContainer.style.display = '';
+            mappingStatusBadge.className = 'badge bg-success-subtle text-success border border-success-subtle fw-semibold px-3 py-1.5';
+            mappingStatusBadge.textContent = 'Mapping Ready';
+            renderPreviewTable();
+        } else {
+            mappingContainer.style.display = 'none';
+            mappingNoTemplateNotice.style.display = '';
+            mappingStatusBadge.className = 'badge bg-warning-subtle text-warning-emphasis border border-warning-subtle fw-semibold px-3 py-1.5';
+            mappingStatusBadge.textContent = 'Upload Excel/CSV Data Required in Step 2';
+        }
+
+        updateSendButtonState();
+    }
+
+    function renderMappingTable(tmpl, headers) {
+        mappingTableBody.innerHTML = '';
+
+        tmpl.variables.forEach(v => {
+            const tr = document.createElement('tr');
+            const key = `var_${v.position}`;
+
+            // Auto-matching logic
+            let matchedHeader = '';
+            const varNameLower = v.name.toLowerCase().trim();
+
+            if (headers.includes(v.name)) {
+                matchedHeader = v.name;
+            } else {
+                for (let h of headers) {
+                    const hLower = h.toLowerCase().trim();
+                    if (hLower === varNameLower || hLower.includes(varNameLower) || varNameLower.includes(hLower)) {
+                        matchedHeader = h;
+                        break;
+                    }
+                }
+            }
+
+            if (!matchedHeader && (v.position === 1 || varNameLower.includes('name'))) {
+                matchedHeader = previewData.name_column || headers[0];
+            }
+
+            let optionsHtml = '';
+            headers.forEach(h => {
+                const selected = (h === matchedHeader) ? 'selected' : '';
+                optionsHtml += `<option value="${h}" ${selected}>${h} (Excel Column)</option>`;
+            });
+
+            tr.innerHTML = `
+                <td>
+                    <strong class="text-dark font-monospace">Var ${v.position}</strong>
+                    <div class="small text-muted">${v.name}</div>
+                </td>
+                <td>
+                    <select name="${key}_source_type" class="form-select form-select-sm mapping-type-select" data-var="${key}">
+                        <option value="field" selected>Excel Column</option>
+                        <option value="static">Static Text</option>
+                    </select>
+                </td>
+                <td>
+                    <div id="${key}_field_wrapper">
+                        <select name="${key}_field_val" class="form-select mapping-val-input" data-var="${key}">
+                            ${optionsHtml}
+                        </select>
+                    </div>
+                    <div id="${key}_static_wrapper" style="display: none;">
+                        <input type="text" name="${key}_static_val" class="form-control mapping-val-input" placeholder="Enter static value for Var ${v.position}" data-var="${key}">
+                    </div>
+                </td>
+            `;
+            mappingTableBody.appendChild(tr);
+        });
+
+        // Add event listeners for type changes
+        document.querySelectorAll('.mapping-type-select').forEach(sel => {
+            sel.addEventListener('change', function () {
+                const varKey = this.getAttribute('data-var');
+                const fieldWrapper = document.getElementById(`${varKey}_field_wrapper`);
+                const staticWrapper = document.getElementById(`${varKey}_static_wrapper`);
+                if (this.value === 'static') {
+                    fieldWrapper.style.display = 'none';
+                    staticWrapper.style.display = '';
+                } else {
+                    fieldWrapper.style.display = '';
+                    staticWrapper.style.display = 'none';
+                }
+                renderPreviewTable();
+            });
+        });
+
+        // Add event listeners for value changes
+        document.querySelectorAll('.mapping-val-input').forEach(inp => {
+            inp.addEventListener('change', renderPreviewTable);
+            inp.addEventListener('input', renderPreviewTable);
+        });
+    }
+
+    function renderPreviewTable() {
+        if (!currentSelectedTemplate || !previewData || !previewData.rows) {
+            previewContainer.style.display = 'none';
+            previewNoDataNotice.style.display = '';
+            return;
+        }
+
+        previewNoDataNotice.style.display = 'none';
+        previewContainer.style.display = '';
+        previewTableBody.innerHTML = '';
+
+        const sampleRows = previewData.rows.slice(0, 5);
+
+        sampleRows.forEach((row, idx) => {
+            let renderedText = currentSelectedTemplate.template_content;
+
+            currentSelectedTemplate.variables.forEach(v => {
+                const key = `var_${v.position}`;
+                const typeSelect = document.querySelector(`select[name="${key}_source_type"]`);
+                const source = typeSelect ? typeSelect.value : 'field';
+
+                let val = '';
+                if (source === 'field') {
+                    const fieldSelect = document.querySelector(`select[name="${key}_field_val"]`);
+                    const colName = fieldSelect ? fieldSelect.value : '';
+                    val = row[colName] || '';
+                } else {
+                    const staticInput = document.querySelector(`input[name="${key}_static_val"]`);
+                    val = staticInput ? staticInput.value : '';
+                }
+
+                // Replace {#var#}, {#val#}, or {1} placeholders
+                const p1 = '{#var#}';
+                const p2 = '{#val#}';
+                const p3 = `{${v.position}}`;
+
+                if (renderedText.includes(p1)) {
+                    renderedText = renderedText.replace(p1, val || `[Var ${v.position}]`);
+                } else if (renderedText.includes(p2)) {
+                    renderedText = renderedText.replace(p2, val || `[Var ${v.position}]`);
+                } else if (renderedText.includes(p3)) {
+                    renderedText = renderedText.replace(p3, val || `[Var ${v.position}]`);
+                }
+            });
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td class="font-monospace text-muted small">${idx + 1}</td>
+                <td><strong class="text-dark">${row.name_val || row.__normalized_name || 'Recipient'}</strong></td>
+                <td class="font-monospace text-primary fw-semibold">${row.mobile_val || row.__normalized_mobile}</td>
+                <td class="font-monospace text-dark small" style="white-space: pre-wrap;">${renderedText}</td>
+            `;
+            previewTableBody.appendChild(tr);
+        });
+
+        updateSendButtonState();
+    }
+
+    function updateSendButtonState() {
+        const hasTemplate = !!currentSelectedTemplate;
+        const hasData = previewData && previewData.valid_count > 0;
+
+        if (hasTemplate && hasData) {
+            sendBulkSmsBtn.disabled = false;
+            sendSummaryText.textContent = `Ready to dispatch personalized SMS to ${previewData.valid_count} recipient(s) using template "${currentSelectedTemplate.name}".`;
+        } else if (!hasTemplate && !hasData) {
+            sendBulkSmsBtn.disabled = true;
+            sendSummaryText.textContent = 'Please select an SMS template in Step 1 and upload data in Step 2 to enable dispatch.';
+        } else if (!hasTemplate) {
+            sendBulkSmsBtn.disabled = true;
+            sendSummaryText.textContent = 'Please select an SMS template in Step 1 to proceed.';
+        } else {
+            sendBulkSmsBtn.disabled = true;
+            sendSummaryText.textContent = 'Please upload Excel or CSV data in Step 2 to proceed.';
+        }
+    }
+
+    // Modal Confirmation & Dispatch Launch
+    sendBulkSmsBtn.addEventListener('click', function () {
+        if (!currentSelectedTemplate || !previewData) return;
+
+        document.getElementById('modalTmplName').textContent = currentSelectedTemplate.name;
+        document.getElementById('modalTotalRecipients').textContent = previewData.valid_count + ' Recipients';
+        document.getElementById('modalConfirmText').textContent = `Are you ready to send Bulk SMS to ${previewData.valid_count} recipients using "${currentSelectedTemplate.name}"?`;
+
+        document.getElementById('dispatchConfirmState').style.display = '';
+        document.getElementById('dispatchProgressState').style.display = 'none';
+
+        dispatchModal.show();
+    });
+
+    document.getElementById('startDispatchBtn').addEventListener('click', function () {
+        const btn = this;
+        btn.disabled = true;
+
+        document.getElementById('dispatchConfirmState').style.display = 'none';
+        document.getElementById('dispatchProgressState').style.display = '';
+
+        const formData = new FormData(document.getElementById('dispatchForm'));
+        formData.set('template', currentSelectedTemplate.id);
+
+        // Step 1: Start Batch AJAX
+        fetch("{% url 'sms:bulk_start_ajax' %}", {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (!data.success) {
+                alert('Error starting batch: ' + (data.error || 'Unknown error'));
+                dispatchModal.hide();
+                btn.disabled = false;
+                return;
+            }
+
+            const batchId = data.batch_id;
+            const totalRecords = data.total_records;
+
+            // Step 2: Execute Batch Dispatch AJAX
+            fetch(`/sms/bulk/execute-ajax/${batchId}/`, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                }
+            })
+            .then(res => res.json())
+            .then(execData => {
+                if (execData.success && execData.redirect_url) {
+                    window.location.href = execData.redirect_url;
+                } else {
+                    alert('Dispatch completed with issues.');
+                    window.location.reload();
+                }
+            })
+            .catch(err => {
+                alert('Dispatch error: ' + err);
+                dispatchModal.hide();
+                btn.disabled = false;
+            });
+
+            // Step 3: Poll Progress
+            const pollInterval = setInterval(() => {
+                fetch(`/sms/bulk/progress-ajax/${batchId}/`)
+                .then(r => r.json())
+                .then(prog => {
+                    const proc = prog.processed_records || 0;
+                    const tot = prog.total_records || totalRecords;
+                    const pct = tot > 0 ? Math.round((proc / tot) * 100) : 0;
+
+                    document.getElementById('progressBar').style.width = pct + '%';
+                    document.getElementById('progressCounterText').textContent = `${proc} / ${tot} Sent`;
+
+                    if (prog.is_completed || proc >= tot) {
+                        clearInterval(pollInterval);
+                    }
+                })
+                .catch(() => clearInterval(pollInterval));
+            }, 800);
+        })
+        .catch(err => {
+            alert('Failed to start dispatch: ' + err);
+            dispatchModal.hide();
+            btn.disabled = false;
+        });
+    });
+
+    // Auto-select template if already pre-selected
+    if (templateSelect.value) {
+        templateSelect.dispatchEvent(new Event('change'));
+    }
 });
 </script>
 {% endblock %}

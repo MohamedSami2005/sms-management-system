@@ -156,51 +156,140 @@ class StaffSearchAjaxView(LoginRequiredMixin, RoleRequiredMixin, View):
         return JsonResponse({'results': results})
 
 
-class BulkSMSStaffSelectionView(LoginRequiredMixin, RoleRequiredMixin, ListView):
+def _get_bulk_sms_context(request):
+    """Prepares template metadata, office filters, and session Excel data for Bulk SMS workflow."""
+    import json
+    from apps.common.scopes import get_scoped_queryset
+    from apps.users.models import Office
+
+    dlt_templates = get_scoped_queryset(
+        request.user,
+        DLTTemplate.objects.filter(is_active=True)
+    ).select_related('office').prefetch_related('variables')
+
+    offices = Office.objects.filter(is_active=True).order_by('name')
+
+    templates_list = []
+    for t in dlt_templates:
+        vars_list = []
+        for v in t.variables.all().order_by('position'):
+            vars_list.append({
+                'position': v.position,
+                'name': v.name or f"Variable {v.position}",
+                'sample_value': v.sample_value or f"Sample {v.position}"
+            })
+        if not vars_list:
+            placeholders = t.extract_variable_placeholders()
+            for idx, p in enumerate(placeholders, start=1):
+                vars_list.append({
+                    'position': idx,
+                    'name': f"Variable {idx}",
+                    'sample_value': f"Sample {idx}"
+                })
+
+        templates_list.append({
+            'id': t.id,
+            'name': t.name,
+            'dlt_template_id': t.dlt_template_id,
+            'header_sender_id': t.header_sender_id,
+            'category_display': t.get_category_display() if hasattr(t, 'get_category_display') else t.category,
+            'template_content': t.template_content,
+            'office_id': t.office_id,
+            'office_name': t.office.name if t.office else 'All Offices',
+            'variable_count': t.variable_count,
+            'variables': vars_list
+        })
+
+    preview_data = request.session.get('bulk_excel_data')
+    preview_data_json = json.dumps(preview_data) if preview_data else "null"
+
+    return {
+        'dlt_templates': dlt_templates,
+        'offices': offices,
+        'templates_json': json.dumps(templates_list),
+        'preview_data': preview_data,
+        'preview_data_json': preview_data_json,
+        'bulk_sms_source': request.session.get('bulk_sms_source', 'excel')
+    }
+
+
+class BulkSMSStaffSelectionView(LoginRequiredMixin, RoleRequiredMixin, View):
     """
-    Step 1: Staff Selection Screen.
-    Displays paginated table of recipient staff members with search, department filter, and multi-selection checkboxes.
+    Primary Personalized Bulk SMS Workflow View.
+    Serves 5-Step progressive interface driven primarily by dynamic Excel/CSV recipient import.
     """
-    model = Staff
     template_name = 'sms/bulk_staff_select.html'
-    context_object_name = 'staff_list'
     allowed_roles = ALLOWED_SMS_ROLES
-    paginate_by = 500
 
-    def get_queryset(self):
-        qs = Staff.objects.filter(is_active=True).select_related('department').order_by('name')
-
-        search_query = self.request.GET.get('q', '').strip()
-        dept_id = self.request.GET.get('department', '').strip()
-
-        if search_query:
-            qs = qs.filter(
-                Q(name__icontains=search_query) |
-                Q(mobile_number__icontains=search_query)
-            )
-
-        if dept_id and dept_id.isdigit():
-            qs = qs.filter(department_id=dept_id)
-
-        return qs
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['departments'] = Department.objects.filter(is_active=True)
-        context['search_query'] = self.request.GET.get('q', '')
-        context['selected_dept'] = self.request.GET.get('department', '')
-        return context
+    def get(self, request, *args, **kwargs):
+        context = _get_bulk_sms_context(request)
+        return render(request, self.template_name, context)
 
     def post(self, request, *args, **kwargs):
-        """Processes selected staff IDs and stores them in session for Step 2."""
-        selected_ids = request.POST.getlist('selected_staff_ids')
-        if not selected_ids:
-            messages.error(request, "Please select at least one staff member to proceed.")
-            return redirect('sms:bulk_select')
+        from .services.excel_import import BulkExcelImportService
+        from apps.common.scopes import get_scoped_queryset
 
-        request.session['bulk_sms_staff_ids'] = [int(i) for i in selected_ids if i.isdigit()]
-        request.session['bulk_sms_source'] = 'database'
-        return redirect('sms:bulk_compose')
+        # File Upload Action
+        if 'excel_file' in request.FILES:
+            excel_file = request.FILES['excel_file']
+            parsed_data, errors = BulkExcelImportService.parse_excel(excel_file)
+            if errors:
+                for err in errors:
+                    messages.error(request, err)
+            else:
+                request.session['bulk_sms_source'] = 'excel'
+                request.session['bulk_excel_data'] = parsed_data
+                if 'bulk_sms_staff_ids' in request.session:
+                    del request.session['bulk_sms_staff_ids']
+                messages.success(
+                    request,
+                    f"File parsed successfully! Found {parsed_data['valid_count']} valid recipient(s) across {len(parsed_data['all_headers'])} columns."
+                )
+            context = _get_bulk_sms_context(request)
+            return render(request, self.template_name, context)
+
+        # Dispatch Submission Action
+        template_id = request.POST.get('template')
+        if not template_id or not template_id.isdigit():
+            messages.error(request, "Please select a valid DLT Template.")
+            context = _get_bulk_sms_context(request)
+            return render(request, self.template_name, context)
+
+        excel_data = request.session.get('bulk_excel_data', {})
+        excel_rows = excel_data.get('rows', [])
+        if not excel_rows:
+            messages.error(request, "Please upload an Excel/CSV file with valid recipients before sending Bulk SMS.")
+            context = _get_bulk_sms_context(request)
+            return render(request, self.template_name, context)
+
+        template = get_object_or_404(
+            get_scoped_queryset(request.user, DLTTemplate.objects.filter(is_active=True)),
+            pk=template_id
+        )
+
+        mapping_config = {}
+        for idx in range(1, template.variable_count + 1):
+            key = f"var_{idx}"
+            stype = request.POST.get(f"{key}_source_type", "field")
+            sval = request.POST.get(f"{key}_field_val") or request.POST.get(f"{key}_static_val", "")
+            mapping_config[key] = {"type": stype, "value": sval}
+
+        batch, summary = BulkSMSService.execute_bulk_dispatch(
+            user=request.user,
+            staff_user_ids=[],
+            template=template,
+            mapping_config=mapping_config,
+            department=request.user.department,
+            excel_rows=excel_rows
+        )
+
+        request.session['last_bulk_batch_id'] = batch.id
+        request.session['last_bulk_summary'] = summary
+        if 'bulk_excel_data' in request.session:
+            del request.session['bulk_excel_data']
+
+        messages.success(request, f"Bulk SMS dispatch complete. Sent: {batch.successful_count}/{batch.total_records}")
+        return redirect('sms:bulk_summary', pk=batch.id)
 
 
 class BulkSMSExcelImportView(LoginRequiredMixin, RoleRequiredMixin, View):
@@ -220,7 +309,7 @@ class BulkSMSExcelImportView(LoginRequiredMixin, RoleRequiredMixin, View):
     def post(self, request):
         from .services.excel_import import BulkExcelImportService
         if 'excel_file' not in request.FILES:
-            messages.error(request, "Please select an Excel file (.xlsx or .xls) to upload.")
+            messages.error(request, "Please select an Excel or CSV file (.xlsx, .xls, .csv) to upload.")
             return render(request, self.template_name)
 
         excel_file = request.FILES['excel_file']
@@ -239,7 +328,7 @@ class BulkSMSExcelImportView(LoginRequiredMixin, RoleRequiredMixin, View):
 
         messages.success(
             request,
-            f"Excel file parsed successfully! Found {parsed_data['valid_count']} valid recipient(s) across {len(parsed_data['all_headers'])} columns."
+            f"Spreadsheet parsed successfully! Found {parsed_data['valid_count']} valid recipient(s) across {len(parsed_data['all_headers'])} columns."
         )
 
         return render(request, self.template_name, {
@@ -258,119 +347,17 @@ class BulkSMSExcelSampleView(LoginRequiredMixin, RoleRequiredMixin, View):
         return BulkExcelImportService.generate_sample_excel()
 
 
-class BulkSMSComposeView(LoginRequiredMixin, RoleRequiredMixin, TemplateView):
+class BulkSMSComposeView(LoginRequiredMixin, RoleRequiredMixin, View):
     """
-    Step 2: Dynamic Variable Mapping & Live Preview Sandbox Screen.
-    Supports both database Contact recipients and temporary dynamic Excel recipients.
+    Redirects legacy compose endpoint to the primary 5-Step Bulk SMS Workflow.
     """
-    template_name = 'sms/bulk_sms_compose.html'
     allowed_roles = ALLOWED_SMS_ROLES
 
     def get(self, request, *args, **kwargs):
-        from apps.common.scopes import get_scoped_queryset
-        source = request.session.get('bulk_sms_source', 'database')
-
-        if source == 'excel':
-            excel_data = request.session.get('bulk_excel_data')
-            if not excel_data or not excel_data.get('rows'):
-                messages.warning(request, "No Excel recipients uploaded. Please upload an Excel file first.")
-                return redirect('sms:bulk_excel_import')
-
-            valid_rows = excel_data['rows']
-            headers = excel_data['all_headers']
-            selected_count = len(valid_rows)
-
-            staff_members = [
-                {
-                    'id': idx + 1,
-                    'name': r.get('__normalized_name'),
-                    'mobile_number': r.get('__normalized_mobile'),
-                    'department_name': r.get('Department') or r.get('dept') or '-'
-                }
-                for idx, r in enumerate(valid_rows)
-            ]
-            db_fields = [{'key': h, 'label': f"{h} (Excel Column)"} for h in headers]
-        else:
-            staff_ids = request.session.get('bulk_sms_staff_ids', [])
-            if not staff_ids:
-                messages.warning(request, "No staff members selected. Please select recipients first.")
-                return redirect('sms:bulk_select')
-
-            staff_members = Staff.objects.filter(id__in=staff_ids, is_active=True).select_related('department')
-            if not staff_members.exists():
-                staff_members = CustomUser.objects.filter(id__in=staff_ids).select_related('department')
-            selected_count = len(staff_members)
-            db_fields = StaffFieldMapper.get_supported_fields()
-
-        from apps.users.models import Office
-        dlt_templates = get_scoped_queryset(request.user, DLTTemplate.objects.filter(is_active=True)).select_related('office')
-        offices = Office.objects.filter(is_active=True).order_by('name')
-
-        context = self.get_context_data()
-        context['staff_members'] = staff_members
-        context['selected_count'] = selected_count
-        context['dlt_templates'] = dlt_templates
-        context['offices'] = offices
-        context['db_fields'] = db_fields
-        context['bulk_sms_source'] = source
-        return self.render_to_response(context)
+        return redirect('sms:bulk_select')
 
     def post(self, request, *args, **kwargs):
-        from apps.common.scopes import get_scoped_queryset
-        source = request.session.get('bulk_sms_source', 'database')
-        staff_ids = request.session.get('bulk_sms_staff_ids', [])
-        excel_rows = None
-
-        if source == 'excel':
-            excel_data = request.session.get('bulk_excel_data', {})
-            excel_rows = excel_data.get('rows', [])
-            if not excel_rows:
-                messages.error(request, "Session expired or no Excel recipients found.")
-                return redirect('sms:bulk_excel_import')
-        else:
-            if not staff_ids:
-                messages.error(request, "Session expired or no recipients selected.")
-                return redirect('sms:bulk_select')
-
-        template_id = request.POST.get('template')
-        if not template_id or not template_id.isdigit():
-            messages.error(request, "Please select a valid DLT Template.")
-            return redirect('sms:bulk_compose')
-
-        template = get_object_or_404(
-            get_scoped_queryset(request.user, DLTTemplate.objects.filter(is_active=True)),
-            pk=template_id
-        )
-
-        mapping_config = {}
-        for idx in range(1, template.variable_count + 1):
-            key = f"var_{idx}"
-            stype = request.POST.get(f"{key}_source_type", "static")
-            if stype == "field":
-                sval = request.POST.get(f"{key}_field_val", "")
-            else:
-                sval = request.POST.get(f"{key}_static_val", "")
-            mapping_config[key] = {"type": stype, "value": sval}
-
-        batch, summary = BulkSMSService.execute_bulk_dispatch(
-            user=request.user,
-            staff_user_ids=staff_ids if source != 'excel' else [],
-            template=template,
-            mapping_config=mapping_config,
-            department=request.user.department,
-            excel_rows=excel_rows
-        )
-
-        request.session['last_bulk_batch_id'] = batch.id
-        request.session['last_bulk_summary'] = summary
-
-        if 'bulk_sms_staff_ids' in request.session:
-            del request.session['bulk_sms_staff_ids']
-        if 'bulk_excel_data' in request.session:
-            del request.session['bulk_excel_data']
-
-        messages.success(request, f"Bulk SMS dispatch complete. Sent: {batch.successful_count}/{batch.total_records}")
-        return redirect('sms:bulk_summary', pk=batch.id)
+        return redirect('sms:bulk_select')
 
 
 class PersonalizedPreviewAjaxView(LoginRequiredMixin, RoleRequiredMixin, View):

@@ -135,3 +135,11 @@ class SingleSMSStaffLookupTestCase(TestCase):
         data = response.json()
         self.assertTrue(data['success'])
         self.assertEqual(data['rendered_text'], 'Dear Mohamed Sami, fee of Rs.10000 received.')
+
+    def test_office_filter_context_in_single_sms(self):
+        """Verifies Single SMS view provides offices and dlt_templates in context."""
+        url = reverse('sms:single')
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('offices', response.context)
+        self.assertIn('dlt_templates', response.context)
