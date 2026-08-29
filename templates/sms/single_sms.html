@@ -446,7 +446,7 @@
                             <select name="template" id="dltTemplateSelect" class="form-select" required>
                                 <option value="">-- Choose Approved DLT Template --</option>
                                 {% for tmpl in dlt_templates %}
-                                    <option value="{{ tmpl.pk }}" data-office-id="{{ tmpl.office_id|default:'' }}" {% if form.template.value|stringformat:"s" == tmpl.pk|stringformat:"s" %}selected{% endif %}>
+                                    <option value="{{ tmpl.pk }}" data-office-ids="{% if tmpl.office_id %}{{ tmpl.office_id }},{% endif %}{% if tmpl.department_id %}{{ tmpl.department_id }},{% endif %}{% for o in tmpl.allowed_offices.all %}{{ o.id }},{% endfor %}" {% if form.template.value|stringformat:"s" == tmpl.pk|stringformat:"s" %}selected{% endif %}>
                                         {{ tmpl.name }} (ID: {{ tmpl.dlt_template_id }})
                                     </option>
                                 {% endfor %}
@@ -549,8 +549,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
             options.forEach(option => {
                 if (!option.value) return; // Keep default prompt option visible
-                const tmplOfficeId = option.getAttribute('data-office-id') || '';
-                if (!selectedOfficeId || tmplOfficeId === selectedOfficeId) {
+                const officeIdsAttr = option.getAttribute('data-office-ids') || '';
+                const officeIds = officeIdsAttr.split(',').map(s => s.trim()).filter(s => s.length > 0);
+
+                let isMatch = false;
+                if (!selectedOfficeId) {
+                    isMatch = true;
+                } else if (officeIds.includes(selectedOfficeId)) {
+                    isMatch = true;
+                }
+
+                if (isMatch) {
                     option.hidden = false;
                     option.disabled = false;
                     option.style.display = '';
@@ -562,7 +571,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
 
             const currentSelectedOpt = templateSelect.options[templateSelect.selectedIndex];
-            if (currentSelectedOpt && currentSelectedOpt.hidden) {
+            if (currentSelectedOpt && (currentSelectedOpt.hidden || currentSelectedOpt.disabled)) {
                 templateSelect.value = '';
                 templateSelect.dispatchEvent(new Event('change'));
             }

@@ -51,7 +51,7 @@
                 <select id="templateSelect" name="template" class="form-select form-select-lg" required>
                     <option value="">-- Select DLT Template --</option>
                     {% for tmpl in dlt_templates %}
-                        <option value="{{ tmpl.id }}" data-office="{{ tmpl.office_id|default:'all' }}">
+                        <option value="{{ tmpl.id }}" data-office-ids="{% if tmpl.office_id %}{{ tmpl.office_id }},{% endif %}{% if tmpl.department_id %}{{ tmpl.department_id }},{% endif %}{% for o in tmpl.allowed_offices.all %}{{ o.id }},{% endfor %}">
                             {{ tmpl.name }} ({{ tmpl.dlt_template_id }})
                         </option>
                     {% endfor %}
@@ -389,18 +389,32 @@ document.addEventListener('DOMContentLoaded', function () {
         const options = templateSelect.querySelectorAll('option');
 
         options.forEach(opt => {
-            if (!opt.value) return;
-            const optOffice = opt.getAttribute('data-office');
-            if (selectedOffice === 'all' || optOffice === 'all' || optOffice === selectedOffice) {
+            if (!opt.value) return; // Keep "-- Select DLT Template --" prompt option
+
+            const officeIdsAttr = opt.getAttribute('data-office-ids') || '';
+            const officeIds = officeIdsAttr.split(',').map(s => s.trim()).filter(s => s.length > 0);
+
+            let isMatch = false;
+            if (selectedOffice === 'all') {
+                isMatch = true;
+            } else if (officeIds.includes(selectedOffice)) {
+                isMatch = true;
+            }
+
+            if (isMatch) {
+                opt.hidden = false;
+                opt.disabled = false;
                 opt.style.display = '';
             } else {
+                opt.hidden = true;
+                opt.disabled = true;
                 opt.style.display = 'none';
             }
         });
 
-        // Reset template selection if hidden
+        // Reset template selection if hidden/disabled
         const selectedOpt = templateSelect.options[templateSelect.selectedIndex];
-        if (selectedOpt && selectedOpt.style.display === 'none') {
+        if (selectedOpt && (selectedOpt.hidden || selectedOpt.disabled)) {
             templateSelect.value = '';
             onTemplateChanged(null);
         }
