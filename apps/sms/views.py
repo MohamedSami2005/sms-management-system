@@ -165,12 +165,20 @@ def _get_bulk_sms_context(request):
     dlt_templates = get_scoped_queryset(
         request.user,
         DLTTemplate.objects.filter(is_active=True)
-    ).select_related('office').prefetch_related('variables')
+    ).select_related('office', 'department').prefetch_related('allowed_offices', 'variables')
 
     offices = Office.objects.filter(is_active=True).order_by('name')
 
     templates_list = []
     for t in dlt_templates:
+        allowed_office_ids = set()
+        if t.office_id:
+            allowed_office_ids.add(t.office_id)
+        if t.department_id:
+            allowed_office_ids.add(t.department_id)
+        for ao in t.allowed_offices.all():
+            allowed_office_ids.add(ao.id)
+
         vars_list = []
         for v in t.variables.all().order_by('position'):
             vars_list.append({
@@ -195,7 +203,9 @@ def _get_bulk_sms_context(request):
             'category_display': t.get_category_display() if hasattr(t, 'get_category_display') else t.category,
             'template_content': t.template_content,
             'office_id': t.office_id,
-            'office_name': t.office.name if t.office else 'All Offices',
+            'department_id': t.department_id,
+            'allowed_office_ids': list(allowed_office_ids),
+            'office_name': t.office.name if t.office else (t.department.name if t.department else 'All Offices'),
             'variable_count': t.variable_count,
             'variables': vars_list
         })
