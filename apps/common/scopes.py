@@ -38,8 +38,17 @@ def get_scoped_queryset(user, queryset: QuerySet, field_name: str = 'office') ->
     if hasattr(queryset.model, 'allowed_offices'):
         return queryset.filter(Q(allowed_offices=user_office) | Q(office=user_office)).distinct()
 
+    if hasattr(queryset.model, 'office') and hasattr(queryset.model, 'department'):
+        from apps.users.models import Office
+        if isinstance(user_office, Office):
+            return queryset.filter(Q(office=user_office) | Q(department__code=user_office.code)).distinct()
+        else:
+            return queryset.filter(Q(department=user_office) | Q(office__code=user_office.code)).distinct()
+
     if hasattr(queryset.model, 'office'):
-        return queryset.filter(office=user_office)
+        from apps.users.models import Office
+        if isinstance(user_office, Office):
+            return queryset.filter(office=user_office)
 
     if hasattr(queryset.model, 'department'):
         return queryset.filter(department=user_office)

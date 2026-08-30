@@ -12,6 +12,44 @@
     </div>
 </div>
 
+<!-- Excel Export Toolbar -->
+<div class="card border-0 shadow-sm rounded-4 mb-4 bg-light">
+    <div class="card-body p-3">
+        <form method="get" action="{% url 'logs:export' %}" id="exportLogsForm" class="row g-2 align-items-center">
+            <div class="col-auto">
+                <span class="fw-bold text-dark me-2 small text-uppercase"><i class="bi bi-file-earmark-excel text-success me-1"></i> Export SMS Logs:</span>
+            </div>
+            <div class="col-auto">
+                <select name="period" id="exportPeriodSelect" class="form-select form-select-sm fw-semibold" style="min-width: 160px;">
+                    <option value="all" selected>All</option>
+                    <option value="today">Today</option>
+                    <option value="custom">Custom Date Range</option>
+                </select>
+            </div>
+
+            <!-- Custom Date Range Inputs -->
+            <div id="customDateRangeFields" class="col-auto d-none">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="d-flex align-items-center gap-1">
+                        <label class="small text-muted mb-0 fw-semibold">From:</label>
+                        <input type="date" name="from_date" id="exportFromDate" class="form-control form-control-sm" style="width: 150px;">
+                    </div>
+                    <div class="d-flex align-items-center gap-1">
+                        <label class="small text-muted mb-0 fw-semibold">To:</label>
+                        <input type="date" name="to_date" id="exportToDate" class="form-control form-control-sm" style="width: 150px;">
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-auto ms-auto">
+                <button type="submit" id="downloadExcelBtn" class="btn btn-success btn-sm fw-bold px-3 shadow-sm">
+                    <i class="bi bi-download me-1"></i> Download Excel
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <!-- Filters Section -->
 <div class="filter-toolbar mb-4">
     <form method="get" action="{% url 'logs:list' %}" id="logFilterForm" class="row g-3 align-items-end">
@@ -231,5 +269,183 @@
     </nav>
 </div>
 {% endif %}
+
+<!-- Export Preview Modal -->
+<div class="modal fade" id="exportPreviewModal" tabindex="-1" aria-labelledby="exportPreviewModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content rounded-4 border-0 shadow-lg">
+            <div class="modal-header bg-dark text-white border-0 py-3">
+                <h5 class="modal-title fw-bold text-white d-flex align-items-center" id="exportPreviewModalLabel">
+                    <i class="bi bi-file-earmark-excel text-success me-2 fs-4"></i> SMS Log Export Preview
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <!-- Summary Metrics Bar -->
+                <div class="d-flex justify-content-between align-items-center p-3 mb-3 bg-light rounded-3 border">
+                    <div>
+                        <span class="text-muted small text-uppercase fw-semibold me-2">Export Period:</span>
+                        <span id="previewPeriodDisplay" class="badge bg-primary fs-6 fw-bold">All Records</span>
+                    </div>
+                    <div>
+                        <span class="text-muted small text-uppercase fw-semibold me-2">Records to Export:</span>
+                        <span id="previewRecordCount" class="badge bg-success fs-6 fw-bold">0</span>
+                    </div>
+                </div>
+
+                <!-- Scrollable Table Container -->
+                <div class="border rounded-3 overflow-hidden" style="max-height: 380px; overflow-y: auto;">
+                    <table class="table table-hover table-sm align-middle mb-0" style="font-size: 0.85rem;">
+                        <thead class="table-dark sticky-top">
+                            <tr>
+                                <th class="text-center" style="width: 60px;">S.No</th>
+                                <th>Name</th>
+                                <th class="text-center">Mobile Number</th>
+                                <th>SMS Template</th>
+                                <th class="text-center">Sent Date</th>
+                                <th class="text-center">Delivery Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="previewTableBody">
+                            <!-- Dynamically populated via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer bg-light border-0 py-3 d-flex justify-content-between">
+                <button type="button" class="btn btn-outline-secondary fw-semibold px-4" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-1"></i> Cancel
+                </button>
+                <button type="button" id="confirmDownloadBtn" class="btn btn-success fw-bold px-4 shadow">
+                    <i class="bi bi-download me-1"></i> Confirm Download
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const periodSelect = document.getElementById('exportPeriodSelect');
+    const customFields = document.getElementById('customDateRangeFields');
+    const fromDateInput = document.getElementById('exportFromDate');
+    const toDateInput = document.getElementById('exportToDate');
+    const exportForm = document.getElementById('exportLogsForm');
+    const downloadExcelBtn = document.getElementById('downloadExcelBtn');
+
+    const previewModalEl = document.getElementById('exportPreviewModal');
+    const previewModal = new bootstrap.Modal(previewModalEl);
+    const previewPeriodDisplay = document.getElementById('previewPeriodDisplay');
+    const previewRecordCount = document.getElementById('previewRecordCount');
+    const previewTableBody = document.getElementById('previewTableBody');
+    const confirmDownloadBtn = document.getElementById('confirmDownloadBtn');
+
+    let currentExportParams = {};
+
+    function toggleCustomFields() {
+        if (periodSelect.value === 'custom') {
+            customFields.classList.remove('d-none');
+            fromDateInput.required = true;
+            toDateInput.required = true;
+        } else {
+            customFields.classList.add('d-none');
+            fromDateInput.required = false;
+            toDateInput.required = false;
+            fromDateInput.value = '';
+            toDateInput.value = '';
+        }
+    }
+
+    periodSelect.addEventListener('change', toggleCustomFields);
+    toggleCustomFields();
+
+    exportForm.addEventListener('submit', function (e) {
+        e.preventDefault(); // MANDATORY: NEVER AUTO-DOWNLOAD DIRECTLY
+
+        const period = periodSelect.value;
+        const fromVal = fromDateInput.value;
+        const toVal = toDateInput.value;
+
+        if (period === 'custom') {
+            if (!fromVal || !toVal) {
+                alert('Please select both From Date and To Date for Custom Date Range export.');
+                return;
+            }
+
+            if (new Date(fromVal) > new Date(toVal)) {
+                alert('From Date cannot be later than To Date.');
+                return;
+            }
+        }
+
+        currentExportParams = {
+            period: period,
+            from_date: fromVal,
+            to_date: toVal
+        };
+
+        // Show loading state on button
+        const originalBtnText = downloadExcelBtn.innerHTML;
+        downloadExcelBtn.disabled = true;
+        downloadExcelBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Loading Preview...';
+
+        // Fetch Preview JSON via AJAX
+        const params = new URLSearchParams(currentExportParams);
+        fetch('{% url "logs:preview_export_ajax" %}?' + params.toString())
+            .then(response => response.json())
+            .then(data => {
+                downloadExcelBtn.disabled = false;
+                downloadExcelBtn.innerHTML = originalBtnText;
+
+                if (!data.success) {
+                    alert(data.error || 'No SMS logs found for the selected period.');
+                    return;
+                }
+
+                // Update Preview Modal fields
+                previewPeriodDisplay.textContent = data.period_display;
+                previewRecordCount.textContent = data.total_count;
+
+                // Build Preview Table Rows
+                previewTableBody.innerHTML = '';
+                data.rows.forEach(row => {
+                    let statusBadgeClass = 'bg-secondary';
+                    if (row.delivery_status === 'Delivered') statusBadgeClass = 'bg-success';
+                    else if (row.delivery_status === 'Sent') statusBadgeClass = 'bg-success-subtle text-success border border-success-subtle';
+                    else if (row.delivery_status === 'Failed') statusBadgeClass = 'bg-danger-subtle text-danger border border-danger-subtle';
+                    else if (row.delivery_status === 'Queued') statusBadgeClass = 'bg-primary-subtle text-primary border border-primary-subtle';
+                    else statusBadgeClass = 'bg-warning-subtle text-warning-emphasis border border-warning-subtle';
+
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td class="text-center font-monospace text-muted">${row.s_no}</td>
+                        <td class="fw-semibold text-dark">${row.name}</td>
+                        <td class="text-center font-monospace">${row.mobile}</td>
+                        <td><span class="fw-medium text-primary">${row.sms_template}</span></td>
+                        <td class="text-center text-muted">${row.sent_date}</td>
+                        <td class="text-center"><span class="badge ${statusBadgeClass} rounded-pill">${row.delivery_status}</span></td>
+                    `;
+                    previewTableBody.appendChild(tr);
+                });
+
+                // Show modal
+                previewModal.show();
+            })
+            .catch(err => {
+                downloadExcelBtn.disabled = false;
+                downloadExcelBtn.innerHTML = originalBtnText;
+                alert('An error occurred while fetching the export preview.');
+                console.error(err);
+            });
+    });
+
+    // Confirm Download Button Handler
+    confirmDownloadBtn.addEventListener('click', function () {
+        previewModal.hide();
+        const params = new URLSearchParams(currentExportParams);
+        window.location.href = '{% url "logs:export" %}?' + params.toString();
+    });
+});
+</script>
 
 {% endblock %}
