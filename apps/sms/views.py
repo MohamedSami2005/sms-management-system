@@ -156,7 +156,7 @@ class StaffSearchAjaxView(LoginRequiredMixin, RoleRequiredMixin, View):
         return JsonResponse({'results': results})
 
 
-def _get_bulk_sms_context(request):
+def _get_bulk_sms_context(request, selected_office=None, selected_template_id=None):
     """Prepares template metadata, office filters, and session Excel data for Bulk SMS workflow."""
     import json
     from apps.common.scopes import get_scoped_queryset
@@ -213,13 +213,20 @@ def _get_bulk_sms_context(request):
     preview_data = request.session.get('bulk_excel_data')
     preview_data_json = json.dumps(preview_data) if preview_data else "null"
 
+    if selected_office is None:
+        selected_office = request.session.get('bulk_sms_office_id', 'all')
+    if selected_template_id is None:
+        selected_template_id = request.session.get('bulk_sms_template_id', '')
+
     return {
         'dlt_templates': dlt_templates,
         'offices': offices,
         'templates_json': json.dumps(templates_list),
         'preview_data': preview_data,
         'preview_data_json': preview_data_json,
-        'bulk_sms_source': request.session.get('bulk_sms_source', 'excel')
+        'bulk_sms_source': request.session.get('bulk_sms_source', 'excel'),
+        'selected_office': selected_office,
+        'selected_template_id': selected_template_id,
     }
 
 
@@ -232,6 +239,9 @@ class BulkSMSStaffSelectionView(LoginRequiredMixin, RoleRequiredMixin, View):
     allowed_roles = ALLOWED_SMS_ROLES
 
     def get(self, request, *args, **kwargs):
+        if 'bulk_excel_data' not in request.session:
+            request.session.pop('bulk_sms_office_id', None)
+            request.session.pop('bulk_sms_template_id', None)
         context = _get_bulk_sms_context(request)
         return render(request, self.template_name, context)
 
@@ -242,6 +252,9 @@ class BulkSMSStaffSelectionView(LoginRequiredMixin, RoleRequiredMixin, View):
         # File Upload Action
         if 'excel_file' in request.FILES:
             excel_file = request.FILES['excel_file']
+            selected_office = (request.POST.get('selected_office') or request.POST.get('office') or '').strip()
+            selected_template = (request.POST.get('selected_template') or request.POST.get('template') or '').strip()
+
             parsed_data, errors = BulkExcelImportService.parse_excel(excel_file)
             if errors:
                 for err in errors:
@@ -255,7 +268,17 @@ class BulkSMSStaffSelectionView(LoginRequiredMixin, RoleRequiredMixin, View):
                     request,
                     f"File parsed successfully! Found {parsed_data['valid_count']} valid recipient(s) across {len(parsed_data['all_headers'])} columns."
                 )
-            context = _get_bulk_sms_context(request)
+
+            if selected_office:
+                request.session['bulk_sms_office_id'] = selected_office
+            if selected_template:
+                request.session['bulk_sms_template_id'] = selected_template
+
+            context = _get_bulk_sms_context(
+                request,
+                selected_office=selected_office if selected_office else None,
+                selected_template_id=selected_template if selected_template else None
+            )
             return render(request, self.template_name, context)
 
         # Dispatch Submission Action
@@ -297,6 +320,8 @@ class BulkSMSStaffSelectionView(LoginRequiredMixin, RoleRequiredMixin, View):
         request.session['last_bulk_summary'] = summary
         if 'bulk_excel_data' in request.session:
             del request.session['bulk_excel_data']
+        request.session.pop('bulk_sms_office_id', None)
+        request.session.pop('bulk_sms_template_id', None)
 
         messages.success(request, f"Bulk SMS dispatch complete. Sent: {batch.successful_count}/{batch.total_records}")
         return redirect('sms:bulk_summary', pk=batch.id)
@@ -590,6 +615,8 @@ class BulkSMSExecuteAjaxView(LoginRequiredMixin, RoleRequiredMixin, View):
             del request.session['bulk_sms_staff_ids']
         if 'bulk_excel_data' in request.session:
             del request.session['bulk_excel_data']
+        request.session.pop('bulk_sms_office_id', None)
+        request.session.pop('bulk_sms_template_id', None)
 
         return JsonResponse({
             'success': True,

@@ -37,10 +37,10 @@
                 <label class="form-label fw-semibold text-muted small text-uppercase mb-1">
                     <i class="bi bi-building me-1"></i> Filter by Office
                 </label>
-                <select id="officeSelect" class="form-select form-select-lg">
-                    <option value="all">All Offices</option>
+                <select id="officeSelect" name="office" class="form-select form-select-lg">
+                    <option value="all" {% if selected_office == 'all' or not selected_office %}selected{% endif %}>All Offices</option>
                     {% for office in offices %}
-                        <option value="{{ office.id }}">{{ office.name }}</option>
+                        <option value="{{ office.id }}" {% if selected_office|stringformat:"s" == office.id|stringformat:"s" %}selected{% endif %}>{{ office.name }}</option>
                     {% endfor %}
                 </select>
             </div>
@@ -51,7 +51,7 @@
                 <select id="templateSelect" name="template" class="form-select form-select-lg" required>
                     <option value="">-- Select DLT Template --</option>
                     {% for tmpl in dlt_templates %}
-                        <option value="{{ tmpl.id }}" data-office-ids="{% if tmpl.office_id %}{{ tmpl.office_id }},{% endif %}{% if tmpl.department_id %}{{ tmpl.department_id }},{% endif %}{% for o in tmpl.allowed_offices.all %}{{ o.id }},{% endfor %}">
+                        <option value="{{ tmpl.id }}" data-office-ids="{% if tmpl.office_id %}{{ tmpl.office_id }},{% endif %}{% if tmpl.department_id %}{{ tmpl.department_id }},{% endif %}{% for o in tmpl.allowed_offices.all %}{{ o.id }},{% endfor %}" {% if selected_template_id|stringformat:"s" == tmpl.id|stringformat:"s" %}selected{% endif %}>
                             {{ tmpl.name }} ({{ tmpl.dlt_template_id }})
                         </option>
                     {% endfor %}
@@ -115,8 +115,10 @@
     </div>
     <div class="card-body p-4">
         <!-- Upload Form -->
-        <form method="post" enctype="multipart/form-data" class="row g-3 align-items-end mb-3">
+        <form method="post" enctype="multipart/form-data" class="row g-3 align-items-end mb-3" id="uploadForm">
             {% csrf_token %}
+            <input type="hidden" name="selected_office" id="uploadSelectedOffice" value="{{ selected_office|default:'all' }}">
+            <input type="hidden" name="selected_template" id="uploadSelectedTemplate" value="{{ selected_template_id|default:'' }}">
             <div class="col-md-9">
                 <label class="form-label fw-semibold text-muted small text-uppercase mb-1">
                     Select Excel / CSV Spreadsheet File (.xlsx, .xls, .csv)
@@ -217,7 +219,7 @@
 
         <form id="dispatchForm" method="post">
             {% csrf_token %}
-            <input type="hidden" name="template" id="hiddenTemplateId" value="">
+            <input type="hidden" name="template" id="hiddenTemplateId" value="{{ selected_template_id|default:'' }}">
 
             <div id="mappingContainer" style="display: none;">
                 <div class="table-responsive border rounded-3 mb-3">
@@ -383,9 +385,20 @@ document.addEventListener('DOMContentLoaded', function () {
 
     let currentSelectedTemplate = null;
 
-    // Filter Templates by Office
-    officeSelect.addEventListener('change', function () {
-        const selectedOffice = this.value;
+    const uploadForm = document.getElementById('uploadForm');
+    const uploadSelectedOffice = document.getElementById('uploadSelectedOffice');
+    const uploadSelectedTemplate = document.getElementById('uploadSelectedTemplate');
+
+    function syncUploadHiddenFields() {
+        if (uploadSelectedOffice && officeSelect) {
+            uploadSelectedOffice.value = officeSelect.value;
+        }
+        if (uploadSelectedTemplate && templateSelect) {
+            uploadSelectedTemplate.value = templateSelect.value;
+        }
+    }
+
+    function filterTemplatesByOffice(selectedOffice) {
         const options = templateSelect.querySelectorAll('option');
 
         options.forEach(opt => {
@@ -395,7 +408,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const officeIds = officeIdsAttr.split(',').map(s => s.trim()).filter(s => s.length > 0);
 
             let isMatch = false;
-            if (selectedOffice === 'all') {
+            if (!selectedOffice || selectedOffice === 'all') {
                 isMatch = true;
             } else if (officeIds.includes(selectedOffice)) {
                 isMatch = true;
@@ -416,14 +429,22 @@ document.addEventListener('DOMContentLoaded', function () {
         const selectedOpt = templateSelect.options[templateSelect.selectedIndex];
         if (selectedOpt && (selectedOpt.hidden || selectedOpt.disabled)) {
             templateSelect.value = '';
+            hiddenTemplateId.value = '';
             onTemplateChanged(null);
         }
+    }
+
+    // Filter Templates by Office
+    officeSelect.addEventListener('change', function () {
+        filterTemplatesByOffice(this.value);
+        syncUploadHiddenFields();
     });
 
     // Handle Template Change
     templateSelect.addEventListener('change', function () {
         const tmplIdVal = this.value;
         hiddenTemplateId.value = tmplIdVal;
+        syncUploadHiddenFields();
 
         if (!tmplIdVal) {
             onTemplateChanged(null);
@@ -433,6 +454,12 @@ document.addEventListener('DOMContentLoaded', function () {
         const tmpl = templatesData.find(t => t.id == tmplIdVal);
         onTemplateChanged(tmpl);
     });
+
+    if (uploadForm) {
+        uploadForm.addEventListener('submit', function () {
+            syncUploadHiddenFields();
+        });
+    }
 
     function onTemplateChanged(tmpl) {
         currentSelectedTemplate = tmpl;
@@ -738,10 +765,18 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
+    // Filter templates by office initially if an office is selected
+    if (officeSelect && officeSelect.value && officeSelect.value !== 'all') {
+        filterTemplatesByOffice(officeSelect.value);
+    }
+
     // Auto-select template if already pre-selected
-    if (templateSelect.value) {
+    if (templateSelect && templateSelect.value) {
         templateSelect.dispatchEvent(new Event('change'));
     }
+
+    // Ensure hidden inputs in upload form match initial selections
+    syncUploadHiddenFields();
 });
 </script>
 {% endblock %}
