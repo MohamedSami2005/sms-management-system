@@ -596,6 +596,56 @@ document.addEventListener('DOMContentLoaded', function () {
         return true;
     }
 
+    function escapeRegExp(string) {
+        return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    function formatPersonalizedMessage(text, recipientName, templateContent) {
+        if (!text) return '';
+        let cleaned = text;
+        const name = (recipientName || '').trim();
+        const tmpl = templateContent || '';
+
+        if (name) {
+            const escapedName = escapeRegExp(name);
+
+            // 1. Deduplicate consecutive identical recipient names (e.g. "SAQSAQ" -> "SAQ", "SAQ SAQ" -> "SAQ")
+            const duplicateNameRegex = new RegExp(`(${escapedName})(?:\\s*${escapedName})+`, 'gi');
+            cleaned = cleaned.replace(duplicateNameRegex, '$1');
+
+            // 2. Fix inverted or incorrect concatenation with static prefixes/titles (e.g. "SAQProf" or "SAQ SAQProf" -> "Prof. SAQ")
+            const hasSpaceInTmpl = tmpl.includes('Prof. ') || tmpl.includes('Dr. ') || tmpl.includes('Mr. ') || tmpl.includes('Mrs. ') || tmpl.includes('Ms. ') || !tmpl.includes('Prof.');
+            
+            const invertedRegex = new RegExp(`\\b(${escapedName})\\s*(Prof\\.?|Dr\\.?|Mr\\.?|Mrs\\.?|Ms\\.?)\\b`, 'gi');
+            cleaned = cleaned.replace(invertedRegex, function (match, pName, pPrefix) {
+                const normPrefix = pPrefix.replace(/\.+$/, '') + '.';
+                return hasSpaceInTmpl ? `${normPrefix} ${pName}` : `${normPrefix}${pName}`;
+            });
+
+            // 3. If recipient name is already present, do not duplicate it if repeated across multiple variables
+            const allNameMatches = cleaned.match(new RegExp(`\\b${escapedName}\\b`, 'gi'));
+            if (allNameMatches && allNameMatches.length > 1) {
+                let firstSeen = false;
+                cleaned = cleaned.replace(new RegExp(`\\b${escapedName}\\b`, 'gi'), function (match) {
+                    if (!firstSeen) {
+                        firstSeen = true;
+                        return match;
+                    }
+                    return '';
+                });
+            }
+        }
+
+        // 4. Deduplicate duplicated static honorific titles (e.g. "Prof. Prof." or "Prof.Prof." -> "Prof.")
+        cleaned = cleaned.replace(/\b(Prof\.|Dr\.|Mr\.|Mrs\.|Ms\.)\s*(?:\1\s*)+/gi, '$1 ');
+        cleaned = cleaned.replace(/\b(Prof|Dr|Mr|Mrs|Ms)\s*(?:\1\s*)+/gi, '$1 ');
+
+        // Clean up redundant consecutive spaces or dangling commas/spaces
+        cleaned = cleaned.replace(/[ \t]{2,}/g, ' ').trim();
+
+        return cleaned;
+    }
+
     function renderPreviewTable() {
         if (!currentSelectedTemplate || !previewData || !previewData.rows) {
             previewContainer.style.display = 'none';
@@ -611,42 +661,98 @@ document.addEventListener('DOMContentLoaded', function () {
 
         sampleRows.forEach((row, idx) => {
             let renderedText = currentSelectedTemplate.template_content;
+            const recipientName = (row.name_val || row.__normalized_name || '').trim();
 
-            currentSelectedTemplate.variables.forEach(v => {
-                const key = `var_${v.position}`;
-                const typeSelect = document.querySelector(`select[name="${key}_source_type"]`);
-                const source = typeSelect ? typeSelect.value : 'field';
+            const placeholders = renderedText.match(/\{#[^#]*#\}|\{\d+\}/g) || [];
 
-                let val = '';
-                if (source === 'field') {
-                    const fieldSelect = document.querySelector(`select[name="${key}_field_val"]`);
-                    const colName = fieldSelect ? fieldSelect.value : '';
-                    val = row[colName] || '';
-                } else {
-                    const staticInput = document.querySelector(`input[name="${key}_static_val"]`);
-                    val = staticInput ? staticInput.value : '';
-                }
+            if (placeholders.length > 0 && currentSelectedTemplate.variables) {
+                currentSelectedTemplate.variables.forEach((v, vIdx) => {
+                    const key = `var_${v.position}`;
+                    const typeSelect = document.querySelector(`select[name="${key}_source_type"]`);
+                    const source = typeSelect ? typeSelect.value : 'field';
 
-                // Replace {#var#}, {#val#}, or {1} placeholders
-                const p1 = '{#var#}';
-                const p2 = '{#val#}';
-                const p3 = `{${v.position}}`;
+                    let val = '';
+                    if (source === 'field') {
+                        const fieldSelect = document.querySelector(`select[name="${key}_field_val"]`);
+                        const colName = fieldSelect ? fieldSelect.value : '';
+                        val = (colName && row[colName] !== undefined && row[colName] !== null) ? String(row[colName]).trim() : '';
+                    } else {
+                        const staticInput = document.querySelector(`input[name="${key}_static_val"]`);
+                        val = staticInput ? staticInput.value.trim() : '';
+                    }
 
-                if (renderedText.includes(p1)) {
-                    renderedText = renderedText.replace(p1, val || `[Var ${v.position}]`);
-                } else if (renderedText.includes(p2)) {
-                    renderedText = renderedText.replace(p2, val || `[Var ${v.position}]`);
-                } else if (renderedText.includes(p3)) {
-                    renderedText = renderedText.replace(p3, val || `[Var ${v.position}]`);
-                }
-            });
+                    const isNameVal = recipientName && val && (val.toLowerCase() === recipientName.toLowerCase());
+
+                    let targetPlaceholder = `{${v.position}}`;
+                    if (!renderedText.includes(targetPlaceholder)) {
+                        targetPlaceholder = placeholders[vIdx] || '{#var#}';
+                    }
+
+                    if (renderedText.includes(targetPlaceholder)) {
+                        if (isNameVal && renderedText.includes(recipientName)) {
+                            // Do not append the recipient name again if it is already present in the personalized message
+                            renderedText = renderedText.replace(targetPlaceholder, '');
+                        } else {
+                            renderedText = renderedText.replace(targetPlaceholder, val || `[Var ${v.position}]`);
+                        }
+                    }
+                });
+            } else if (currentSelectedTemplate.variables) {
+                currentSelectedTemplate.variables.forEach(v => {
+                    const key = `var_${v.position}`;
+                    const typeSelect = document.querySelector(`select[name="${key}_source_type"]`);
+                    const source = typeSelect ? typeSelect.value : 'field';
+
+                    let val = '';
+                    if (source === 'field') {
+                        const fieldSelect = document.querySelector(`select[name="${key}_field_val"]`);
+                        const colName = fieldSelect ? fieldSelect.value : '';
+                        val = (colName && row[colName] !== undefined && row[colName] !== null) ? String(row[colName]).trim() : '';
+                    } else {
+                        const staticInput = document.querySelector(`input[name="${key}_static_val"]`);
+                        val = staticInput ? staticInput.value.trim() : '';
+                    }
+
+                    const p1 = '{#var#}';
+                    const p2 = '{#val#}';
+                    const p3 = `{${v.position}}`;
+
+                    const isNameVal = recipientName && val && (val.toLowerCase() === recipientName.toLowerCase());
+
+                    if (renderedText.includes(p1)) {
+                        if (isNameVal && renderedText.includes(recipientName)) {
+                            renderedText = renderedText.replace(p1, '');
+                        } else {
+                            renderedText = renderedText.replace(p1, val || `[Var ${v.position}]`);
+                        }
+                    } else if (renderedText.includes(p2)) {
+                        if (isNameVal && renderedText.includes(recipientName)) {
+                            renderedText = renderedText.replace(p2, '');
+                        } else {
+                            renderedText = renderedText.replace(p2, val || `[Var ${v.position}]`);
+                        }
+                    } else if (renderedText.includes(p3)) {
+                        if (isNameVal && renderedText.includes(recipientName)) {
+                            renderedText = renderedText.replace(p3, '');
+                        } else {
+                            renderedText = renderedText.replace(p3, val || `[Var ${v.position}]`);
+                        }
+                    }
+                });
+            }
+
+            // Post-processing to ensure:
+            // 1. Recipient name appears only once and is not duplicated
+            // 2. Static text such as Prof. is not duplicated or concatenated incorrectly
+            // 3. Format follows Prof. SAQ or Prof.SAQ
+            renderedText = formatPersonalizedMessage(renderedText, recipientName, currentSelectedTemplate.template_content);
 
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td class="font-monospace text-muted small">${idx + 1}</td>
                 <td><strong class="text-dark">${row.name_val || row.__normalized_name || 'Recipient'}</strong></td>
                 <td class="font-monospace text-primary fw-semibold">${row.mobile_val || row.__normalized_mobile}</td>
-                <td class="font-monospace text-dark small" style="white-space: pre-wrap;">${renderedText}</td>
+                <td class="font-monospace" style="white-space: pre-wrap; color: var(--slate-900, #020617) !important; font-weight: 500; font-size: 0.925rem; line-height: 1.5;">${renderedText}</td>
             `;
             previewTableBody.appendChild(tr);
         });
