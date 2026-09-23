@@ -500,8 +500,6 @@ document.addEventListener('DOMContentLoaded', function () {
             renderMappingTable(tmpl, previewData.all_headers);
             mappingNoTemplateNotice.style.display = 'none';
             mappingContainer.style.display = '';
-            mappingStatusBadge.className = 'badge bg-success-subtle text-success border border-success-subtle fw-semibold px-3 py-1.5';
-            mappingStatusBadge.textContent = 'Mapping Ready';
             renderPreviewTable();
         } else {
             mappingContainer.style.display = 'none';
@@ -520,30 +518,9 @@ document.addEventListener('DOMContentLoaded', function () {
             const tr = document.createElement('tr');
             const key = `var_${v.position}`;
 
-            // Auto-matching logic
-            let matchedHeader = '';
-            const varNameLower = v.name.toLowerCase().trim();
-
-            if (headers.includes(v.name)) {
-                matchedHeader = v.name;
-            } else {
-                for (let h of headers) {
-                    const hLower = h.toLowerCase().trim();
-                    if (hLower === varNameLower || hLower.includes(varNameLower) || varNameLower.includes(hLower)) {
-                        matchedHeader = h;
-                        break;
-                    }
-                }
-            }
-
-            if (!matchedHeader && (v.position === 1 || varNameLower.includes('name'))) {
-                matchedHeader = previewData.name_column || headers[0];
-            }
-
-            let optionsHtml = '';
+            let optionsHtml = '<option value="" selected>Select a value</option>';
             headers.forEach(h => {
-                const selected = (h === matchedHeader) ? 'selected' : '';
-                optionsHtml += `<option value="${h}" ${selected}>${h} (Excel Column)</option>`;
+                optionsHtml += `<option value="${h}">${h}</option>`;
             });
 
             tr.innerHTML = `
@@ -593,6 +570,30 @@ document.addEventListener('DOMContentLoaded', function () {
             inp.addEventListener('change', renderPreviewTable);
             inp.addEventListener('input', renderPreviewTable);
         });
+    }
+
+    function checkMappingComplete() {
+        if (!currentSelectedTemplate || !currentSelectedTemplate.variables) return true;
+        if (currentSelectedTemplate.variables.length === 0) return true;
+
+        for (let v of currentSelectedTemplate.variables) {
+            const key = `var_${v.position}`;
+            const typeSelect = document.querySelector(`select[name="${key}_source_type"]`);
+            const source = typeSelect ? typeSelect.value : 'field';
+
+            if (source === 'field') {
+                const fieldSelect = document.querySelector(`select[name="${key}_field_val"]`);
+                if (!fieldSelect || !fieldSelect.value || fieldSelect.value.trim() === '') {
+                    return false;
+                }
+            } else if (source === 'static') {
+                const staticInput = document.querySelector(`input[name="${key}_static_val"]`);
+                if (!staticInput || !staticInput.value || staticInput.value.trim() === '') {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     function renderPreviewTable() {
@@ -656,25 +657,49 @@ document.addEventListener('DOMContentLoaded', function () {
     function updateSendButtonState() {
         const hasTemplate = !!currentSelectedTemplate;
         const hasData = previewData && previewData.valid_count > 0;
+        const isMappingComplete = checkMappingComplete();
 
-        if (hasTemplate && hasData) {
+        if (hasTemplate && hasData && isMappingComplete) {
             sendBulkSmsBtn.disabled = false;
             sendSummaryText.textContent = `Ready to dispatch personalized SMS to ${previewData.valid_count} recipient(s) using template "${currentSelectedTemplate.name}".`;
+            if (mappingStatusBadge) {
+                mappingStatusBadge.className = 'badge bg-success-subtle text-success border border-success-subtle fw-semibold px-3 py-1.5';
+                mappingStatusBadge.textContent = 'Mapping Ready';
+            }
+        } else if (hasTemplate && hasData && !isMappingComplete) {
+            sendBulkSmsBtn.disabled = true;
+            sendSummaryText.textContent = 'Please select a value for all template variables in Step 3 to proceed.';
+            if (mappingStatusBadge) {
+                mappingStatusBadge.className = 'badge bg-warning-subtle text-warning-emphasis border border-warning-subtle fw-semibold px-3 py-1.5';
+                mappingStatusBadge.textContent = 'Mapping Required';
+            }
         } else if (!hasTemplate && !hasData) {
             sendBulkSmsBtn.disabled = true;
             sendSummaryText.textContent = 'Please select an SMS template in Step 1 and upload data in Step 2 to enable dispatch.';
+            if (mappingStatusBadge) {
+                mappingStatusBadge.className = 'badge bg-secondary fw-semibold px-3 py-1.5';
+                mappingStatusBadge.textContent = 'Select Template & Upload Data First';
+            }
         } else if (!hasTemplate) {
             sendBulkSmsBtn.disabled = true;
             sendSummaryText.textContent = 'Please select an SMS template in Step 1 to proceed.';
+            if (mappingStatusBadge) {
+                mappingStatusBadge.className = 'badge bg-secondary fw-semibold px-3 py-1.5';
+                mappingStatusBadge.textContent = 'Select Template in Step 1';
+            }
         } else {
             sendBulkSmsBtn.disabled = true;
             sendSummaryText.textContent = 'Please upload Excel or CSV data in Step 2 to proceed.';
+            if (mappingStatusBadge) {
+                mappingStatusBadge.className = 'badge bg-warning-subtle text-warning-emphasis border border-warning-subtle fw-semibold px-3 py-1.5';
+                mappingStatusBadge.textContent = 'Upload Excel/CSV Data Required in Step 2';
+            }
         }
     }
 
     // Modal Confirmation & Dispatch Launch
     sendBulkSmsBtn.addEventListener('click', function () {
-        if (!currentSelectedTemplate || !previewData) return;
+        if (!currentSelectedTemplate || !previewData || !checkMappingComplete()) return;
 
         document.getElementById('modalTmplName').textContent = currentSelectedTemplate.name;
         document.getElementById('modalTotalRecipients').textContent = previewData.valid_count + ' Recipients';
