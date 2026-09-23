@@ -60,7 +60,7 @@
         </div>
 
         <!-- Selected Template Information Display Box -->
-        <div id="templateInfoCard" class="mt-4 p-4 bg-light rounded-4 border" style="display: none;">
+        <div id="templateInfoCard" class="mt-4 p-4 rounded-4 border" style="display: none; background: linear-gradient(135deg, #f0f7ff 0%, #e0effe 100%); border-color: #bae6fd !important;">
             <div class="d-flex justify-content-between align-items-start mb-3 flex-wrap gap-2">
                 <div>
                     <h5 class="fw-bold text-dark mb-1" id="tmplName">—</h5>
@@ -76,7 +76,7 @@
                 <label class="form-label fw-bold text-uppercase small text-muted mb-1">
                     <i class="bi bi-chat-left-quote me-1"></i> Approved DLT Message Template
                 </label>
-                <div class="p-3 bg-white rounded-3 border font-monospace text-dark" id="tmplContentBox" style="white-space: pre-wrap; line-height: 1.6;">
+                <div class="p-3 bg-white rounded-3 border font-monospace text-dark shadow-sm" id="tmplContentBox" style="white-space: pre-wrap; line-height: 1.6; border-color: #bae6fd !important;">
                     —
                 </div>
             </div>
@@ -131,36 +131,36 @@
                 </button>
             </div>
         </form>
-        <small class="text-muted d-block">
-            <i class="bi bi-info-circle me-1"></i> Note: Uploaded recipient rows are temporary for this dispatch operation and will <strong>NOT be created as permanent contacts</strong> in the system database.
-        </small>
+        <div class="p-3 rounded-3 border" style="background: linear-gradient(135deg, #f0f7ff 0%, #f8fafc 100%); border-color: #bae6fd !important; color: #0369a1;">
+            <i class="bi bi-info-circle-fill me-1 text-primary"></i> <strong>Note:</strong> Uploaded recipient rows are temporary for this dispatch operation and will <strong>NOT be created as permanent contacts</strong> in the system database.
+        </div>
 
         {% if preview_data %}
         <!-- Parse Summary Section -->
         <div class="mt-4 pt-3 border-top">
             <div class="row g-3 mb-4">
                 <div class="col-md-3">
-                    <div class="p-3 bg-light rounded-3 border text-center">
-                        <small class="text-muted d-block text-uppercase font-monospace">Total Rows Detected</small>
+                    <div class="p-3 rounded-3 border text-center shadow-xs" style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border-color: #cbd5e1 !important;">
+                        <small class="text-muted d-block text-uppercase font-monospace fw-semibold">Total Rows Detected</small>
                         <strong class="fs-4 text-dark">{{ preview_data.total_rows }}</strong>
                     </div>
                 </div>
                 <div class="col-md-3">
-                    <div class="p-3 bg-success-subtle text-success rounded-3 border border-success-subtle text-center">
-                        <small class="d-block text-uppercase font-monospace">Valid Recipients</small>
-                        <strong class="fs-4">{{ preview_data.valid_count }}</strong>
+                    <div class="p-3 rounded-3 border text-center shadow-xs" style="background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); border-color: #a7f3d0 !important;">
+                        <small class="d-block text-uppercase font-monospace fw-semibold" style="color: #047857;">Valid Recipients</small>
+                        <strong class="fs-4" style="color: #065f46;">{{ preview_data.valid_count }}</strong>
                     </div>
                 </div>
                 <div class="col-md-3">
-                    <div class="p-3 bg-light rounded-3 border text-center">
-                        <small class="text-muted d-block text-uppercase font-monospace">Auto-Identified Name</small>
-                        <strong class="fs-6 text-primary font-monospace">{{ preview_data.name_column }}</strong>
+                    <div class="p-3 rounded-3 border text-center shadow-xs" style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border-color: #bfdbfe !important;">
+                        <small class="d-block text-uppercase font-monospace fw-semibold" style="color: #1d4ed8;">Auto-Identified Name</small>
+                        <strong class="fs-6 font-monospace" style="color: #1e40af;">{{ preview_data.name_column }}</strong>
                     </div>
                 </div>
                 <div class="col-md-3">
-                    <div class="p-3 bg-light rounded-3 border text-center">
-                        <small class="text-muted d-block text-uppercase font-monospace">Auto-Identified Mobile</small>
-                        <strong class="fs-6 text-primary font-monospace">{{ preview_data.number_column }}</strong>
+                    <div class="p-3 rounded-3 border text-center shadow-xs" style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border-color: #bfdbfe !important;">
+                        <small class="d-block text-uppercase font-monospace fw-semibold" style="color: #1d4ed8;">Auto-Identified Mobile</small>
+                        <strong class="fs-6 font-monospace" style="color: #1e40af;">{{ preview_data.number_column }}</strong>
                     </div>
                 </div>
             </div>
@@ -180,14 +180,14 @@
             </div>
 
             {% if preview_data.invalid_details %}
-            <div class="alert alert-warning border border-warning-subtle rounded-3 mt-3 mb-0">
-                <h6 class="fw-bold text-warning-emphasis mb-2"><i class="bi bi-exclamation-triangle-fill me-2"></i>Skipped Invalid Rows ({{ preview_data.invalid_count }})</h6>
+            <div class="alert border rounded-3 mt-3 mb-0" style="background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border-color: #fde68a !important; color: #92400e;">
+                <h6 class="fw-bold mb-2" style="color: #78350f;"><i class="bi bi-exclamation-triangle-fill me-2 text-warning"></i>Skipped Invalid Rows ({{ preview_data.invalid_count }})</h6>
                 <ul class="mb-0 small font-monospace">
                     {% for inv in preview_data.invalid_details|slice:":5" %}
                         <li>Row #{{ inv.row_num }}: {{ inv.name }} - Mobile: {{ inv.mobile_raw }} ({{ inv.reason }})</li>
                     {% endfor %}
                     {% if preview_data.invalid_details|length > 5 %}
-                        <li class="text-muted">... and {{ preview_data.invalid_details|length|add:"-5" }} more invalid row(s) skipped.</li>
+                        <li style="color: #a16207;">... and {{ preview_data.invalid_details|length|add:"-5" }} more invalid row(s) skipped.</li>
                     {% endif %}
                 </ul>
             </div>
@@ -212,9 +212,9 @@
         </span>
     </div>
     <div class="card-body p-4">
-        <div id="mappingNoTemplateNotice" class="text-center py-4 text-muted">
-            <i class="bi bi-arrow-up-circle fs-2 d-block mb-2 text-primary opacity-50"></i>
-            Please select an SMS Template in Step 1 and upload an Excel/CSV file in Step 2 to configure column mappings.
+        <div id="mappingNoTemplateNotice" class="text-center py-4 px-3 rounded-4 border" style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border-color: #cbd5e1 !important; color: #475569;">
+            <i class="bi bi-arrow-up-circle fs-2 d-block mb-2 text-primary opacity-75"></i>
+            <span class="fw-medium">Please select an SMS Template in Step 1 and upload an Excel/CSV file in Step 2 to configure column mappings.</span>
         </div>
 
         <form id="dispatchForm" method="post">
@@ -222,13 +222,13 @@
             <input type="hidden" name="template" id="hiddenTemplateId" value="{{ selected_template_id|default:'' }}">
 
             <div id="mappingContainer" style="display: none;">
-                <div class="table-responsive border rounded-3 mb-3">
+                <div class="table-responsive border rounded-4 mb-3 shadow-xs" style="background-color: #ffffff; border-color: #cbd5e1 !important;">
                     <table class="table table-hover align-middle mb-0">
-                        <thead class="table-light">
+                        <thead style="background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%); border-bottom: 2px solid #cbd5e1;">
                             <tr>
-                                <th style="width: 35%;">Template Required Field</th>
-                                <th style="width: 15%;">Source Type</th>
-                                <th style="width: 50%;">Excel Column / Value</th>
+                                <th style="width: 35%; color: #1e293b; font-weight: 600;">Template Required Field</th>
+                                <th style="width: 18%; color: #1e293b; font-weight: 600;">Source Type</th>
+                                <th style="width: 47%; color: #1e293b; font-weight: 600;">Excel Column / Value</th>
                             </tr>
                         </thead>
                         <tbody id="mappingTableBody">
@@ -256,21 +256,21 @@
         </span>
     </div>
     <div class="card-body p-4">
-        <div id="previewNoDataNotice" class="text-center py-4 text-muted">
-            <i class="bi bi-eye-slash fs-2 d-block mb-2 text-secondary opacity-50"></i>
-            Live message previews will appear here once a template is selected and data is uploaded.
+        <div id="previewNoDataNotice" class="text-center py-4 px-3 rounded-4 border" style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border-color: #cbd5e1 !important; color: #475569;">
+            <i class="bi bi-eye-slash fs-2 d-block mb-2 text-primary opacity-75"></i>
+            <span class="fw-medium">Live message previews will appear here once a template is selected and data is uploaded.</span>
         </div>
 
         <div id="previewContainer" style="display: none;">
             <h6 class="fw-bold mb-3"><i class="bi bi-card-text text-primary me-2"></i>Personalized Message Samples (First 5 Recipients)</h6>
-            <div class="table-responsive border rounded-3 mb-0">
+            <div class="table-responsive border rounded-4 mb-0 shadow-xs" style="background-color: #ffffff; border-color: #cbd5e1 !important;">
                 <table class="table table-hover align-middle mb-0">
-                    <thead class="table-light">
+                    <thead style="background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%); border-bottom: 2px solid #cbd5e1;">
                         <tr>
-                            <th style="width: 50px;">#</th>
-                            <th style="width: 200px;">Recipient</th>
-                            <th style="width: 140px;">Mobile</th>
-                            <th>Personalized Message Text</th>
+                            <th style="width: 50px; color: #1e293b; font-weight: 600;">#</th>
+                            <th style="width: 200px; color: #1e293b; font-weight: 600;">Recipient</th>
+                            <th style="width: 140px; color: #1e293b; font-weight: 600;">Mobile</th>
+                            <th style="color: #1e293b; font-weight: 600;">Personalized Message Text</th>
                         </tr>
                     </thead>
                     <tbody id="previewTableBody">
@@ -286,11 +286,11 @@
 <!-- ========================================================================= -->
 <!-- STEP 5 — SEND BULK SMS ACTION BAR                                         -->
 <!-- ========================================================================= -->
-<div class="card border-0 shadow-sm rounded-4 mb-5 bg-white border-top border-primary border-4">
+<div class="card border-0 shadow-sm rounded-4 mb-5 border-top border-primary border-4" style="background: linear-gradient(135deg, #eef2ff 0%, #f0f9ff 100%); border: 1px solid #c7d2fe !important; border-top: 4px solid #4f46e5 !important;">
     <div class="card-body p-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
         <div>
-            <h5 class="fw-bold mb-1 text-dark">Ready to Dispatch Bulk SMS</h5>
-            <p class="text-muted mb-0 small" id="sendSummaryText">Select a template and upload Excel/CSV data to enable SMS dispatch.</p>
+            <h5 class="fw-bold mb-1" style="color: #1e1b4b;"><i class="bi bi-send-check-fill text-primary me-2"></i>Ready to Dispatch Bulk SMS</h5>
+            <p class="mb-0 small" style="color: #3730a3; font-weight: 500;" id="sendSummaryText">Select a template and upload Excel/CSV data to enable SMS dispatch.</p>
         </div>
         <div>
             <button type="button" id="sendBulkSmsBtn" class="btn btn-primary btn-lg fw-bold px-5 py-3 shadow" disabled>
@@ -312,12 +312,12 @@
             <div class="modal-body p-4">
                 <div id="dispatchConfirmState">
                     <p class="lead fs-6 text-dark" id="modalConfirmText">Are you ready to send Bulk SMS?</p>
-                    <ul class="list-group list-group-flush border rounded-3 mb-4 small">
-                        <li class="list-group-item d-flex justify-content-between py-2.5">
+                    <ul class="list-group list-group-flush border rounded-3 mb-4 small" style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border-color: #cbd5e1 !important;">
+                        <li class="list-group-item d-flex justify-content-between py-2.5 bg-transparent" style="border-color: #e2e8f0;">
                             <span class="text-muted">Selected DLT Template:</span>
                             <strong class="text-dark" id="modalTmplName">—</strong>
                         </li>
-                        <li class="list-group-item d-flex justify-content-between py-2.5">
+                        <li class="list-group-item d-flex justify-content-between py-2.5 bg-transparent" style="border-color: #e2e8f0;">
                             <span class="text-muted">Total Recipients:</span>
                             <strong class="text-primary" id="modalTotalRecipients">0</strong>
                         </li>
@@ -525,7 +525,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             tr.innerHTML = `
                 <td>
-                    <strong class="text-dark font-monospace">Var ${v.position}</strong>
+                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle font-monospace px-2.5 py-1.5 fs-6 mb-1 d-inline-block">Var ${v.position}</span>
                     <div class="small text-muted">${v.name}</div>
                 </td>
                 <td>
@@ -749,10 +749,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
             const tr = document.createElement('tr');
             tr.innerHTML = `
-                <td class="font-monospace text-muted small">${idx + 1}</td>
+                <td class="font-monospace text-muted small text-center">${idx + 1}</td>
                 <td><strong class="text-dark">${row.name_val || row.__normalized_name || 'Recipient'}</strong></td>
                 <td class="font-monospace text-primary fw-semibold">${row.mobile_val || row.__normalized_mobile}</td>
-                <td class="font-monospace" style="white-space: pre-wrap; color: var(--slate-900, #020617) !important; font-weight: 500; font-size: 0.925rem; line-height: 1.5;">${renderedText}</td>
+                <td>
+                    <div class="p-2.5 rounded-3 border" style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border-color: #cbd5e1 !important; color: var(--slate-900, #020617) !important; font-weight: 500; font-size: 0.925rem; line-height: 1.5; white-space: pre-wrap; font-family: var(--font-monospace, monospace);">${renderedText}</div>
+                </td>
             `;
             previewTableBody.appendChild(tr);
         });

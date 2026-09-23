@@ -25,12 +25,12 @@
 </div>
 
 <!-- Important Notice Banner -->
-<div class="alert alert-info border border-info-subtle rounded-3 shadow-sm mb-4">
+<div class="alert border rounded-3 shadow-sm mb-4" style="background: linear-gradient(135deg, #f0f7ff 0%, #e0effe 100%); border-color: #bae6fd !important;">
     <div class="d-flex align-items-start gap-2">
-        <i class="bi bi-info-circle-fill fs-5 text-info mt-1"></i>
+        <i class="bi bi-info-circle-fill fs-5 text-primary mt-1"></i>
         <div>
             <strong class="d-block text-dark">Temporary Recipient Import</strong>
-            <span class="small text-secondary">
+            <span class="small" style="color: #0369a1;">
                 Recipients imported through this tool are <strong>temporary</strong> for this Bulk SMS dispatch and will <strong>NOT be saved as permanent contacts</strong> in the system database. Every column header in your Excel file will automatically become available for dynamic SMS template variable mapping!
             </span>
         </div>
@@ -68,27 +68,27 @@
         <!-- Summary Cards Row -->
         <div class="row g-3 mb-4">
             <div class="col-md-3">
-                <div class="p-3 bg-light rounded-3 border text-center">
-                    <small class="text-muted d-block text-uppercase font-monospace">Total Rows Detected</small>
+                <div class="p-3 rounded-3 border text-center shadow-xs" style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border-color: #cbd5e1 !important;">
+                    <small class="text-muted d-block text-uppercase font-monospace fw-semibold">Total Rows Detected</small>
                     <strong class="fs-3 text-dark">{{ preview_data.total_rows }}</strong>
                 </div>
             </div>
             <div class="col-md-3">
-                <div class="p-3 bg-success-subtle text-success rounded-3 border border-success-subtle text-center">
-                    <small class="d-block text-uppercase font-monospace">Valid Recipients</small>
-                    <strong class="fs-3">{{ preview_data.valid_count }}</strong>
+                <div class="p-3 rounded-3 border text-center shadow-xs" style="background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); border-color: #a7f3d0 !important;">
+                    <small class="d-block text-uppercase font-monospace fw-semibold" style="color: #047857;">Valid Recipients</small>
+                    <strong class="fs-3" style="color: #065f46;">{{ preview_data.valid_count }}</strong>
                 </div>
             </div>
             <div class="col-md-3">
-                <div class="p-3 bg-light rounded-3 border text-center">
-                    <small class="text-muted d-block text-uppercase font-monospace">Auto-Identified Name</small>
-                    <strong class="fs-5 text-primary font-monospace">{{ preview_data.name_column }}</strong>
+                <div class="p-3 rounded-3 border text-center shadow-xs" style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border-color: #bfdbfe !important;">
+                    <small class="d-block text-uppercase font-monospace fw-semibold" style="color: #1d4ed8;">Auto-Identified Name</small>
+                    <strong class="fs-5 font-monospace" style="color: #1e40af;">{{ preview_data.name_column }}</strong>
                 </div>
             </div>
             <div class="col-md-3">
-                <div class="p-3 bg-light rounded-3 border text-center">
-                    <small class="text-muted d-block text-uppercase font-monospace">Auto-Identified Mobile</small>
-                    <strong class="fs-5 text-primary font-monospace">{{ preview_data.number_column }}</strong>
+                <div class="p-3 rounded-3 border text-center shadow-xs" style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border-color: #bfdbfe !important;">
+                    <small class="d-block text-uppercase font-monospace fw-semibold" style="color: #1d4ed8;">Auto-Identified Mobile</small>
+                    <strong class="fs-5 font-monospace" style="color: #1e40af;">{{ preview_data.number_column }}</strong>
                 </div>
             </div>
         </div>
@@ -109,14 +109,14 @@
 
         {% if preview_data.invalid_details %}
         <!-- Invalid Mobile Rows Notice -->
-        <div class="alert alert-warning border border-warning-subtle rounded-3 mb-4">
-            <h6 class="fw-bold text-warning-emphasis mb-2"><i class="bi bi-exclamation-triangle-fill me-2"></i>Skipped Invalid Rows ({{ preview_data.invalid_count }})</h6>
+        <div class="alert border rounded-3 mb-4" style="background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border-color: #fde68a !important; color: #92400e;">
+            <h6 class="fw-bold mb-2" style="color: #78350f;"><i class="bi bi-exclamation-triangle-fill me-2 text-warning"></i>Skipped Invalid Rows ({{ preview_data.invalid_count }})</h6>
             <ul class="mb-0 small font-monospace">
                 {% for inv in preview_data.invalid_details|slice:":5" %}
                     <li>Row #{{ inv.row_num }}: {{ inv.name }} - Mobile: {{ inv.mobile_raw }} ({{ inv.reason }})</li>
                 {% endfor %}
                 {% if preview_data.invalid_details|length > 5 %}
-                    <li class="text-muted">... and {{ preview_data.invalid_details|length|add:"-5" }} more invalid row(s) skipped.</li>
+                    <li style="color: #a16207;">... and {{ preview_data.invalid_details|length|add:"-5" }} more invalid row(s) skipped.</li>
                 {% endif %}
             </ul>
         </div>
